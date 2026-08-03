@@ -1,0 +1,6 @@
+{
+  "name": "STB Singapore",
+  "description": "Singapore Private Transport & Tour Booking service with live fare calculator, interactive route map, fleet showcase, and instant WhatsApp quotes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
