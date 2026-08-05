@@ -8,6 +8,23 @@ const escape = (s = '') => String(s)
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;');
 
+// Format ISO datetime-local ("2026-08-06T02:14") into "6 Aug 2026, 2:14 AM"
+function fmtDateTime(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso);
+    const day = d.getDate();
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const year = d.getFullYear();
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    return `${day} ${mon} ${year}, ${h}:${m} ${ampm}`;
+  } catch { return String(iso); }
+}
+
 // ============================================
 // SHARED HEAD + WRAPPER
 // ============================================
@@ -116,7 +133,7 @@ function guestEmail(booking, brand) {
     vehicle: escape(booking.vehicle || ''),
     pickup: escape(booking.pickup || ''),
     destination: escape(booking.destination || ''),
-    dateTime: escape(booking.dateTime || 'To be confirmed'),
+    dateTime: escape(fmtDateTime(booking.dateTime) || 'To be confirmed'),
     flightNo: escape(booking.flightNo || ''),
     fare: escape(booking.fare || ''),
     currency: escape(booking.currency || 'SGD'),
@@ -266,7 +283,7 @@ function adminEmail(booking, brand) {
     vehicle: escape(booking.vehicle || ''),
     pickup: escape(booking.pickup || ''),
     destination: escape(booking.destination || ''),
-    dateTime: escape(booking.dateTime || ''),
+    dateTime: escape(fmtDateTime(booking.dateTime) || ''),
     flightNo: escape(booking.flightNo || ''),
     fare: escape(booking.fare || ''),
     currency: escape(booking.currency || 'SGD'),
@@ -366,6 +383,19 @@ function adminEmail(booking, brand) {
         <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:12px;">
           Quick Actions
         </div>
+
+        <!-- Primary: Assign Driver (opens tiny form) -->
+        ${brand.assignUrl ? `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#E31E24,#B8171C);border-radius:12px;margin-bottom:10px;">
+          <tr><td align="center">
+            <a href="${brand.assignUrl}" style="display:block;padding:16px 20px;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
+              🚗 &nbsp;Assign Driver &amp; Vehicle
+              <span style="display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,0.7);margin-top:3px;letter-spacing:0.08em;">Guest reminder auto-fires 12h before pickup</span>
+            </a>
+          </td></tr>
+        </table>
+        ` : ''}
+
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td class="stack" style="padding-right:6px;width:50%;">
@@ -378,7 +408,7 @@ function adminEmail(booking, brand) {
               </table>
             </td>
             <td class="stack stack-pad" style="padding-left:6px;width:50%;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E31E24;border-radius:12px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#141414;border-radius:12px;">
                 <tr><td align="center">
                   <a href="${mailtoLink}" style="display:block;padding:14px 20px;color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
                     ✉ &nbsp;Email Customer
@@ -525,4 +555,218 @@ function adminText(booking) {
   ].filter(Boolean).join('\n');
 }
 
-export { guestEmail, adminEmail, guestText, adminText };
+// ============================================
+// GUEST — 12-HOUR REMINDER
+// ============================================
+function reminderEmail(booking, brand) {
+  const b = {
+    voucherCode: escape(booking.voucherCode || ''),
+    passengerName: escape(booking.passengerName || 'Guest'),
+    firstName: escape((booking.passengerName || 'Guest').split(' ')[0]),
+    vehicle: escape(booking.vehicle || ''),
+    pickup: escape(booking.pickup || ''),
+    destination: escape(booking.destination || ''),
+    dateTime: escape(fmtDateTime(booking.dateTime) || ''),
+    flightNo: escape(booking.flightNo || ''),
+    fare: escape(booking.fare || ''),
+    currency: escape(booking.currency || 'SGD'),
+    driverName: escape(booking.driverName || ''),
+    driverPhone: escape(booking.driverPhone || ''),
+    driverPlate: escape(booking.driverPlate || ''),
+    driverPhotoUrl: escape(booking.driverPhotoUrl || ''),
+  };
+
+  const hasDriver = Boolean(booking.driverName && booking.driverPlate);
+  const waNumber = (brand.whatsapp || '').replace(/[^0-9]/g, '');
+  const waMsg = encodeURIComponent(`Hello STB, this is ${booking.passengerName} regarding booking ${b.voucherCode}.`);
+  const waLink = `https://wa.me/${waNumber}?text=${waMsg}`;
+
+  const driverBlock = hasDriver ? `
+    <!-- Driver Card -->
+    <tr>
+      <td class="px" style="padding:8px 40px 0 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#141414;border-radius:20px;overflow:hidden;">
+          <tr>
+            <td style="padding:24px 26px;color:#ffffff;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.22em;color:#D4A24A;text-transform:uppercase;margin-bottom:14px;">
+                Your Chauffeur
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  ${b.driverPhotoUrl ? `
+                  <td width="80" style="vertical-align:top;padding-right:16px;">
+                    <img src="${b.driverPhotoUrl}" width="70" height="70" alt="${b.driverName}" style="display:block;width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #D4A24A;" />
+                  </td>
+                  ` : ''}
+                  <td style="vertical-align:top;">
+                    <div class="serif" style="font-family:Georgia,serif;font-size:22px;font-weight:500;color:#ffffff;letter-spacing:-0.01em;margin-bottom:4px;">
+                      ${b.driverName}
+                    </div>
+                    ${b.driverPhone ? `<div style="font-size:12px;color:#B0B0B0;margin-bottom:4px;">✆ <a href="tel:${b.driverPhone}" style="color:#B0B0B0;text-decoration:none;">${b.driverPhone}</a></div>` : ''}
+                    <div style="display:inline-block;background:#D4A24A;color:#141414;font-family:'Courier New',monospace;font-size:14px;font-weight:800;padding:6px 14px;border-radius:8px;letter-spacing:0.1em;margin-top:6px;">
+                      ${b.driverPlate}
+                    </div>
+                    <div style="font-size:11px;color:#7a7a7a;margin-top:6px;">${b.vehicle}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  ` : `
+    <!-- Driver pending -->
+    <tr>
+      <td class="px" style="padding:8px 40px 0 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FBF3E1;border:1px dashed #B08536;border-radius:16px;">
+          <tr>
+            <td style="padding:18px 22px;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:6px;">
+                Driver Details Incoming
+              </div>
+              <div style="font-size:13px;color:#141414;line-height:1.55;">
+                Our dispatch team will send your chauffeur's name, contact, and vehicle plate to your WhatsApp shortly. Please keep <strong>${b.voucherCode}</strong> handy.
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
+
+  const bodyHtml = `
+    <!-- Reminder badge -->
+    <tr>
+      <td class="px" align="center" style="padding:8px 40px 4px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:#FBF3E1;color:#B08536;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
+            ⏰ 12 Hours to Pickup
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Headline -->
+    <tr>
+      <td class="px" align="center" style="padding:16px 40px 8px 40px;">
+        <h1 class="serif h1" style="margin:0;font-family:Georgia,serif;font-size:30px;line-height:1.15;font-weight:500;color:#141414;letter-spacing:-0.02em;">
+          ${b.firstName}, your ride is <span style="color:#E31E24;font-style:italic;">tomorrow.</span>
+        </h1>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="px" align="center" style="padding:0 40px 20px 40px;">
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#6B6B6B;max-width:440px;">
+          Here's everything you need for a smooth ride. Save this email or screenshot the plate number.
+        </p>
+      </td>
+    </tr>
+
+    ${driverBlock}
+
+    <!-- Pickup summary -->
+    <tr>
+      <td class="px" style="padding:16px 40px 0 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FDECEC;border-radius:16px;">
+          <tr>
+            <td style="padding:22px 24px;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#E31E24;text-transform:uppercase;margin-bottom:12px;">
+                Pickup Details
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                ${rowTd('Voucher', b.voucherCode, '#E31E24')}
+                ${rowTd('Pickup', b.pickup)}
+                ${b.destination ? rowTd('Destination', b.destination) : ''}
+                ${rowTd('Time', b.dateTime)}
+                ${b.flightNo ? rowTd('Flight', b.flightNo, '#E31E24') : ''}
+                ${rowTd('Vehicle', b.vehicle)}
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- WhatsApp CTA -->
+    <tr>
+      <td class="px" align="center" style="padding:24px 40px 8px 40px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td align="center" style="background:#25D366;border-radius:14px;">
+              <a href="${waLink}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
+                💬 &nbsp;Message dispatch on WhatsApp
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Tips -->
+    <tr>
+      <td class="px" style="padding:24px 40px 8px 40px;">
+        <div class="serif" style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:#141414;letter-spacing:-0.01em;margin-bottom:12px;">
+          A few reminders
+        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          ${nextStep('01', 'Be ready 10 minutes early', 'Your chauffeur arrives 10 minutes ahead of pickup time. Complimentary waiting from actual landing if flight delayed.')}
+          ${nextStep('02', 'Look for the name board', b.flightNo ? 'At Changi arrivals hall, your chauffeur will hold a printed board with your name.' : 'Your chauffeur will call/WhatsApp you upon arrival.')}
+          ${nextStep('03', 'Zero surcharges', 'ERP, tolls, and peak charges are all included. Your fare is guaranteed.')}
+        </table>
+      </td>
+    </tr>
+
+    <!-- Change info -->
+    <tr>
+      <td class="px" style="padding:16px 40px 40px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FBF7F0;border-radius:14px;">
+          <tr>
+            <td style="padding:18px 22px;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:8px;">Last-minute changes?</div>
+              <div style="font-size:12px;color:#141414;line-height:1.6;">
+                Reply to this email or WhatsApp us with voucher <strong>${b.voucherCode}</strong>. Free cancellation until 2 hours before pickup.
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
+
+  return shell({
+    title: `Your ride is tomorrow — ${b.voucherCode}`,
+    preheader: hasDriver
+      ? `Chauffeur ${booking.driverName} · Plate ${booking.driverPlate} · Pickup ${booking.dateTime}`
+      : `Pickup in 12 hours · ${b.pickup} · Voucher ${b.voucherCode}`,
+    bodyHtml,
+    brand,
+  });
+}
+
+function reminderText(booking) {
+  const hasDriver = Boolean(booking.driverName && booking.driverPlate);
+  return [
+    `STB Singapore — Your Ride is Tomorrow`,
+    ``,
+    `${booking.passengerName}, your pickup is in 12 hours.`,
+    ``,
+    hasDriver ? `CHAUFFEUR` : `DISPATCH`,
+    hasDriver ? `  Driver: ${booking.driverName}` : `  We'll message your driver details via WhatsApp shortly.`,
+    hasDriver && booking.driverPhone ? `  Phone: ${booking.driverPhone}` : ``,
+    hasDriver ? `  Plate: ${booking.driverPlate}` : ``,
+    ``,
+    `TRIP`,
+    `  Voucher: ${booking.voucherCode}`,
+    `  Pickup: ${booking.pickup}`,
+    booking.destination ? `  Destination: ${booking.destination}` : ``,
+    `  Time: ${booking.dateTime}`,
+    booking.flightNo ? `  Flight: ${booking.flightNo}` : ``,
+    `  Vehicle: ${booking.vehicle}`,
+    ``,
+    `Reply to this email or WhatsApp us with voucher ${booking.voucherCode} for any changes.`,
+  ].filter(Boolean).join('\n');
+}
+
+export { guestEmail, adminEmail, reminderEmail, guestText, adminText, reminderText };

@@ -64,7 +64,9 @@ const VEHICLES = [
     tagStyle: 'gold',
     pax: 6,
     luggage: 5,
-    baseFareSGD: 85,
+    baseFareSGD: 45,
+    perKmSGD: 2.5,
+    minFareSGD: 65,
     hourlySGD: 65,
     image: 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1200&q=80',
@@ -79,7 +81,9 @@ const VEHICLES = [
     tag: 'Executive Choice',
     pax: 3,
     luggage: 2,
-    baseFareSGD: 75,
+    baseFareSGD: 40,
+    perKmSGD: 2.2,
+    minFareSGD: 55,
     hourlySGD: 60,
     image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1200&q=80',
@@ -94,7 +98,9 @@ const VEHICLES = [
     tag: 'Ultra Luxury',
     pax: 3,
     luggage: 3,
-    baseFareSGD: 150,
+    baseFareSGD: 80,
+    perKmSGD: 4.0,
+    minFareSGD: 120,
     hourlySGD: 120,
     image: 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
@@ -109,7 +115,9 @@ const VEHICLES = [
     tag: 'Best for Groups',
     pax: 13,
     luggage: 10,
-    baseFareSGD: 110,
+    baseFareSGD: 60,
+    perKmSGD: 3.0,
+    minFareSGD: 90,
     hourlySGD: 75,
     image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=1200&q=80',
@@ -124,7 +132,9 @@ const VEHICLES = [
     tag: 'Modern Comfort',
     pax: 7,
     luggage: 6,
-    baseFareSGD: 80,
+    baseFareSGD: 42,
+    perKmSGD: 2.3,
+    minFareSGD: 60,
     hourlySGD: 60,
     image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=1200&q=80',
@@ -139,7 +149,9 @@ const VEHICLES = [
     tag: 'MICE · Tour Delegations',
     pax: 45,
     luggage: 40,
-    baseFareSGD: 250,
+    baseFareSGD: 150,
+    perKmSGD: 5.0,
+    minFareSGD: 200,
     hourlySGD: 150,
     image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
@@ -187,11 +199,49 @@ function formatCurrency(amountSGD) {
   return `${state.currencySymbol}${Math.round(v)}`;
 }
 
+function haversineKm(a, b) {
+  if (!a || !b) return null;
+  const R = 6371;
+  const toRad = (v) => (v * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+// Adds 25% road-factor to straight-line distance (roads are never straight)
+function estimatedRoadKm(pickupName, destName) {
+  const p = LOCATION_COORDS[pickupName];
+  const d = LOCATION_COORDS[destName];
+  const straight = haversineKm(p, d);
+  return straight == null ? null : straight * 1.25;
+}
+
 function computeFareSGD() {
   const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
   if (state.tripMode === 'hourly') return v.hourlySGD * state.hourlyDuration;
-  if (state.tripMode === 'return') return Math.round(v.baseFareSGD * 1.85);
-  return v.baseFareSGD;
+
+  const pickup = document.getElementById('pickup-input')?.value || '';
+  const dest = document.getElementById('dest-input')?.value || '';
+  const km = estimatedRoadKm(pickup, dest);
+
+  let fare;
+  if (km == null || km < 0.5) {
+    fare = v.minFareSGD || v.baseFareSGD;
+  } else {
+    fare = v.baseFareSGD + km * v.perKmSGD;
+    fare = Math.max(fare, v.minFareSGD || 0);
+  }
+
+  if (state.tripMode === 'return') fare = fare * 1.85;
+  return Math.round(fare);
+}
+
+function currentDistanceKm() {
+  if (state.tripMode === 'hourly') return null;
+  const pickup = document.getElementById('pickup-input')?.value || '';
+  const dest = document.getElementById('dest-input')?.value || '';
+  return estimatedRoadKm(pickup, dest);
 }
 
 // ============================================
@@ -215,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initReveal();
   initMobileBottomBar();
   updateAll();
+  renderRouteSummary();
 });
 
 // ============================================
@@ -355,6 +406,7 @@ function initTripMode() {
         hourlyC.classList.add('hidden');
       }
       renderVehicleChips();
+      renderRouteSummary();
     });
   });
 
@@ -364,6 +416,7 @@ function initTripMode() {
       btn.classList.add('active');
       state.hourlyDuration = parseInt(btn.dataset.hours || '4', 10);
       renderVehicleChips();
+      renderRouteSummary();
     });
   });
 }
@@ -421,20 +474,68 @@ function renderVehicleChips() {
   const grid = $('#vehicle-grid');
   if (!grid) return;
 
-  grid.innerHTML = VEHICLES.map(v => `
-    <div class="vehicle-chip ${v.id === state.selectedVehicleId ? 'active' : ''}" data-id="${v.id}" data-testid="vchip-${v.id}">
-      <div class="vname">${v.name}</div>
-      <div class="vmeta">${v.pax} pax · ${v.luggage} bags</div>
-      <div class="vprice">${formatCurrency(state.tripMode === 'hourly' ? v.hourlySGD * state.hourlyDuration : v.baseFareSGD)}</div>
-    </div>
-  `).join('');
+  const pickup = document.getElementById('pickup-input')?.value || '';
+  const dest = document.getElementById('dest-input')?.value || '';
+  const km = state.tripMode === 'hourly' ? null : estimatedRoadKm(pickup, dest);
+
+  grid.innerHTML = VEHICLES.map(v => {
+    let priceSGD;
+    if (state.tripMode === 'hourly') {
+      priceSGD = v.hourlySGD * state.hourlyDuration;
+    } else if (km != null) {
+      priceSGD = Math.max(Math.round(v.baseFareSGD + km * v.perKmSGD), v.minFareSGD || 0);
+      if (state.tripMode === 'return') priceSGD = Math.round(priceSGD * 1.85);
+    } else {
+      priceSGD = v.minFareSGD || v.baseFareSGD;
+      if (state.tripMode === 'return') priceSGD = Math.round(priceSGD * 1.85);
+    }
+    return `
+      <div class="vehicle-chip ${v.id === state.selectedVehicleId ? 'active' : ''}" data-id="${v.id}" data-testid="vchip-${v.id}">
+        <div class="vname">${v.name}</div>
+        <div class="vmeta">${v.pax} pax · ${v.luggage} bags</div>
+        <div class="vprice">${formatCurrency(priceSGD)}</div>
+      </div>
+    `;
+  }).join('');
 
   grid.querySelectorAll('.vehicle-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       state.selectedVehicleId = chip.dataset.id;
       renderVehicleChips();
+      renderRouteSummary();
     });
   });
+}
+
+function renderRouteSummary() {
+  const el = document.getElementById('route-summary');
+  if (!el) return;
+  if (state.tripMode === 'hourly') {
+    el.innerHTML = `
+      <span class="material-symbols-outlined" style="color:var(--stb-gold-dark);font-size:1rem;">schedule</span>
+      <span><strong>${state.hourlyDuration}h disposal</strong> · chauffeur at your service</span>
+      <span style="margin-left:auto;font-weight:800;color:var(--stb-red);">${formatCurrency(computeFareSGD())}</span>
+    `;
+    el.style.display = 'flex';
+    return;
+  }
+  const km = currentDistanceKm();
+  if (km == null) {
+    el.innerHTML = `
+      <span class="material-symbols-outlined" style="color:var(--stb-muted);font-size:1rem;">info</span>
+      <span style="color:var(--stb-muted);">Pick preset locations for live route pricing</span>
+      <span style="margin-left:auto;font-weight:800;color:var(--stb-red);">from ${formatCurrency(computeFareSGD())}</span>
+    `;
+    el.style.display = 'flex';
+    return;
+  }
+  const min = Math.round((km / 40) * 60);
+  el.innerHTML = `
+    <span class="material-symbols-outlined" style="color:var(--stb-red);font-size:1rem;">route</span>
+    <span><strong>${km.toFixed(1)} km</strong> · ~${min} min drive${state.tripMode === 'return' ? ' · round trip' : ''}</span>
+    <span style="margin-left:auto;font-weight:800;color:var(--stb-red);">${formatCurrency(computeFareSGD())}</span>
+  `;
+  el.style.display = 'flex';
 }
 
 // ============================================
@@ -622,6 +723,8 @@ function initPresets() {
         input.value = item.querySelector('span').textContent;
         container.classList.add('hidden');
         updateMapMarkers(pickup.value, dest.value);
+        renderVehicleChips();
+        renderRouteSummary();
       });
     });
   };
@@ -631,6 +734,8 @@ function initPresets() {
 
   pickup?.addEventListener('focus', () => pPresets?.classList.remove('hidden'));
   dest?.addEventListener('focus', () => dPresets?.classList.remove('hidden'));
+  pickup?.addEventListener('input', () => { renderVehicleChips(); renderRouteSummary(); });
+  dest?.addEventListener('input', () => { renderVehicleChips(); renderRouteSummary(); });
 
   document.addEventListener('click', e => {
     if (!pickup?.contains(e.target) && !pPresets?.contains(e.target)) pPresets?.classList.add('hidden');
@@ -643,6 +748,8 @@ function initPresets() {
       if (dest && loc) {
         dest.value = loc;
         updateMapMarkers(pickup.value, loc);
+        renderVehicleChips();
+        renderRouteSummary();
         scrollToWidget();
       }
     });
