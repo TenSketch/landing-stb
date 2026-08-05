@@ -1,0 +1,34 @@
+{
+  "summary": "Backend-only testing for STB Singapore Node/Express refactor for Vercel deploy. Created pytest suite at /app/backend/tests/backend_test.py — 19/19 tests PASSED covering: /api/health, static asset serving (index.html, stb-logo.png, /src/main.js, /src/styles.css), POST /api/bookings (success with real Gmail SMTP + validation errors), GET/POST /assign/:voucher (200/404/persistence/prefill), reminder cron (fires + idempotent guard + reminderSentAt persistence), and structural validation of /app/api/*.js Vercel wrappers + vercel.json (has crons + rewrites). Real emails were sent successfully via Gmail SMTP (both customer and admin ok=true, message IDs returned). Booking persisted to /app/data/bookings.json. Reminder cron correctly sent on first call, did NOT re-send on second call, and reminderSentAt is a valid ISO timestamp.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "handleGetAssign returns HTML with a 404 status but no `renderNotFound` distinction — fine as-is; the HTML clearly shows 'Booking not found'.",
+    "getTransporter() memoizes to `false` on first miss which is fine, but subsequent env changes at runtime won't be reflected (acceptable for serverless).",
+    "Reminder cron has no auth guard when CRON_SECRET is unset — acceptable for local/dev; production should ensure Vercel sets and validates CRON_SECRET header.",
+    "voucherCode is used directly in URL paths — handlers use encodeURIComponent when rendering, which is correct."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py",
+    "/app/data/bookings.json (reset to [] pre-run, now contains 1 test booking)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not tested (skipped per request)"},
+  "test_credentials": "SMTP: tensketch285@gmail.com (from /app/.env, live Gmail app-password)",
+  "seed_data_creation": "One test booking with voucherCode STB-TEST-<timestamp> written to /app/data/bookings.json; reminderSentAt set after cron run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Server runs via `node server.js` on port 3000 (managed by main agent, not supervisor). Reset /app/data/bookings.json to [] before re-running tests. All 19 pytest cases live in /app/backend/tests/backend_test.py. SMTP sends real emails to tensketch285@gmail.com — expect 3 emails per full run (guest confirm, admin notify, 12h reminder).",
+  "rca of the issue": "No issues found. Refactor is deployment-ready for Vercel: static assets served from root, /api/* wrappers exist and export default handlers, vercel.json has valid crons + rewrites, shared handlers in /app/lib/handlers.js work correctly through both the Express dev server and the serverless wrappers."
+}
