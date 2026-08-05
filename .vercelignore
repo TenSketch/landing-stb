@@ -5,7 +5,7 @@ node_modules
 data/
 memory/
 test_reports/
-backend/tests/
+backend/
 .pytest_cache/
 tests/
 scripts/
