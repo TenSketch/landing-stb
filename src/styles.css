@@ -849,14 +849,26 @@ body {
 .mbb-item .material-symbols-outlined { font-size: 22px; }
 .mbb-item.active, .mbb-item:hover { color: var(--stb-red); }
 .mbb-item.primary {
-  color: white;
-  background: var(--stb-red);
-  border-radius: 16px;
-  margin: -12px 0.25rem 0;
-  padding: 0.55rem 0.25rem;
-  box-shadow: 0 6px 16px rgba(227, 30, 36, 0.4);
+  color: var(--stb-red);
+  background: transparent;
+  border-radius: 0;
+  margin: 0;
+  padding: 0.35rem 0.25rem;
+  box-shadow: none;
+  position: relative;
 }
-.mbb-item.primary:hover { color: white; background: var(--stb-red-dark); }
+.mbb-item.primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 3px;
+  background: var(--stb-red);
+  border-radius: 0 0 3px 3px;
+}
+.mbb-item.primary:hover { color: var(--stb-red-dark); background: transparent; }
 
 /* ============================================
    Modals
