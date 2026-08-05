@@ -1,21 +1,30 @@
-// Pure Vanilla JavaScript Application - STB Singapore (No React, No TypeScript)
+// STB Singapore — Vanilla JavaScript App
+// Pure JS, no framework. Handles booking widget, currency, map, modals, filters.
 
-// Global Application State
-let currentCurrency = 'SGD';
-let currentCurrencySymbol = 'S$';
-let currentExchangeRate = 1.0;
-
-let currentTripMode = 'one_way';
-let selectedVehicleId = 'alphard';
-let selectedService = 'airport_arrival';
-let hourlyDuration = 4;
+// ============================================
+// STATE
+// ============================================
+const state = {
+  currency: 'SGD',
+  currencySymbol: 'S$',
+  exchangeRate: 1.0,
+  tripMode: 'one_way',
+  selectedVehicleId: 'alphard',
+  selectedService: 'airport_arrival',
+  hourlyDuration: 4,
+  faqCategory: 'all',
+  fleetCategory: 'all',
+  selectedStars: 5,
+};
 
 let mapInstance = null;
 let pickupMarker = null;
 let destMarker = null;
 let routePolyline = null;
 
-// Currency Exchange Rates (Base: SGD)
+// ============================================
+// CONSTANTS
+// ============================================
 const CURRENCY_MAP = {
   SGD: { symbol: 'S$', rate: 1.0 },
   USD: { symbol: '$', rate: 0.74 },
@@ -23,10 +32,9 @@ const CURRENCY_MAP = {
   GBP: { symbol: '£', rate: 0.58 },
   AUD: { symbol: 'A$', rate: 1.13 },
   MYR: { symbol: 'RM', rate: 3.52 },
-  INR: { symbol: '₹', rate: 61.80 }
+  INR: { symbol: '₹', rate: 61.80 },
 };
 
-// Preset Singapore & Malaysia Coordinates
 const LOCATION_COORDS = {
   'Changi Airport Terminal 1': { lat: 1.3644, lng: 103.9915 },
   'Changi Airport Terminal 2': { lat: 1.3572, lng: 103.9870 },
@@ -38,318 +46,255 @@ const LOCATION_COORDS = {
   'Universal Studios Singapore': { lat: 1.2540, lng: 103.8238 },
   'Orchard Road Shopping Belt': { lat: 1.3048, lng: 103.8318 },
   'Singapore Cruise Centre (HarbourFront)': { lat: 1.2647, lng: 103.8203 },
+  'Raffles Hotel Singapore': { lat: 1.2947, lng: 103.8543 },
+  'Clarke Quay River Cruise': { lat: 1.2894, lng: 103.8465 },
   'Johor Bahru City Square (Malaysia)': { lat: 1.4623, lng: 103.7638 },
-  'Legoland Malaysia (Johor)': { lat: 1.4273, lng: 103.6293 }
+  'Legoland Malaysia (Johor)': { lat: 1.4273, lng: 103.6293 },
+  'Desaru Coast Resort (Malaysia)': { lat: 1.5395, lng: 104.2662 },
 };
 
-// Vehicles Dataset
+// Vehicles with ACCURATE Unsplash images
 const VEHICLES = [
   {
     id: 'alphard',
-    name: 'Toyota Alphard / Vellfire Luxury MPV',
+    name: 'Toyota Alphard MPV',
+    fullName: 'Toyota Alphard / Vellfire Luxury MPV',
     category: 'mpv',
-    tag: 'Most Popular for Families',
+    tag: 'Most Popular',
+    tagStyle: 'gold',
     pax: 6,
     luggage: 5,
     baseFareSGD: 85,
     hourlySGD: 65,
-    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80'
-    ],
-    description: 'First-class captain ottoman seats, dual sunroof, tri-zone automatic climate control, and whisper-quiet suspension.',
-    features: ['Captain Ottoman Seats', 'Dual Sunroof & Ambient Lighting', 'Free High-Speed 5G WiFi', 'Complimentary Mineral Water', 'Child Safety Seat Available']
+    image: 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=1200&q=80',
+    fallback: 'https://images.unsplash.com/photo-1609520505218-7421df7ef226?auto=format&fit=crop&w=1200&q=80',
+    description: 'First-class captain ottoman seats, dual sunroof, tri-zone climate control, and whisper-quiet suspension. The pinnacle of family luxury.',
+    features: ['Captain Ottoman Seats', 'Dual Sunroof + Ambient Lights', 'Free 5G WiFi Onboard', 'Complimentary Mineral Water', 'Child Safety Seat Available'],
   },
   {
     id: 'eclass',
-    name: 'Mercedes-Benz E-Class Executive Sedan',
+    name: 'Mercedes E-Class Sedan',
+    fullName: 'Mercedes-Benz E-Class Executive Sedan',
     category: 'sedan',
-    tag: 'Business Executive Choice',
+    tag: 'Executive Choice',
     pax: 3,
     luggage: 2,
     baseFareSGD: 75,
     hourlySGD: 60,
-    image: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80'
-    ],
-    description: 'Sleek executive sedan offering plush leather upholstery, smooth ride comfort, and professional chauffeur presentation.',
-    features: ['Nappa Leather Interior', 'Burmester Sound System', 'Mobile Charging Cables', 'Newspaper & Refreshments', 'Flight Landing Tracking']
+    image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
+    fallback: 'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&w=1200&q=80',
+    description: 'Sleek executive sedan with plush Nappa leather, whisper-smooth ride, and professional chauffeur presentation.',
+    features: ['Nappa Leather Interior', 'Burmester Sound System', 'Mobile Charging Ports', 'Newspapers & Refreshments', 'Flight Landing Tracking'],
   },
   {
     id: 'sclass',
-    name: 'Mercedes-Benz S-Class VIP Limousine',
+    name: 'Mercedes S-Class VIP',
+    fullName: 'Mercedes-Benz S-Class VIP Limousine',
     category: 'luxury',
-    tag: 'Ultra-VIP Luxury',
+    tag: 'Ultra Luxury',
     pax: 3,
     luggage: 3,
     baseFareSGD: 150,
     hourlySGD: 120,
-    image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80'
-    ],
+    image: 'https://images.unsplash.com/photo-1616422285623-13ff0162193c?auto=format&fit=crop&w=1200&q=80',
+    fallback: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1200&q=80',
     description: 'The pinnacle of luxury motoring. Rear executive reclining seats with massage function, soft-close doors, and privacy blinds.',
-    features: ['Reclining Rear Seats', 'Air Balance Fragrance System', 'Soft-Close Acoustic Glass', 'Dedicated VIP Concierge', 'Complimentary Champagne Option']
+    features: ['Reclining Rear Seats', 'Air Balance Fragrance', 'Soft-Close Acoustic Glass', 'Dedicated VIP Concierge', 'Complimentary Champagne'],
   },
   {
     id: 'hiace',
-    name: 'VIP Toyota HiAce Super Long Van',
+    name: 'Toyota HiAce Van',
+    fullName: 'VIP Toyota HiAce Super Long Van',
     category: 'mpv',
-    tag: 'Best for Groups & Luggage',
+    tag: 'Best for Groups',
     pax: 13,
     luggage: 10,
     baseFareSGD: 110,
     hourlySGD: 75,
-    image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80'
-    ],
-    description: 'Spacious 13-seater passenger transport ideal for large tour groups, golf excursions, and heavy luggage airport transfers.',
-    features: ['High-Roof Spacious Interior', 'Individual Air Con Vents', 'Extra Large Luggage Trunk', 'Microphone System for Guides', 'Easy Slide Door Entrance']
+    image: 'https://images.unsplash.com/photo-1600585152220-90363fe7e115?auto=format&fit=crop&w=1200&q=80',
+    fallback: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=1200&q=80',
+    description: 'Spacious 13-seater passenger van ideal for large tour groups, golf excursions, and heavy luggage airport transfers.',
+    features: ['High-Roof Spacious Interior', 'Individual A/C Vents', 'Extra-Large Luggage Trunk', 'PA Microphone for Guide', 'Wide Sliding Door'],
   },
   {
     id: 'staria',
-    name: 'Hyundai Staria Luxury MPV',
+    name: 'Hyundai Staria MPV',
+    fullName: 'Hyundai Staria Premium MPV',
     category: 'mpv',
-    tag: 'Modern Futuristic Comfort',
+    tag: 'Modern Comfort',
     pax: 7,
     luggage: 6,
     baseFareSGD: 80,
     hourlySGD: 60,
-    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80'
-    ],
-    description: 'Futuristic spaceship-inspired luxury MPV with panoramic glass windows and relaxion seating for optimal touring visibility.',
-    features: ['Panoramic Windows', 'Relaxion Reclining Seats', 'Type-C USB Fast Ports', 'Quiet Engine Technology', 'Spacious Legroom']
+    image: 'https://images.unsplash.com/photo-1683009427666-340595e57e43?auto=format&fit=crop&w=1200&q=80',
+    fallback: 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=1200&q=80',
+    description: 'Futuristic spaceship-inspired MPV with panoramic windows and relaxation seating — optimal for touring visibility.',
+    features: ['Panoramic Windows', 'Relaxion Reclining Seats', 'Type-C USB Fast Ports', 'Quiet Engine Technology', 'Generous Legroom'],
   },
   {
     id: 'bus',
-    name: 'VIP Luxury Tour Coach Bus (23-45 Seater)',
+    name: 'Luxury Tour Coach',
+    fullName: 'VIP Luxury Tour Coach Bus (23-45 Seater)',
     category: 'coach',
-    tag: 'MICE & Large Tour Delegations',
+    tag: 'MICE · Tour Delegations',
     pax: 45,
     luggage: 40,
     baseFareSGD: 250,
     hourlySGD: 150,
-    image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80',
-    gallery: [
-      'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=800&q=80'
-    ],
-    description: 'Fully equipped air-conditioned tour bus with onboard PA system, experienced licensed tour driver, and luggage bay.',
-    features: ['23 to 45 Reclining Seats', 'Under-Floor Luggage Compartment', 'PA Microphone for Tour Guide', 'Safety Belt Equipped Seats', 'Island-Wide Sightseeing']
-  }
+    image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=1200&q=80',
+    fallback: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
+    description: 'Fully equipped air-conditioned tour bus with onboard PA, licensed tour driver, and under-floor luggage bay.',
+    features: ['23 to 45 Reclining Seats', 'Under-Floor Luggage Bay', 'PA Microphone for Guide', 'Safety Belt Equipped', 'Island-Wide Sightseeing'],
+  },
 ];
 
-// Initial FAQ List
+const SERVICES = [
+  { id: 'airport_arrival', title: 'Changi Arrival', icon: 'flight_land', tag: 'Most Popular', priceSGD: 65, desc: '60-min free waiting, live flight tracking, and personalized name-board greeting inside arrival hall.' },
+  { id: 'airport_departure', title: 'Changi Departure', icon: 'flight_takeoff', tag: null, priceSGD: 60, desc: 'Punctual pickup from hotel or residence direct to Terminals 1, 2, 3, 4, or Jewel drop-off curb.' },
+  { id: 'jb_malaysia', title: 'Malaysia Transfer', icon: 'directions_car', tag: 'Cross-Border', priceSGD: 180, desc: 'Seamless transfers to Johor Bahru, Legoland, Desaru Coast, Melaka, and Kuala Lumpur — stay in-vehicle at customs.' },
+  { id: 'hourly_disposal', title: 'Hourly Chauffeur', icon: 'schedule', tag: 'Flexible', priceSGD: 65, desc: 'Dedicated luxury vehicle at your disposal for city sightseeing, roadshows, weddings, and photography tours.' },
+];
+
 const FAQS = [
-  {
-    id: 'faq-1',
-    category: 'pricing',
-    question: 'Are ERP toll fees and airport pick-up charges included in the fare?',
-    answer: 'Yes! All quotes provided on STB Singapore are 100% all-inclusive. This covers ERP gantry tolls, peak hour surcharges, airport pick-up fees, fuel, and driver fees.'
-  },
-  {
-    id: 'faq-2',
-    category: 'airport',
-    question: 'What happens if my flight landing at Changi Airport is delayed?',
-    answer: 'We track all incoming flight numbers in real-time. If your flight is delayed or lands early, your chauffeur automatically adjusts their arrival. We provide 60 minutes of complimentary waiting time from actual touchdown.'
-  },
-  {
-    id: 'faq-3',
-    category: 'booking',
-    question: 'Can I book a cross-border private transfer from Singapore to Malaysia?',
-    answer: 'Yes! We specialize in seamless cross-border transfers to Johor Bahru, Legoland Malaysia, Desaru Coast, Melaka, and Kuala Lumpur. You remain comfortably inside the vehicle during customs clearance.'
-  },
-  {
-    id: 'faq-4',
-    category: 'vehicles',
-    question: 'Are child safety seats available for young children?',
-    answer: 'Yes, child booster and baby car seats are available upon request for a nominal SGD 10 fee to ensure compliance with Singapore LTA road safety guidelines.'
-  },
-  {
-    id: 'faq-5',
-    category: 'pricing',
-    question: 'What payment methods do you accept?',
-    answer: 'We accept major international Credit/Debit Cards (Visa, MasterCard, Amex), PayNow / PayLah SG bank transfer, and direct cash payment to the driver.'
-  },
-  {
-    id: 'faq-6',
-    category: 'booking',
-    question: 'How far in advance should I reserve my ride?',
-    answer: 'While we accept instant bookings up to 1 hour before pickup, we recommend reserving at least 24 hours in advance during peak holiday seasons.'
-  }
+  { id: 'faq-1', category: 'pricing', question: 'Are ERP tolls and pickup charges included?', answer: 'Yes! All quotes are 100% all-inclusive. This covers ERP gantry tolls, peak hour surcharges, airport pickup fees, fuel, and driver gratuity. No hidden charges — the price you see is the price you pay.' },
+  { id: 'faq-2', category: 'airport', question: 'What if my Changi flight is delayed?', answer: 'We track all incoming flights in real time. If your flight is delayed or lands early, your chauffeur automatically adjusts arrival. We include 60 minutes of complimentary waiting time from actual touchdown.' },
+  { id: 'faq-3', category: 'booking', question: 'Can I book cross-border transfers to Malaysia?', answer: 'Absolutely — this is our specialty. We handle seamless transfers to Johor Bahru, Legoland Malaysia, Desaru Coast, Melaka, and Kuala Lumpur. You remain comfortably inside the vehicle during customs clearance.' },
+  { id: 'faq-4', category: 'vehicles', question: 'Are child safety seats available?', answer: 'Yes — booster and baby car seats are available on request for a nominal SGD 10 fee to ensure compliance with Singapore LTA road safety guidelines.' },
+  { id: 'faq-5', category: 'pricing', question: 'What payment methods do you accept?', answer: 'Major international credit/debit cards (Visa, MasterCard, Amex), PayNow SG bank transfer, or direct cash to the driver. All payments are 100% secure.' },
+  { id: 'faq-6', category: 'booking', question: 'How far in advance should I book?', answer: 'We accept instant bookings up to 1 hour before pickup. However, we recommend reserving at least 24 hours in advance during peak holiday seasons (CNY, Christmas, F1) to guarantee vehicle availability.' },
+  { id: 'faq-7', category: 'airport', question: 'Where does my chauffeur meet me at Changi?', answer: 'Your chauffeur will be waiting inside the arrival hall with a personalized name board — no need to search. For premium bookings, we offer curb-side meet-and-greet direct from the aerobridge.' },
+  { id: 'faq-8', category: 'vehicles', question: 'Can I request a specific vehicle model?', answer: 'Yes. When booking, select your preferred vehicle from our fleet. All vehicles are under 3 years old, professionally detailed, dashcam-equipped, and fully insured.' },
 ];
 
-// Initial Testimonials
 const REVIEWS = [
-  {
-    id: 'rev-1',
-    name: 'David & Family',
-    role: 'Family Tourist',
-    country: 'Australia',
-    stars: 5,
-    date: '2 Days ago',
-    comment: 'Booked the Toyota Alphard for our family arrival at Changi. Chauffeur Ken was waiting with a clear name board. Flawless service and spotless car!'
-  },
-  {
-    id: 'rev-2',
-    name: 'Hiroshi Tanaka',
-    role: 'Corporate Executive',
-    country: 'Japan',
-    stars: 5,
-    date: '1 Week ago',
-    comment: 'Exceptional Mercedes S-Class service for our executive meetings across Marina Bay. Very punctual, discreet, and smooth driving.'
-  },
-  {
-    id: 'rev-3',
-    name: 'Sarah Jenkins',
-    role: 'Malaysia Tour Group',
-    country: 'United Kingdom',
-    stars: 5,
-    date: '2 Weeks ago',
-    comment: 'The cross-border transfer to Legoland Malaysia was a breeze. We did not even need to carry heavy luggage down at immigration. Highly recommended STB!'
-  }
+  { id: 'rev-1', name: 'David & Family', role: 'Family Tourist', country: 'Australia', stars: 5, date: '2 days ago', comment: 'Booked the Toyota Alphard for our family arrival at Changi. Chauffeur Ken was waiting with a clear name board. Flawless service and spotless car!' },
+  { id: 'rev-2', name: 'Hiroshi Tanaka', role: 'Corporate Executive', country: 'Japan', stars: 5, date: '1 week ago', comment: 'Exceptional Mercedes S-Class service for our executive meetings across Marina Bay. Very punctual, discreet, and impossibly smooth driving.' },
+  { id: 'rev-3', name: 'Sarah Jenkins', role: 'Malaysia Tour Group', country: 'United Kingdom', stars: 5, date: '2 weeks ago', comment: 'The cross-border transfer to Legoland Malaysia was a breeze. We did not even need to unload luggage at immigration. Highly recommended STB!' },
+  { id: 'rev-4', name: 'Priya Sharma', role: 'Honeymoon Trip', country: 'India', stars: 5, date: '3 weeks ago', comment: 'From Changi to our Marina Bay Sands suite — the chauffeur even helped us with photos at the SkyPark drop-off. Truly majestic hospitality.' },
 ];
 
-// Helper Functions
+// ============================================
+// HELPERS
+// ============================================
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
 function formatCurrency(amountSGD) {
-  const converted = amountSGD * currentExchangeRate;
-  if (currentCurrency === 'INR' || currentCurrency === 'MYR') {
-    return `${currentCurrencySymbol}${Math.round(converted).toLocaleString()}`;
+  const v = amountSGD * state.exchangeRate;
+  if (state.currency === 'INR' || state.currency === 'MYR') {
+    return `${state.currencySymbol}${Math.round(v).toLocaleString()}`;
   }
-  return `${currentCurrencySymbol}${Math.round(converted)}`;
+  return `${state.currencySymbol}${Math.round(v)}`;
 }
 
-// Calculate Current Fare
-function computeCalculatedFareSGD() {
-  const vehicle = VEHICLES.find(v => v.id === selectedVehicleId) || VEHICLES[0];
-  if (currentTripMode === 'hourly') {
-    return vehicle.hourlySGD * hourlyDuration;
-  } else if (currentTripMode === 'return') {
-    return Math.round(vehicle.baseFareSGD * 1.85); // 15% discount on return leg
-  }
-  return vehicle.baseFareSGD;
+function computeFareSGD() {
+  const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
+  if (state.tripMode === 'hourly') return v.hourlySGD * state.hourlyDuration;
+  if (state.tripMode === 'return') return Math.round(v.baseFareSGD * 1.85);
+  return v.baseFareSGD;
 }
 
-// DOM Initialization
+// ============================================
+// INIT
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
-  initNavbar();
-  initCurrencySelector();
-  initLeafletMap();
-  initTripModeSwitcher();
-  initVehicleSelection();
-  initFleetCards('all');
-  initFAQAccordion();
-  initTestimonials();
-  initModalHandlers();
-  initAutocompletePresets();
-  initFormCalculators();
-  initDateTimeDefault();
-  updateAllPriceDisplays();
+  initNavScroll();
+  initMobileMenu();
+  initCurrency();
+  initMap();
+  initTripMode();
+  initServiceGrid();
+  initVehicleChips();
+  initFleet('all');
+  initFAQ();
+  initReviews();
+  initModals();
+  initPresets();
+  initFormWiring();
+  initDateTime();
+  initReveal();
+  initMobileBottomBar();
+  updateAll();
 });
 
-// Navbar & Mobile Drawer
-function initNavbar() {
-  const toggleBtn = document.getElementById('mobile-menu-toggle');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const menuIcon = document.getElementById('menu-icon');
+// ============================================
+// NAV SCROLL
+// ============================================
+function initNavScroll() {
+  const nav = $('#stb-nav');
+  const onScroll = () => {
+    if (window.scrollY > 20) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
 
-  toggleBtn?.addEventListener('click', () => {
-    if (mobileMenu?.classList.contains('hidden')) {
-      mobileMenu.classList.remove('hidden');
-      if (menuIcon) menuIcon.textContent = 'close';
+// ============================================
+// MOBILE MENU
+// ============================================
+function initMobileMenu() {
+  const toggle = $('#mobile-menu-toggle');
+  const menu = $('#mobile-menu');
+  const icon = $('#menu-icon');
+
+  toggle?.addEventListener('click', () => {
+    const open = !menu.classList.contains('hidden');
+    if (open) {
+      menu.classList.add('hidden');
+      icon.textContent = 'menu';
     } else {
-      mobileMenu?.classList.add('hidden');
-      if (menuIcon) menuIcon.textContent = 'menu';
+      menu.classList.remove('hidden');
+      icon.textContent = 'close';
     }
   });
 
-  document.querySelectorAll('.mobile-nav-link').forEach(link => {
+  $$('.mobile-nav-link').forEach(link => {
     link.addEventListener('click', () => {
-      mobileMenu?.classList.add('hidden');
-      if (menuIcon) menuIcon.textContent = 'menu';
+      menu.classList.add('hidden');
+      icon.textContent = 'menu';
     });
   });
-
-  // Buttons
-  document.getElementById('nav-btn-whatsapp')?.addEventListener('click', () => openWhatsAppModal());
-  document.getElementById('mobile-btn-whatsapp')?.addEventListener('click', () => openWhatsAppModal());
-  document.getElementById('mobile-drawer-whatsapp')?.addEventListener('click', () => openWhatsAppModal());
-  document.getElementById('floating-whatsapp')?.addEventListener('click', () => openWhatsAppModal());
-
-  document.getElementById('nav-btn-book')?.addEventListener('click', scrollToWidget);
-  document.getElementById('mobile-drawer-book')?.addEventListener('click', () => {
-    mobileMenu?.classList.add('hidden');
-    scrollToWidget();
-  });
-  document.getElementById('hero-cta-quote')?.addEventListener('click', scrollToWidget);
 }
 
-function scrollToWidget() {
-  const widget = document.getElementById('booking-widget-container');
-  widget?.scrollIntoView({ behavior: 'smooth' });
-}
+// ============================================
+// CURRENCY
+// ============================================
+function initCurrency() {
+  const desk = $('#currency-select');
+  const mob = $('#mobile-currency-select');
 
-// Currency Engine
-function initCurrencySelector() {
-  const desktopSelect = document.getElementById('currency-select');
-  const mobileSelect = document.getElementById('mobile-currency-select');
-
-  const handleCurrencyChange = (newCurr) => {
-    if (!CURRENCY_MAP[newCurr]) return;
-    currentCurrency = newCurr;
-    currentCurrencySymbol = CURRENCY_MAP[newCurr].symbol;
-    currentExchangeRate = CURRENCY_MAP[newCurr].rate;
-
-    if (desktopSelect) desktopSelect.value = newCurr;
-    if (mobileSelect) mobileSelect.value = newCurr;
-
-    updateAllPriceDisplays();
+  const apply = (c) => {
+    if (!CURRENCY_MAP[c]) return;
+    state.currency = c;
+    state.currencySymbol = CURRENCY_MAP[c].symbol;
+    state.exchangeRate = CURRENCY_MAP[c].rate;
+    if (desk) desk.value = c;
+    if (mob) mob.value = c;
+    updateAll();
   };
 
-  desktopSelect?.addEventListener('change', (e) => handleCurrencyChange(e.target.value));
-  mobileSelect?.addEventListener('change', (e) => handleCurrencyChange(e.target.value));
+  desk?.addEventListener('change', e => apply(e.target.value));
+  mob?.addEventListener('change', e => apply(e.target.value));
 }
 
-function updateAllPriceDisplays() {
-  // Update Fare Box
-  const fareDisplay = document.getElementById('calculated-fare-display');
-  const currLabel = document.getElementById('calculated-currency-label');
-  const fareSGD = computeCalculatedFareSGD();
-
-  if (fareDisplay) fareDisplay.textContent = formatCurrency(fareSGD);
-  if (currLabel) currLabel.textContent = currentCurrency;
-
-  // Update Service Price Tags
-  document.querySelectorAll('.service-price').forEach(el => {
-    const sgd = parseFloat(el.getAttribute('data-sgd') || '0');
-    el.textContent = formatCurrency(sgd);
-  });
-
-  // Re-render Fleet Cards
-  const activeFilter = document.querySelector('.fleet-filter-btn.active')?.getAttribute('data-category') || 'all';
-  initFleetCards(activeFilter);
+function updateAll() {
+  initFleet(state.fleetCategory);
+  renderServiceGrid();
+  renderVehicleChips();
 }
 
-// Leaflet Map Initialization
-function initLeafletMap() {
-  const mapElement = document.getElementById('route-map');
-  if (!mapElement || typeof L === 'undefined') return;
+// ============================================
+// MAP
+// ============================================
+function initMap() {
+  const el = document.getElementById('route-map');
+  if (!el || typeof L === 'undefined') return;
 
-  // Center on Singapore
-  mapInstance = L.map('route-map', {
-    zoomControl: false,
-    scrollWheelZoom: false
-  }).setView([1.3521, 103.8198], 11);
-
+  mapInstance = L.map('route-map', { zoomControl: false, scrollWheelZoom: false }).setView([1.3521, 103.8198], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: '&copy; OSM',
   }).addTo(mapInstance);
-
   L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
 
   updateMapMarkers('Changi Airport Terminal 1', 'Marina Bay Sands Hotel Tower 1');
@@ -358,808 +303,685 @@ function initLeafletMap() {
 function updateMapMarkers(pickupName, destName) {
   if (!mapInstance || typeof L === 'undefined') return;
 
-  const pCoord = LOCATION_COORDS[pickupName] || { lat: 1.3644, lng: 103.9915 };
-  const dCoord = LOCATION_COORDS[destName] || { lat: 1.2834, lng: 103.8607 };
+  const p = LOCATION_COORDS[pickupName] || { lat: 1.3644, lng: 103.9915 };
+  const d = LOCATION_COORDS[destName] || { lat: 1.2834, lng: 103.8607 };
 
   if (pickupMarker) mapInstance.removeLayer(pickupMarker);
   if (destMarker) mapInstance.removeLayer(destMarker);
   if (routePolyline) mapInstance.removeLayer(routePolyline);
 
-  // Red Pickup Marker
-  const redIcon = L.divIcon({
-    className: 'custom-map-icon-pickup',
-    html: `<div style="background-color:#ae0011; width:28px; height:28px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:bold;">A</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14]
+  const iconA = L.divIcon({
+    className: '',
+    html: `<div style="background:#E31E24;width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 16px rgba(227,30,36,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;">A</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+  const iconB = L.divIcon({
+    className: '',
+    html: `<div style="background:#D4A24A;width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 16px rgba(212,162,74,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;">B</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
   });
 
-  // Amber Destination Marker
-  const amberIcon = L.divIcon({
-    className: 'custom-map-icon-dest',
-    html: `<div style="background-color:#795900; width:28px; height:28px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:white; font-size:12px; font-weight:bold;">B</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14]
-  });
+  pickupMarker = L.marker([p.lat, p.lng], { icon: iconA }).addTo(mapInstance).bindPopup(`<b>Pickup:</b> ${pickupName}`);
+  destMarker = L.marker([d.lat, d.lng], { icon: iconB }).addTo(mapInstance).bindPopup(`<b>Destination:</b> ${destName}`);
 
-  pickupMarker = L.marker([pCoord.lat, pCoord.lng], { icon: redIcon }).addTo(mapInstance).bindPopup(`<b>Pickup:</b> ${pickupName}`);
-  destMarker = L.marker([dCoord.lat, dCoord.lng], { icon: amberIcon }).addTo(mapInstance).bindPopup(`<b>Destination:</b> ${destName}`);
-
-  // Draw connecting dashed line
-  routePolyline = L.polyline([
-    [pCoord.lat, pCoord.lng],
-    [dCoord.lat, dCoord.lng]
-  ], {
-    color: '#ae0011',
-    weight: 4,
-    opacity: 0.8,
-    dashArray: '8, 8'
+  routePolyline = L.polyline([[p.lat, p.lng], [d.lat, d.lng]], {
+    color: '#E31E24', weight: 4, opacity: 0.8, dashArray: '10, 10',
   }).addTo(mapInstance);
 
-  const bounds = L.latLngBounds([
-    [pCoord.lat, pCoord.lng],
-    [dCoord.lat, dCoord.lng]
-  ]);
-  mapInstance.fitBounds(bounds, { padding: [40, 40] });
+  mapInstance.fitBounds(L.latLngBounds([[p.lat, p.lng], [d.lat, d.lng]]), { padding: [50, 50] });
 }
 
-// Autocomplete Presets
-function initAutocompletePresets() {
-  const pickupInput = document.getElementById('pickup-input');
-  const destInput = document.getElementById('dest-input');
-  const pickupPresets = document.getElementById('pickup-presets');
-  const destPresets = document.getElementById('dest-presets');
+// ============================================
+// TRIP MODE
+// ============================================
+function initTripMode() {
+  const tabs = $$('.trip-tab');
+  const destC = $('#dest-address-container');
+  const hourlyC = $('#hourly-duration-container');
 
-  const presetList = Object.keys(LOCATION_COORDS);
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.tripMode = btn.dataset.mode;
 
-  const renderPresets = (container, input) => {
-    if (!container) return;
-    container.innerHTML = presetList.map(loc => `
-      <div class="preset-item px-4 py-2.5 hover:bg-red-50 cursor-pointer text-xs font-semibold text-gray-800 flex items-center justify-between border-b border-gray-100">
-        <span>${loc}</span>
-        <span class="material-symbols-outlined text-sm text-gray-400">arrow_forward</span>
+      if (state.tripMode === 'hourly') {
+        destC.classList.add('hidden');
+        hourlyC.classList.remove('hidden');
+      } else {
+        destC.classList.remove('hidden');
+        hourlyC.classList.add('hidden');
+      }
+      renderVehicleChips();
+    });
+  });
+
+  $$('.hourly-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.hourly-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.hourlyDuration = parseInt(btn.dataset.hours || '4', 10);
+      renderVehicleChips();
+    });
+  });
+}
+
+// ============================================
+// SERVICE GRID
+// ============================================
+function initServiceGrid() {
+  renderServiceGrid();
+}
+function renderServiceGrid() {
+  const grid = $('#service-grid');
+  if (!grid) return;
+
+  grid.innerHTML = SERVICES.map((s, i) => `
+    <article class="service-card reveal" data-delay="${i}" data-testid="service-card-${s.id}">
+      <div class="flex items-start justify-between mb-1">
+        <div class="service-card-icon">
+          <span class="material-symbols-outlined fill-1">${s.icon}</span>
+        </div>
+        ${s.tag ? `<span class="service-card-tag">${s.tag}</span>` : ''}
       </div>
-    `).join('');
+      <h3 class="service-card-title">${s.title}</h3>
+      <p class="service-card-desc">${s.desc}</p>
+      <div class="service-card-foot">
+        <div>
+          <div class="text-[0.6rem] font-bold text-stb-muted uppercase tracking-widest">From</div>
+          <div class="service-card-price">${formatCurrency(s.priceSGD)}${s.id === 'hourly_disposal' ? '<span class="text-xs text-stb-muted">/hr</span>' : ''}</div>
+        </div>
+        <button class="service-card-cta srv-book-btn" data-service="${s.id}" data-testid="srv-book-${s.id}">
+          Book <span class="material-symbols-outlined text-base">arrow_forward</span>
+        </button>
+      </div>
+    </article>
+  `).join('');
 
-    container.querySelectorAll('.preset-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const text = item.querySelector('span')?.textContent || '';
-        input.value = text;
-        container.classList.add('hidden');
-        updateMapMarkers(pickupInput.value, destInput.value);
-        updateAllPriceDisplays();
-      });
-    });
-  };
-
-  renderPresets(pickupPresets, pickupInput);
-  renderPresets(destPresets, destInput);
-
-  pickupInput?.addEventListener('focus', () => pickupPresets?.classList.remove('hidden'));
-  destInput?.addEventListener('focus', () => destPresets?.classList.remove('hidden'));
-
-  document.addEventListener('click', (e) => {
-    if (!pickupInput?.contains(e.target) && !pickupPresets?.contains(e.target)) {
-      pickupPresets?.classList.add('hidden');
-    }
-    if (!destInput?.contains(e.target) && !destPresets?.contains(e.target)) {
-      destPresets?.classList.add('hidden');
-    }
-  });
-
-  // Landmark Bento Cards Click to Populate Destination
-  document.querySelectorAll('.dest-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const location = card.getAttribute('data-location') || '';
-      if (destInput && location) {
-        destInput.value = location;
-        scrollToWidget();
-        updateMapMarkers(pickupInput.value, location);
-        updateAllPriceDisplays();
-      }
+  grid.querySelectorAll('.srv-book-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const s = btn.dataset.service || 'airport_arrival';
+      state.selectedService = s;
+      const sel = $('#service-select');
+      if (sel) sel.value = s;
+      scrollToWidget();
     });
   });
+
+  initReveal();
 }
 
-// Trip Mode Switcher
-function initTripModeSwitcher() {
-  const buttons = document.querySelectorAll('.trip-mode-btn');
-  const destContainer = document.getElementById('dest-address-container');
-  const hourlyContainer = document.getElementById('hourly-duration-container');
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      buttons.forEach(b => {
-        b.classList.remove('active', 'bg-[#ae0011]', 'text-white');
-        b.classList.add('bg-gray-100', 'text-gray-600');
-      });
-
-      btn.classList.add('active', 'bg-[#ae0011]', 'text-white');
-      btn.classList.remove('bg-gray-100', 'text-gray-600');
-
-      const id = btn.id;
-      if (id === 'trip-one-way') {
-        currentTripMode = 'one_way';
-        destContainer?.classList.remove('hidden');
-        hourlyContainer?.classList.add('hidden');
-      } else if (id === 'trip-return') {
-        currentTripMode = 'return';
-        destContainer?.classList.remove('hidden');
-        hourlyContainer?.classList.add('hidden');
-      } else if (id === 'trip-hourly') {
-        currentTripMode = 'hourly';
-        destContainer?.classList.add('hidden');
-        hourlyContainer?.classList.remove('hidden');
-      }
-
-      updateAllPriceDisplays();
-    });
-  });
-
-  // Hourly duration buttons
-  document.querySelectorAll('.hourly-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.hourly-btn').forEach(b => {
-        b.classList.remove('bg-[#795900]', 'text-white', 'border-[#795900]');
-        b.classList.add('border-gray-300');
-      });
-
-      btn.classList.add('bg-[#795900]', 'text-white', 'border-[#795900]');
-      btn.classList.remove('border-gray-300');
-
-      hourlyDuration = parseInt(btn.getAttribute('data-hours') || '4', 10);
-      updateAllPriceDisplays();
-    });
-  });
-}
-
-// Vehicle Grid in Booking Widget
-function initVehicleSelection() {
-  const grid = document.getElementById('vehicle-grid');
+// ============================================
+// VEHICLE CHIPS (inside booking widget)
+// ============================================
+function initVehicleChips() { renderVehicleChips(); }
+function renderVehicleChips() {
+  const grid = $('#vehicle-grid');
   if (!grid) return;
 
   grid.innerHTML = VEHICLES.map(v => `
-    <div class="vehicle-select-card cursor-pointer border rounded-xl p-3 text-left transition-all ${v.id === selectedVehicleId ? 'border-[#ae0011] bg-red-50/80 shadow-xs' : 'border-gray-200 bg-white hover:border-gray-300'}" data-id="${v.id}">
-      <div class="font-bold text-xs text-gray-900 truncate">${v.name.split('/')[0]}</div>
-      <div class="text-[10px] text-gray-500 mt-0.5">${v.pax} Pax • ${v.luggage} Bags</div>
-      <div class="text-xs font-extrabold text-[#ae0011] mt-1.5">${formatCurrency(v.baseFareSGD)}</div>
+    <div class="vehicle-chip ${v.id === state.selectedVehicleId ? 'active' : ''}" data-id="${v.id}" data-testid="vchip-${v.id}">
+      <div class="vname">${v.name}</div>
+      <div class="vmeta">${v.pax} pax · ${v.luggage} bags</div>
+      <div class="vprice">${formatCurrency(state.tripMode === 'hourly' ? v.hourlySGD * state.hourlyDuration : v.baseFareSGD)}</div>
     </div>
   `).join('');
 
-  grid.querySelectorAll('.vehicle-select-card').forEach(card => {
-    card.addEventListener('click', () => {
-      grid.querySelectorAll('.vehicle-select-card').forEach(c => {
-        c.classList.remove('border-[#ae0011]', 'bg-red-50/80', 'shadow-xs');
-        c.classList.add('border-gray-200', 'bg-white');
-      });
-
-      card.classList.add('border-[#ae0011]', 'bg-red-50/80', 'shadow-xs');
-      card.classList.remove('border-gray-200', 'bg-white');
-
-      selectedVehicleId = card.getAttribute('data-id') || 'alphard';
-      updateAllPriceDisplays();
+  grid.querySelectorAll('.vehicle-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.selectedVehicleId = chip.dataset.id;
+      renderVehicleChips();
     });
   });
 }
 
-// Fleet Cards Rendering & Filter
-function initFleetCards(category) {
-  const container = document.getElementById('fleet-card-container');
-  const filterBtns = document.querySelectorAll('.fleet-filter-btn');
+// ============================================
+// FLEET
+// ============================================
+function initFleet(cat) {
+  state.fleetCategory = cat;
+  const container = $('#fleet-card-container');
+  const filters = $$('.fleet-filter-btn');
 
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => {
-        b.classList.remove('active', 'bg-[#ae0011]', 'text-white');
-        b.classList.add('text-gray-600');
-      });
-      btn.classList.add('active', 'bg-[#ae0011]', 'text-white');
-      btn.classList.remove('text-gray-600');
-
-      const cat = btn.getAttribute('data-category') || 'all';
-      initFleetCards(cat);
-    });
+  filters.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.category === cat);
+    if (!btn._wired) {
+      btn.addEventListener('click', () => initFleet(btn.dataset.category));
+      btn._wired = true;
+    }
   });
 
   if (!container) return;
+  const list = cat === 'all' ? VEHICLES : VEHICLES.filter(v => v.category === cat);
 
-  const filtered = category === 'all' ? VEHICLES : VEHICLES.filter(v => v.category === category);
-
-  container.innerHTML = filtered.map(v => `
-    <article class="bg-white rounded-3xl overflow-hidden border border-gray-200/80 shadow-sm hover:shadow-2xl transition-all duration-300 text-left flex flex-col justify-between group">
-      <div>
-        <div class="relative h-56 overflow-hidden bg-gray-100">
-          <img src="${v.image}" alt="${v.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          <span class="absolute top-4 left-4 bg-black/75 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
-            ${v.tag}
-          </span>
-        </div>
-
-        <div class="p-6">
-          <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-gray-900 mb-2">${v.name}</h3>
-          <p class="text-xs text-gray-600 leading-relaxed mb-4">${v.description}</p>
-
-          <div class="flex items-center gap-4 text-xs font-bold text-gray-700 pb-4 border-b border-gray-100">
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-base text-[#ae0011]">group</span> ${v.pax} Passengers</span>
-            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-base text-[#ae0011]">luggage</span> ${v.luggage} Luggage</span>
-          </div>
-
-          <ul class="space-y-1.5 my-4">
-            ${v.features.slice(0, 3).map(f => `
-              <li class="text-xs text-gray-600 flex items-center gap-2">
-                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
-                <span>${f}</span>
-              </li>
-            `).join('')}
-          </ul>
-        </div>
+  container.innerHTML = list.map((v, i) => `
+    <article class="fleet-card reveal" data-delay="${i % 3}" data-testid="fleet-card-${v.id}">
+      <div class="fleet-img-wrap">
+        <img src="${v.image}" alt="${v.fullName}" onerror="this.onerror=null;this.src='${v.fallback}';" loading="lazy" />
+        <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}">${v.tag}</span>
       </div>
-
-      <div class="p-6 pt-0 flex items-center justify-between border-t border-gray-100/60 mt-auto">
-        <div>
-          <div class="text-[10px] text-gray-400 font-semibold uppercase">Fixed Rate</div>
-          <div class="text-xl font-extrabold text-[#ae0011]">${formatCurrency(v.baseFareSGD)}</div>
+      <div class="fleet-body">
+        <h3 class="fleet-title">${v.fullName}</h3>
+        <p class="fleet-desc">${v.description}</p>
+        <div class="fleet-stats">
+          <span class="fleet-stat"><span class="material-symbols-outlined">group</span>${v.pax} pax</span>
+          <span class="fleet-stat"><span class="material-symbols-outlined">luggage</span>${v.luggage} bags</span>
         </div>
-
-        <div class="flex gap-2">
-          <button class="btn-fleet-detail px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs cursor-pointer" data-id="${v.id}">
-            Specs
-          </button>
-          <button class="btn-fleet-select px-4 py-2 rounded-xl bg-[#ae0011] hover:bg-[#d71920] text-white font-bold text-xs shadow-xs cursor-pointer" data-id="${v.id}">
-            Book Now
-          </button>
+        <ul class="mb-4">
+          ${v.features.slice(0, 3).map(f => `<li class="fleet-feature"><span class="material-symbols-outlined">check_circle</span>${f}</li>`).join('')}
+        </ul>
+        <div class="fleet-foot">
+          <div class="fleet-price-block">
+            <div class="fleet-price-label">Fixed rate</div>
+            <div class="fleet-price">${formatCurrency(v.baseFareSGD)}</div>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-ghost btn-fleet-detail" data-id="${v.id}" style="padding: 0.5rem 0.85rem; font-size: 0.72rem;" data-testid="fleet-specs-${v.id}">Specs</button>
+            <button class="btn-primary btn-fleet-select" data-id="${v.id}" style="padding: 0.5rem 1rem; font-size: 0.72rem; box-shadow: none;" data-testid="fleet-book-${v.id}">Book</button>
+          </div>
         </div>
       </div>
     </article>
   `).join('');
 
-  // Event Listeners
-  container.querySelectorAll('.btn-fleet-detail').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-id') || '';
-      openVehicleModal(id);
-    });
-  });
+  container.querySelectorAll('.btn-fleet-detail').forEach(b => b.addEventListener('click', () => openVehicleModal(b.dataset.id)));
+  container.querySelectorAll('.btn-fleet-select').forEach(b => b.addEventListener('click', () => {
+    state.selectedVehicleId = b.dataset.id;
+    renderVehicleChips();
+    scrollToWidget();
+  }));
 
-  container.querySelectorAll('.btn-fleet-select').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-id') || '';
-      selectedVehicleId = id;
-      initVehicleSelection();
-      scrollToWidget();
-      updateAllPriceDisplays();
-    });
-  });
+  initReveal();
 }
 
-// FAQ Accordion logic
-function initFAQAccordion() {
-  const container = document.getElementById('faq-accordion-list');
-  const searchInput = document.getElementById('faq-search-input');
-  const catBtns = document.querySelectorAll('.faq-cat-btn');
-
-  let activeCat = 'all';
-
-  const renderFaqs = () => {
-    if (!container) return;
-    const query = searchInput?.value.toLowerCase().trim() || '';
-
-    const filtered = FAQS.filter(f => {
-      const matchesCat = activeCat === 'all' || f.category === activeCat;
-      const matchesQuery = !query || f.question.toLowerCase().includes(query) || f.answer.toLowerCase().includes(query);
-      return matchesCat && matchesQuery;
-    });
-
-    if (filtered.length === 0) {
-      container.innerHTML = `<div class="p-8 text-center text-gray-500 font-medium">No matching questions found. Contact our WhatsApp concierge for immediate support!</div>`;
-      return;
-    }
-
-    container.innerHTML = filtered.map((faq) => `
-      <div class="faq-item bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-xs">
-        <button class="faq-trigger w-full px-6 py-5 text-left font-['Plus_Jakarta_Sans'] font-bold text-base text-gray-900 flex justify-between items-center gap-4 cursor-pointer hover:bg-gray-50/80 transition-colors">
-          <span>${faq.question}</span>
-          <span class="material-symbols-outlined faq-icon text-gray-400 transition-transform duration-300">expand_more</span>
-        </button>
-        <div class="faq-answer hidden px-6 pb-6 text-sm text-gray-600 leading-relaxed border-t border-gray-100/60 pt-4 bg-gray-50/50">
-          ${faq.answer}
-        </div>
-      </div>
-    `).join('');
-
-    container.querySelectorAll('.faq-trigger').forEach(trigger => {
-      trigger.addEventListener('click', () => {
-        const item = trigger.closest('.faq-item');
-        const answer = item?.querySelector('.faq-answer');
-        const icon = item?.querySelector('.faq-icon');
-
-        const isOpen = !answer?.classList.contains('hidden');
-
-        // Close all
-        container.querySelectorAll('.faq-answer').forEach(a => a.classList.add('hidden'));
-        container.querySelectorAll('.faq-icon').forEach(i => i.classList.remove('rotate-180'));
-
-        if (!isOpen) {
-          answer?.classList.remove('hidden');
-          icon?.classList.add('rotate-180');
-        }
-      });
-    });
-  };
+// ============================================
+// FAQ
+// ============================================
+function initFAQ() {
+  const search = $('#faq-search-input');
+  const catBtns = $$('.faq-cat-btn');
 
   catBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      catBtns.forEach(b => {
-        b.classList.remove('active', 'bg-[#ae0011]', 'text-white');
-        b.classList.add('bg-white', 'text-gray-600');
-      });
-      btn.classList.add('active', 'bg-[#ae0011]', 'text-white');
-      btn.classList.remove('bg-white', 'text-gray-600');
-
-      activeCat = btn.getAttribute('data-cat') || 'all';
-      renderFaqs();
+      catBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.faqCategory = btn.dataset.cat;
+      renderFAQ();
     });
   });
 
-  searchInput?.addEventListener('input', renderFaqs);
-  renderFaqs();
+  search?.addEventListener('input', renderFAQ);
+  renderFAQ();
+}
+function renderFAQ() {
+  const container = $('#faq-accordion-list');
+  const q = ($('#faq-search-input')?.value || '').toLowerCase().trim();
+  const filtered = FAQS.filter(f => {
+    const cat = state.faqCategory === 'all' || f.category === state.faqCategory;
+    const match = !q || f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q);
+    return cat && match;
+  });
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="p-8 text-center text-stb-muted font-semibold">No matches. Ping our WhatsApp concierge for instant help!</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(f => `
+    <div class="faq-item" data-testid="faq-${f.id}">
+      <button class="faq-trigger">
+        <span>${f.question}</span>
+        <span class="faq-icon material-symbols-outlined">expand_more</span>
+      </button>
+      <div class="faq-answer">${f.answer}</div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.faq-trigger').forEach(t => {
+    t.addEventListener('click', () => {
+      const item = t.closest('.faq-item');
+      const open = item.classList.contains('open');
+      container.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!open) item.classList.add('open');
+    });
+  });
 }
 
-// Testimonials
-function initTestimonials() {
-  const container = document.getElementById('reviews-container');
-  if (!container) return;
-
-  const renderReviews = () => {
-    container.innerHTML = REVIEWS.map(r => `
-      <article class="bg-[#F8F9FB] rounded-3xl p-8 border border-gray-100 flex-shrink-0 w-[300px] sm:w-[360px] text-left snap-start shadow-xs flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-4">
-            <div class="text-amber-500 text-sm font-bold">${'★'.repeat(r.stars)}</div>
-            <span class="text-[10px] text-gray-400 font-semibold">${r.date}</span>
-          </div>
-          <p class="text-xs sm:text-sm text-gray-700 leading-relaxed mb-6 italic">"${r.comment}"</p>
-        </div>
-
-        <div class="flex items-center gap-3 pt-4 border-t border-gray-200/60">
-          <div class="w-10 h-10 rounded-full bg-[#ae0011] text-white font-extrabold text-sm flex items-center justify-center">
-            ${r.name.charAt(0)}
-          </div>
-          <div>
-            <h4 class="font-bold text-xs text-gray-900">${r.name}</h4>
-            <p class="text-[10px] text-gray-500">${r.role} • ${r.country}</p>
-          </div>
-        </div>
-      </article>
-    `).join('');
-  };
-
+// ============================================
+// REVIEWS
+// ============================================
+function initReviews() {
   renderReviews();
 
-  // Star selector in add review modal
-  let selectedStarCount = 5;
-  const starBtns = document.querySelectorAll('.star-btn');
-  starBtns.forEach(sb => {
+  $$('.star-btn').forEach(sb => {
     sb.addEventListener('click', () => {
-      selectedStarCount = parseInt(sb.getAttribute('data-star') || '5', 10);
-      starBtns.forEach((btn, idx) => {
-        if (idx < selectedStarCount) {
-          btn.classList.add('text-amber-500');
-          btn.classList.remove('text-gray-300');
-        } else {
-          btn.classList.remove('text-amber-500');
-          btn.classList.add('text-gray-300');
-        }
+      const n = parseInt(sb.dataset.star || '5', 10);
+      state.selectedStars = n;
+      $$('.star-btn').forEach((btn, i) => {
+        btn.style.color = i < n ? 'var(--stb-gold-dark)' : '#D1D5DB';
       });
     });
   });
 
-  // Submit Review Form
-  document.getElementById('add-review-form')?.addEventListener('submit', (e) => {
+  $('#btn-open-review-modal')?.addEventListener('click', () => openModal('modal-review'));
+
+  $('#add-review-form')?.addEventListener('submit', e => {
     e.preventDefault();
-    const name = document.getElementById('rev-name').value;
-    const role = document.getElementById('rev-role').value || 'Tourist';
-    const country = document.getElementById('rev-country').value || 'International';
-    const comment = document.getElementById('rev-comment').value;
-
-    REVIEWS.unshift({
-      id: 'rev-' + Date.now(),
-      name,
-      role,
-      country,
-      stars: selectedStarCount,
-      date: 'Just now',
-      comment
-    });
-
+    const name = $('#rev-name').value;
+    const role = $('#rev-role').value || 'Tourist';
+    const country = $('#rev-country').value || 'International';
+    const comment = $('#rev-comment').value;
+    REVIEWS.unshift({ id: 'rev-' + Date.now(), name, role, country, stars: state.selectedStars, date: 'Just now', comment });
     renderReviews();
     closeModal('modal-review');
-    alert('Thank you! Your VIP review has been published.');
   });
 }
+function renderReviews() {
+  const c = $('#reviews-container');
+  if (!c) return;
+  c.innerHTML = REVIEWS.map(r => `
+    <article class="review-card">
+      <div class="flex items-center justify-between">
+        <div class="stars text-sm">${'★'.repeat(r.stars)}</div>
+        <span class="text-[0.65rem] text-stb-muted font-bold">${r.date}</span>
+      </div>
+      <p class="comment">"${r.comment}"</p>
+      <div class="flex items-center gap-3 pt-4 border-t border-stone-100 mt-auto">
+        <div class="avatar">${r.name.charAt(0)}</div>
+        <div>
+          <div class="font-bold text-sm text-stb-charcoal">${r.name}</div>
+          <div class="text-[0.7rem] text-stb-muted">${r.role} · ${r.country}</div>
+        </div>
+      </div>
+    </article>
+  `).join('');
+}
 
-// Form Calculators
-function initFormCalculators() {
-  const serviceSelect = document.getElementById('service-select');
-  const paxSelect = document.getElementById('pax-select');
-  const flightContainer = document.getElementById('flight-no-container');
+// ============================================
+// PRESETS (autocomplete)
+// ============================================
+function initPresets() {
+  const pickup = $('#pickup-input');
+  const dest = $('#dest-input');
+  const pPresets = $('#pickup-presets');
+  const dPresets = $('#dest-presets');
+  const list = Object.keys(LOCATION_COORDS);
 
-  serviceSelect?.addEventListener('change', () => {
-    selectedService = serviceSelect.value;
-    if (selectedService.includes('airport')) {
-      flightContainer?.classList.remove('hidden');
-    } else {
-      flightContainer?.classList.add('hidden');
-    }
-    updateAllPriceDisplays();
+  const render = (container, input) => {
+    if (!container) return;
+    container.innerHTML = list.map(loc => `
+      <div class="preset-item">
+        <span>${loc}</span>
+        <span class="material-symbols-outlined text-sm">north_east</span>
+      </div>
+    `).join('');
+    container.querySelectorAll('.preset-item').forEach(item => {
+      item.addEventListener('click', () => {
+        input.value = item.querySelector('span').textContent;
+        container.classList.add('hidden');
+        updateMapMarkers(pickup.value, dest.value);
+      });
+    });
+  };
+
+  render(pPresets, pickup);
+  render(dPresets, dest);
+
+  pickup?.addEventListener('focus', () => pPresets?.classList.remove('hidden'));
+  dest?.addEventListener('focus', () => dPresets?.classList.remove('hidden'));
+
+  document.addEventListener('click', e => {
+    if (!pickup?.contains(e.target) && !pPresets?.contains(e.target)) pPresets?.classList.add('hidden');
+    if (!dest?.contains(e.target) && !dPresets?.contains(e.target)) dPresets?.classList.add('hidden');
   });
 
-  paxSelect?.addEventListener('change', () => {
-    const val = paxSelect.value;
-    if (val.includes('8-13')) {
-      selectedVehicleId = 'hiace';
-    } else if (val.includes('4-7')) {
-      selectedVehicleId = 'alphard';
-    } else if (val.includes('Large Group')) {
-      selectedVehicleId = 'bus';
-    }
-    initVehicleSelection();
-    updateAllPriceDisplays();
-  });
-
-  // Buttons in Service Cards
-  document.querySelectorAll('.srv-book-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const srv = btn.getAttribute('data-service') || 'airport_arrival';
-      if (serviceSelect) serviceSelect.value = srv;
-      selectedService = srv;
-      scrollToWidget();
-      updateAllPriceDisplays();
+  $$('.dest-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const loc = card.dataset.location;
+      if (dest && loc) {
+        dest.value = loc;
+        updateMapMarkers(pickup.value, loc);
+        scrollToWidget();
+      }
     });
   });
-
-  // Main Confirm Booking Button
-  document.getElementById('btn-calc-confirm')?.addEventListener('click', openBookingModal);
 }
 
-function initDateTimeDefault() {
-  const dtInput = document.getElementById('datetime-input');
-  if (dtInput) {
+// ============================================
+// FORM WIRING
+// ============================================
+function initFormWiring() {
+  const serviceSel = $('#service-select');
+  const paxSel = $('#pax-select');
+  const flightC = $('#flight-no-container');
+
+  serviceSel?.addEventListener('change', () => {
+    state.selectedService = serviceSel.value;
+    if (state.selectedService.includes('airport')) flightC?.classList.remove('hidden');
+    else flightC?.classList.add('hidden');
+  });
+
+  paxSel?.addEventListener('change', () => {
+    const v = paxSel.value;
+    if (v.includes('8-13')) state.selectedVehicleId = 'hiace';
+    else if (v.includes('4-7')) state.selectedVehicleId = 'alphard';
+    else if (v.includes('Large Group')) state.selectedVehicleId = 'bus';
+    renderVehicleChips();
+  });
+
+  $('#btn-calc-confirm')?.addEventListener('click', openBookingModal);
+  $('#nav-btn-book')?.addEventListener('click', scrollToWidget);
+  $('#cta-book')?.addEventListener('click', scrollToWidget);
+  $('#cta-whatsapp')?.addEventListener('click', openWhatsAppModal);
+  $('#mbb-book-btn')?.addEventListener('click', scrollToWidget);
+  $('#mbb-whatsapp-btn')?.addEventListener('click', openWhatsAppModal);
+}
+
+function initDateTime() {
+  const dt = $('#datetime-input');
+  if (dt) {
     const now = new Date();
     now.setHours(now.getHours() + 3);
-    dtInput.value = now.toISOString().slice(0, 16);
+    dt.value = now.toISOString().slice(0, 16);
   }
 }
 
-// Modal Engine
-function initModalHandlers() {
-  document.getElementById('close-modal-vehicle')?.addEventListener('click', () => closeModal('modal-vehicle'));
-  document.getElementById('close-modal-booking')?.addEventListener('click', () => closeModal('modal-booking'));
-  document.getElementById('close-modal-whatsapp')?.addEventListener('click', () => closeModal('modal-whatsapp'));
-  document.getElementById('close-modal-review')?.addEventListener('click', () => closeModal('modal-review'));
-  document.getElementById('btn-open-review-modal')?.addEventListener('click', () => openModal('modal-review'));
+function scrollToWidget() {
+  $('#booking-widget-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-  // Close modal on backdrop click
+// ============================================
+// MODALS
+// ============================================
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+function initModals() {
   ['modal-vehicle', 'modal-booking', 'modal-whatsapp', 'modal-review'].forEach(id => {
     const modal = document.getElementById(id);
-    modal?.addEventListener('click', (e) => {
+    modal?.addEventListener('click', e => {
       if (e.target === modal) closeModal(id);
     });
   });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      ['modal-vehicle', 'modal-booking', 'modal-whatsapp', 'modal-review'].forEach(id => closeModal(id));
+    }
+  });
 }
 
-function openModal(id) {
-  document.getElementById(id)?.classList.remove('hidden');
-}
-
-function closeModal(id) {
-  document.getElementById(id)?.classList.add('hidden');
-}
-
-// Vehicle Modal
-function openVehicleModal(vehicleId) {
-  const v = VEHICLES.find(item => item.id === vehicleId);
+function openVehicleModal(vid) {
+  const v = VEHICLES.find(x => x.id === vid);
   if (!v) return;
-
-  const content = document.getElementById('modal-vehicle-content');
-  if (!content) return;
-
-  content.innerHTML = `
-    <div class="p-6 sm:p-8">
-      <div class="h-64 sm:h-72 rounded-2xl overflow-hidden mb-6 relative">
-        <img src="${v.image}" alt="${v.name}" class="w-full h-full object-cover" />
-        <span class="absolute top-4 left-4 bg-black/80 text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase">${v.tag}</span>
-      </div>
-
-      <h3 class="font-['Plus_Jakarta_Sans'] font-extrabold text-2xl text-gray-900 mb-3">${v.name}</h3>
-      <p class="text-xs sm:text-sm text-gray-600 leading-relaxed mb-6">${v.description}</p>
-
-      <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200/80 mb-6">
-        <div>
-          <span class="text-[10px] text-gray-500 font-bold uppercase">Max Capacity</span>
-          <div class="text-sm font-extrabold text-gray-900 flex items-center gap-1 mt-0.5">
-            <span class="material-symbols-outlined text-base text-[#ae0011]">group</span>
-            <span>${v.pax} Passengers</span>
-          </div>
+  $('#modal-vehicle-content').innerHTML = `
+    <div class="relative h-64 sm:h-72 overflow-hidden">
+      <img src="${v.image}" alt="${v.fullName}" onerror="this.onerror=null;this.src='${v.fallback}';" class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}" style="position: absolute; bottom: 1rem; left: 1rem;">${v.tag}</span>
+    </div>
+    <div class="p-7">
+      <h3 class="font-display font-medium text-3xl text-stb-charcoal mb-2" style="letter-spacing: -0.02em;">${v.fullName}</h3>
+      <p class="text-sm text-stb-muted leading-relaxed mb-5">${v.description}</p>
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="bg-stb-cream rounded-2xl p-4">
+          <div class="text-[0.65rem] font-bold text-stb-muted uppercase tracking-wider mb-1">Max capacity</div>
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-stb-red">group</span><span class="font-display text-xl font-medium">${v.pax} pax</span></div>
         </div>
-        <div>
-          <span class="text-[10px] text-gray-500 font-bold uppercase">Luggage Limit</span>
-          <div class="text-sm font-extrabold text-gray-900 flex items-center gap-1 mt-0.5">
-            <span class="material-symbols-outlined text-base text-[#ae0011]">luggage</span>
-            <span>${v.luggage} Suitcases</span>
-          </div>
+        <div class="bg-stb-cream rounded-2xl p-4">
+          <div class="text-[0.65rem] font-bold text-stb-muted uppercase tracking-wider mb-1">Luggage</div>
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-stb-red">luggage</span><span class="font-display text-xl font-medium">${v.luggage} bags</span></div>
         </div>
       </div>
-
-      <h4 class="font-bold text-sm text-gray-900 mb-3">Onboard Amenities & Specs</h4>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-8">
-        ${v.features.map(f => `
-          <div class="text-xs text-gray-700 flex items-center gap-2 bg-gray-50 p-2.5 rounded-xl">
-            <span class="material-symbols-outlined text-emerald-600 text-sm">verified</span>
-            <span>${f}</span>
-          </div>
-        `).join('')}
+      <h4 class="font-bold text-sm text-stb-charcoal mb-3">Onboard amenities</h4>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+        ${v.features.map(f => `<div class="flex items-center gap-2 bg-stb-cream rounded-xl p-2.5 text-xs"><span class="material-symbols-outlined text-emerald-600 text-sm">verified</span>${f}</div>`).join('')}
       </div>
-
-      <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+      <div class="flex items-center justify-between pt-4 border-t border-stone-200">
         <div>
-          <div class="text-xs text-gray-500 font-semibold">Standard Fixed Fare</div>
-          <div class="text-2xl font-extrabold text-[#ae0011]">${formatCurrency(v.baseFareSGD)}</div>
+          <div class="text-[0.65rem] font-bold text-stb-muted uppercase tracking-wider">Fixed rate</div>
+          <div class="font-display text-3xl text-stb-red font-medium">${formatCurrency(v.baseFareSGD)}</div>
         </div>
-        <button id="modal-select-car-btn" class="bg-[#ae0011] text-white px-6 py-3.5 rounded-2xl font-bold text-sm hover:bg-[#d71920] transition-all cursor-pointer shadow-md">
-          Select Vehicle & Book
-        </button>
+        <button id="modal-select-car-btn" class="btn-primary" style="padding: 0.95rem 1.5rem;" data-testid="modal-select-car">Select &amp; Book</button>
       </div>
     </div>
   `;
-
-  document.getElementById('modal-select-car-btn')?.addEventListener('click', () => {
-    selectedVehicleId = v.id;
-    initVehicleSelection();
+  $('#modal-select-car-btn')?.addEventListener('click', () => {
+    state.selectedVehicleId = v.id;
+    renderVehicleChips();
     closeModal('modal-vehicle');
     scrollToWidget();
-    updateAllPriceDisplays();
   });
-
   openModal('modal-vehicle');
 }
 
-// Booking Modal Checkout
+// ============================================
+// BOOKING CHECKOUT MODAL
+// ============================================
 function openBookingModal() {
-  const pickup = document.getElementById('pickup-input').value;
-  const dest = document.getElementById('dest-input').value;
-  const dt = document.getElementById('datetime-input').value;
-  const flight = document.getElementById('flight-input').value;
-  const pax = document.getElementById('pax-select').value;
-  const vehicle = VEHICLES.find(v => v.id === selectedVehicleId) || VEHICLES[0];
-  const fareSGD = computeCalculatedFareSGD();
+  const pickup = $('#pickup-input').value;
+  const dest = $('#dest-input').value;
+  const dt = $('#datetime-input').value;
+  const flight = $('#flight-input').value;
+  const pax = $('#pax-select').value;
+  const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
+  const fareSGD = computeFareSGD();
 
-  const content = document.getElementById('modal-booking-content');
-  if (!content) return;
-
-  content.innerHTML = `
-    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-      <div class="w-12 h-12 rounded-2xl bg-red-50 text-[#ae0011] flex items-center justify-center font-bold text-xl">
+  $('#modal-booking-content').innerHTML = `
+    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-stone-200">
+      <div class="w-12 h-12 rounded-2xl bg-stb-red-soft text-stb-red flex items-center justify-center">
         <span class="material-symbols-outlined text-2xl">confirmation_number</span>
       </div>
       <div>
-        <h3 class="font-['Plus_Jakarta_Sans'] font-extrabold text-xl text-gray-900">Confirm Reservation</h3>
-        <p class="text-xs text-gray-500">Review your itinerary and secure driver assignment</p>
+        <h3 class="font-display font-medium text-2xl text-stb-charcoal">Confirm reservation</h3>
+        <p class="text-xs text-stb-muted">Review itinerary and secure driver assignment</p>
       </div>
     </div>
 
-    <!-- Booking Voucher Summary Box -->
-    <div class="bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200/80 mb-6 space-y-3 text-xs">
-      <div class="flex justify-between border-b border-gray-200/60 pb-2">
-        <span class="text-gray-500 font-medium">Vehicle Class</span>
-        <span class="font-bold text-gray-900">${vehicle.name}</span>
-      </div>
-      <div class="flex justify-between border-b border-gray-200/60 pb-2">
-        <span class="text-gray-500 font-medium">Pickup Location</span>
-        <span class="font-bold text-gray-900 text-right max-w-[200px] truncate">${pickup}</span>
-      </div>
-      ${currentTripMode !== 'hourly' ? `
-      <div class="flex justify-between border-b border-gray-200/60 pb-2">
-        <span class="text-gray-500 font-medium">Destination</span>
-        <span class="font-bold text-gray-900 text-right max-w-[200px] truncate">${dest}</span>
-      </div>
-      ` : `
-      <div class="flex justify-between border-b border-gray-200/60 pb-2">
-        <span class="text-gray-500 font-medium">Chauffeur Duration</span>
-        <span class="font-bold text-gray-900">${hourlyDuration} Hours Disposal</span>
-      </div>
-      `}
-      <div class="flex justify-between border-b border-gray-200/60 pb-2">
-        <span class="text-gray-500 font-medium">Date & Time</span>
-        <span class="font-bold text-gray-900">${dt || 'As scheduled'}</span>
-      </div>
-      ${flight ? `
-      <div class="flex justify-between border-b border-gray-200/60 pb-2">
-        <span class="text-gray-500 font-medium">Flight No</span>
-        <span class="font-bold text-[#ae0011]">${flight}</span>
-      </div>
-      ` : ''}
+    <div class="bg-stb-cream rounded-2xl p-5 mb-5 space-y-3 text-xs">
+      <div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Vehicle</span><span class="font-bold">${v.fullName}</span></div>
+      <div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Pickup</span><span class="font-bold text-right max-w-[220px] truncate">${pickup}</span></div>
+      ${state.tripMode !== 'hourly'
+        ? `<div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Destination</span><span class="font-bold text-right max-w-[220px] truncate">${dest}</span></div>`
+        : `<div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Duration</span><span class="font-bold">${state.hourlyDuration}h disposal</span></div>`
+      }
+      <div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Date &amp; time</span><span class="font-bold">${dt || 'Flexible'}</span></div>
+      ${flight ? `<div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Flight</span><span class="font-bold text-stb-red">${flight}</span></div>` : ''}
       <div class="flex justify-between items-center pt-1">
-        <span class="text-gray-700 font-bold">Total Guaranteed Fare</span>
-        <span class="text-xl font-extrabold text-[#ae0011]">${formatCurrency(fareSGD)} (${currentCurrency})</span>
+        <span class="font-bold">Guaranteed fare</span>
+        <span class="font-display text-2xl font-medium text-stb-red">${formatCurrency(fareSGD)} <span class="text-xs text-stb-muted">${state.currency}</span></span>
       </div>
     </div>
 
-    <!-- Contact Form -->
-    <form id="checkout-form" class="space-y-4" onsubmit="return false;">
+    <form id="checkout-form" onsubmit="return false;" class="space-y-3">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Passenger Name *</label>
-          <input type="text" id="cust-name" required placeholder="Full Name" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs outline-none focus:border-[#ae0011]" />
+          <label class="field-label">Passenger name</label>
+          <input type="text" id="cust-name" required placeholder="Full name" class="field-input" style="padding-left: 1rem;" data-testid="cust-name" />
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">WhatsApp / Phone *</label>
-          <input type="tel" id="cust-phone" required placeholder="+65 9123 4567" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs outline-none focus:border-[#ae0011]" />
+          <label class="field-label">WhatsApp / phone</label>
+          <input type="tel" id="cust-phone" required placeholder="+65 9123 4567" class="field-input" style="padding-left: 1rem;" data-testid="cust-phone" />
         </div>
       </div>
-
       <div>
-        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email Address *</label>
-        <input type="email" id="cust-email" required placeholder="name@domain.com" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs outline-none focus:border-[#ae0011]" />
+        <label class="field-label">Email</label>
+        <input type="email" id="cust-email" required placeholder="name@domain.com" class="field-input" style="padding-left: 1rem;" data-testid="cust-email" />
       </div>
-
       <div>
-        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Payment Method</label>
-        <select id="cust-payment" class="w-full h-11 px-3 bg-white border border-gray-300 rounded-xl text-xs outline-none font-bold text-gray-800">
-          <option value="Cash to Driver">Cash Payment to Chauffeur</option>
-          <option value="PayNow SG">PayNow SG (0% fee)</option>
-          <option value="Credit Card">Credit / Debit Card (Visa/Master)</option>
+        <label class="field-label">Payment method</label>
+        <select id="cust-payment" class="field-select" data-testid="cust-payment">
+          <option value="Cash to Driver">Cash to chauffeur</option>
+          <option value="PayNow SG">PayNow SG · 0% fee</option>
+          <option value="Credit Card">Credit / debit card</option>
         </select>
       </div>
-
-      <button type="submit" id="btn-submit-booking" class="w-full bg-[#ae0011] text-white py-4 rounded-xl font-bold text-sm hover:bg-[#d71920] shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2">
-        <span class="material-symbols-outlined text-xl">verified</span>
-        <span>Confirm Booking & Send Emails</span>
+      <button type="submit" id="btn-submit-booking" class="confirm-btn" data-testid="btn-submit-booking">
+        <span class="material-symbols-outlined">verified</span>
+        Confirm booking
       </button>
     </form>
   `;
 
-  document.getElementById('checkout-form')?.addEventListener('submit', async (e) => {
+  $('#checkout-form')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const name = document.getElementById('cust-name').value;
-    const phone = document.getElementById('cust-phone').value;
-    const email = document.getElementById('cust-email').value;
-    const payment = document.getElementById('cust-payment').value;
+    const name = $('#cust-name').value;
+    const phone = $('#cust-phone').value;
+    const email = $('#cust-email').value;
+    const payment = $('#cust-payment').value;
     const voucherCode = `STB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const submitBtn = document.getElementById('btn-submit-booking');
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<span class="material-symbols-outlined animate-spin text-xl">sync</span><span>Processing & Sending Emails...</span>`;
-    }
+    const btn = $('#btn-submit-booking');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Processing...`;
+
+    let whatsappUrl = `https://api.whatsapp.com/send?phone=6591234567&text=${encodeURIComponent('Booking ' + voucherCode + ' for ' + name)}`;
 
     try {
-      // POST to backend API to dispatch emails to Customer and Admin
-      const response = await fetch('/api/bookings', {
+      const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          voucherCode,
-          passengerName: name,
-          passengerEmail: email,
-          passengerPhone: phone,
-          vehicle: vehicle.name,
-          pickup,
-          destination: currentTripMode !== 'hourly' ? dest : `${hourlyDuration} Hours Disposal`,
-          dateTime: dt,
-          flightNo: flight,
-          fare: formatCurrency(fareSGD),
-          currency: currentCurrency,
-          paymentMethod: payment,
-          pax
-        })
+          voucherCode, passengerName: name, passengerEmail: email, passengerPhone: phone,
+          vehicle: v.fullName, pickup, destination: state.tripMode !== 'hourly' ? dest : `${state.hourlyDuration}h disposal`,
+          dateTime: dt, flightNo: flight, fare: formatCurrency(fareSGD), currency: state.currency, paymentMethod: payment, pax
+        }),
       });
+      const data = await res.json();
+      if (data.whatsappUrl) whatsappUrl = data.whatsappUrl;
+    } catch (err) {
+      console.warn('Booking POST failed, proceeding to WhatsApp:', err);
+    }
 
-      const resData = await response.json();
-      const whatsappUrl = resData.whatsappUrl || `https://api.whatsapp.com/send?phone=6591234567&text=${encodeURIComponent('Booking ' + voucherCode + ' for ' + name)}`;
+    window.open(whatsappUrl, '_blank');
 
-      // Automatically launch WhatsApp API connection in new window
-      window.open(whatsappUrl, '_blank');
+    $('#modal-booking-content').innerHTML = `
+      <div class="text-center space-y-4">
+        <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-4xl font-bold" style="animation: pulse 1.5s ease-in-out infinite;">✓</div>
+        <h3 class="font-display font-medium text-3xl text-stb-charcoal">Reservation confirmed!</h3>
 
-      content.innerHTML = `
-        <div class="text-center py-6 space-y-4">
-          <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl font-bold animate-bounce">
-            ✓
-          </div>
-          <h3 class="font-['Plus_Jakarta_Sans'] font-extrabold text-2xl text-gray-900">Reservation Confirmed!</h3>
-          
-          <!-- Email Notification Banner -->
-          <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl text-xs font-semibold max-w-sm mx-auto flex items-center gap-2 text-left">
-            <span class="material-symbols-outlined text-emerald-600 text-lg">mark_email_read</span>
-            <div>
-              <div>Confirmation email sent to <strong>${email}</strong></div>
-              <div class="text-[10px] text-emerald-600 mt-0.5">Admin copy sent to dispatch@stbsingapore.com</div>
-            </div>
-          </div>
-
-          <div class="bg-gradient-to-r from-red-50 to-amber-50 p-6 rounded-3xl border-2 border-dashed border-[#ae0011] max-w-sm mx-auto text-left relative overflow-hidden shadow-md">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-red-200">
-              <span class="font-extrabold text-xs text-[#ae0011]">STB VIP PASS</span>
-              <span class="font-mono text-xs bg-[#ae0011] text-white px-2 py-0.5 rounded-md font-bold">${voucherCode}</span>
-            </div>
-
-            <div class="space-y-2 text-xs">
-              <div><span class="text-gray-500">Passenger:</span> <strong class="text-gray-900">${name}</strong></div>
-              <div><span class="text-gray-500">Vehicle:</span> <strong class="text-gray-900">${vehicle.name}</strong></div>
-              <div><span class="text-gray-500">Total Fare:</span> <strong class="text-[#ae0011] text-sm">${formatCurrency(fareSGD)}</strong></div>
-              <div><span class="text-gray-500">Payment:</span> <strong class="text-gray-900">${payment}</strong></div>
-              <div><span class="text-gray-500">Status:</span> <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px]">Driver Assigned • Emails Sent</span></div>
-            </div>
-          </div>
-
-          <div class="pt-4 flex flex-col sm:flex-row gap-3">
-            <button id="btn-copy-pass" class="flex-1 bg-gray-900 text-white py-3 rounded-xl font-bold text-xs hover:bg-black cursor-pointer flex items-center justify-center gap-1">
-              <span class="material-symbols-outlined text-base">content_copy</span>
-              <span>Copy Voucher Code</span>
-            </button>
-            <a href="${whatsappUrl}" target="_blank" id="btn-pass-wa" class="flex-1 bg-[#25D366] text-white py-3 rounded-xl font-bold text-xs hover:bg-[#20ba59] cursor-pointer flex items-center justify-center gap-1">
-              <span class="material-symbols-outlined text-base">chat</span>
-              <span>Connect WhatsApp API</span>
-            </a>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs font-bold max-w-sm mx-auto flex items-center gap-2 text-left" style="color: #047857;">
+          <span class="material-symbols-outlined text-lg">mark_email_read</span>
+          <div>
+            <div>Confirmation sent to <strong>${email}</strong></div>
+            <div class="text-[0.65rem] mt-0.5">Admin copy · dispatch@stbsingapore.com</div>
           </div>
         </div>
-      `;
 
-      document.getElementById('btn-copy-pass')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(voucherCode);
-        alert(`Copied voucher code ${voucherCode} to clipboard!`);
-      });
-    } catch (err) {
-      console.error('Error submitting booking:', err);
-      alert('Your booking pass was generated. Connecting to WhatsApp API...');
-      window.open(`https://api.whatsapp.com/send?phone=6591234567&text=${encodeURIComponent('Booking ' + voucherCode + ' for ' + name)}`, '_blank');
-    }
+        <div class="bg-gradient-to-br from-stb-red-soft to-stb-gold-soft p-5 rounded-3xl border-2 border-dashed border-stb-red max-w-sm mx-auto text-left">
+          <div class="flex justify-between items-center mb-3 pb-3 border-b border-stb-red/20">
+            <span class="font-black text-xs text-stb-red tracking-widest">STB VIP PASS</span>
+            <span class="font-mono text-xs bg-stb-red text-white px-2 py-1 rounded-md font-bold">${voucherCode}</span>
+          </div>
+          <div class="space-y-1.5 text-xs">
+            <div><span class="text-stb-muted">Passenger:</span> <strong>${name}</strong></div>
+            <div><span class="text-stb-muted">Vehicle:</span> <strong>${v.fullName}</strong></div>
+            <div><span class="text-stb-muted">Fare:</span> <strong class="text-stb-red">${formatCurrency(fareSGD)}</strong></div>
+            <div><span class="text-stb-muted">Payment:</span> <strong>${payment}</strong></div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 pt-2">
+          <button id="btn-copy-pass" class="btn-ghost flex-1" data-testid="copy-voucher-btn">
+            <span class="material-symbols-outlined text-base">content_copy</span>
+            Copy voucher
+          </button>
+          <a href="${whatsappUrl}" target="_blank" class="btn-primary flex-1" style="background: #25D366; box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);" data-testid="voucher-whatsapp-btn">
+            <span class="material-symbols-outlined text-base">chat</span>
+            WhatsApp confirm
+          </a>
+        </div>
+      </div>
+    `;
+
+    $('#btn-copy-pass')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(voucherCode);
+      const b = $('#btn-copy-pass');
+      const orig = b.innerHTML;
+      b.innerHTML = `<span class="material-symbols-outlined text-base">check</span> Copied!`;
+      setTimeout(() => { b.innerHTML = orig; }, 1500);
+    });
   });
 
   openModal('modal-booking');
 }
 
-// WhatsApp Modal
+// ============================================
+// WHATSAPP MODAL
+// ============================================
 function openWhatsAppModal() {
-  const pickup = document.getElementById('pickup-input').value;
-  const dest = document.getElementById('dest-input').value;
-  const dt = document.getElementById('datetime-input').value;
-  const flight = document.getElementById('flight-input').value;
-  const pax = document.getElementById('pax-select').value;
-  const vehicle = VEHICLES.find(v => v.id === selectedVehicleId) || VEHICLES[0];
-  const fareSGD = computeCalculatedFareSGD();
+  const pickup = $('#pickup-input').value;
+  const dest = $('#dest-input').value;
+  const dt = $('#datetime-input').value;
+  const flight = $('#flight-input').value;
+  const pax = $('#pax-select').value;
+  const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
+  const fareSGD = computeFareSGD();
 
-  const previewBox = document.getElementById('wa-preview-box');
-  const customNotesInput = document.getElementById('wa-custom-notes');
-  const finalLink = document.getElementById('wa-final-link');
+  const box = $('#wa-preview-box');
+  const notesInput = $('#wa-custom-notes');
+  const link = $('#wa-final-link');
 
-  const buildMsg = (notes) => {
-    let msg = `*STB Singapore - VIP Chauffeur Booking Request*\n\n`;
-    msg += `🚘 *Vehicle Class:* ${vehicle.name}\n`;
-    msg += `📍 *Pickup Location:* ${pickup}\n`;
-    if (currentTripMode !== 'hourly') {
-      msg += `🏁 *Destination:* ${dest}\n`;
-    } else {
-      msg += `⏱ *Duration:* ${hourlyDuration} Hours Disposal\n`;
-    }
-    msg += `📅 *Date & Time:* ${dt || 'Flexible'}\n`;
-    msg += `👥 *Pax:* ${pax}\n`;
-    if (flight) msg += `✈️ *Flight No:* ${flight}\n`;
-    msg += `💰 *Guaranteed Fare:* ${formatCurrency(fareSGD)} (${currentCurrency})\n`;
-    if (notes) msg += `📝 *Notes:* ${notes}\n`;
-    msg += `\nPlease confirm availability and driver assignment. Thank you!`;
-    return msg;
+  const build = (notes) => {
+    let m = `*STB Singapore — VIP Chauffeur Booking*\n\n`;
+    m += `🚘 *Vehicle:* ${v.fullName}\n`;
+    m += `📍 *Pickup:* ${pickup}\n`;
+    if (state.tripMode !== 'hourly') m += `🏁 *Destination:* ${dest}\n`;
+    else m += `⏱ *Duration:* ${state.hourlyDuration}h disposal\n`;
+    m += `📅 *Date:* ${dt || 'Flexible'}\n`;
+    m += `👥 *Pax:* ${pax}\n`;
+    if (flight) m += `✈️ *Flight:* ${flight}\n`;
+    m += `💰 *Fare:* ${formatCurrency(fareSGD)} (${state.currency})\n`;
+    if (notes) m += `📝 *Notes:* ${notes}\n`;
+    m += `\nPlease confirm availability and driver. Thank you!`;
+    return m;
   };
 
-  const updateLink = () => {
-    const notes = customNotesInput?.value || '';
-    const rawMsg = buildMsg(notes);
-    if (previewBox) previewBox.textContent = rawMsg;
-    if (finalLink) {
-      finalLink.href = `https://wa.me/6591234567?text=${encodeURIComponent(rawMsg)}`;
-    }
+  const update = () => {
+    const raw = build(notesInput?.value || '');
+    if (box) box.textContent = raw;
+    if (link) link.href = `https://wa.me/6591234567?text=${encodeURIComponent(raw)}`;
   };
 
-  customNotesInput?.addEventListener('input', updateLink);
-  updateLink();
+  notesInput?.addEventListener('input', update);
+  update();
   openModal('modal-whatsapp');
+}
+
+// ============================================
+// MOBILE BOTTOM BAR
+// ============================================
+function initMobileBottomBar() {
+  const items = $$('.mbb-item[href]');
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      items.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+  // Set Home as default
+  items[0]?.classList.add('active');
+}
+
+// ============================================
+// REVEAL ANIMATION
+// ============================================
+function initReveal() {
+  const els = document.querySelectorAll('.reveal:not(.in)');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(e => e.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px 100px 0px' });
+  els.forEach(el => io.observe(el));
 }

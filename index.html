@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary SEO Meta Tags -->
+    <meta name="theme-color" content="#E31E24" />
+
+    <!-- SEO Meta -->
     <title>STB Singapore | Private Transport, Changi Airport Transfer & Tour Booking</title>
     <meta name="title" content="STB Singapore | Private Transport, Changi Airport Transfer & Tour Booking" />
     <meta name="description" content="Book premium private transport and tours in Singapore & Malaysia. VIP Changi airport transfers, Toyota Alphard MPV, Mercedes limousines, Johor Bahru cross-border rides, and hourly disposal with fixed all-inclusive rates." />
@@ -12,28 +13,28 @@
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Singapore Tour Booking (STB)" />
     <link rel="canonical" href="https://stb-singapore.com/" />
+    <link rel="icon" href="/stb-logo.png" type="image/png" />
 
-    <!-- Open Graph / Facebook SEO -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://stb-singapore.com/" />
     <meta property="og:title" content="STB Singapore | Private Transport & Tour Booking" />
-    <meta property="og:description" content="Experience Majestic Hospitality with Singapore’s premier private transport service. Fixed pricing, no ERP tolls, 24/7 WhatsApp concierge." />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1200&q=80" />
+    <meta property="og:description" content="Experience Majestic Hospitality with Singapore's premier private transport service. Fixed pricing, no ERP tolls, 24/7 WhatsApp concierge." />
+    <meta property="og:image" content="/stb-logo.png" />
 
-    <!-- Twitter SEO -->
+    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://stb-singapore.com/" />
     <meta property="twitter:title" content="STB Singapore | Private Transport & Tour Booking" />
     <meta property="twitter:description" content="Book VIP Changi airport transfers, luxury MPVs, and private tour chauffeurs with instant fixed pricing." />
-    <meta property="twitter:image" content="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1200&q=80" />
+    <meta property="twitter:image" content="/stb-logo.png" />
 
-    <!-- Structured JSON-LD Schema Markup for Search Engines -->
+    <!-- JSON-LD LimoService Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "LimoService",
       "name": "Singapore Tour Booking (STB)",
-      "image": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1200&q=80",
+      "image": "https://stb-singapore.com/stb-logo.png",
       "@id": "https://stb-singapore.com",
       "url": "https://stb-singapore.com",
       "telephone": "+6591234567",
@@ -45,838 +46,648 @@
         "postalCode": "819666",
         "addressCountry": "SG"
       },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 1.3644,
-        "longitude": 103.9915
-      },
+      "geo": { "@type": "GeoCoordinates", "latitude": 1.3644, "longitude": 103.9915 },
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-          "Sunday"
-        ],
-        "opens": "00:00",
-        "closes": "23:59"
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+        "opens": "00:00", "closes": "23:59"
       },
       "areaServed": ["Singapore", "Johor Bahru", "Kuala Lumpur"],
-      "hasOfferCatalog": {
-        "@type": "OfferCatalog",
-        "name": "Private Transport Services",
-        "itemListElement": [
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Changi Airport Arrival Meet & Greet Transfer"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Changi Airport Departure Chauffeur"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Singapore to Malaysia Cross-Border Transfer"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Hourly Private Chauffeur Disposal"
-            }
-          }
-        ]
-      }
+      "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "2140" }
     }
     </script>
 
-    <!-- Structured FAQ Schema -->
+    <!-- FAQ Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Are tolls (ERP) and parking fees included in the fare?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes! All quoted prices on STB Singapore are 100% all-inclusive. ERP gantry tolls, peak hour surcharges, airport pick-up fees, and fuel are strictly included."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What happens if my flight to Changi Airport is delayed?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "We monitor real-time flight landing times automatically. Your assigned chauffeur will adjust their arrival accordingly with 60 minutes of complimentary waiting time from actual landing."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I book a private transfer from Singapore to Johor Bahru, Malaysia?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, we specialize in cross-border transfers between Singapore and Malaysia. You stay comfortably inside the air-conditioned vehicle during immigration clearance."
-          }
-        }
+        { "@type": "Question", "name": "Are tolls (ERP) and parking fees included in the fare?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! All quoted prices on STB Singapore are 100% all-inclusive. ERP gantry tolls, peak hour surcharges, airport pick-up fees, and fuel are strictly included." } },
+        { "@type": "Question", "name": "What happens if my flight to Changi Airport is delayed?", "acceptedAnswer": { "@type": "Answer", "text": "We monitor real-time flight landing times automatically. Your assigned chauffeur will adjust their arrival accordingly with 60 minutes of complimentary waiting time from actual landing." } },
+        { "@type": "Question", "name": "Can I book a private transfer from Singapore to Johor Bahru, Malaysia?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, we specialize in cross-border transfers between Singapore and Malaysia. You stay comfortably inside the air-conditioned vehicle during immigration clearance." } }
       ]
     }
     </script>
 
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Fraunces (serif display) + Manrope (body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0..100,0..1;1,9..144,400..700,0..100,0..1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      .material-symbols-outlined {
-        font-size: inherit;
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      }
-      .material-symbols-outlined.fill-1 {
-        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-      }
-      .glass-nav {
-        background: rgba(255, 255, 255, 0.88);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-      }
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      @keyframes pulse-slow {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-      }
-      .animate-pulse-slow {
-        animation: pulse-slow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-    </style>
 
-    <!-- Leaflet Map CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
 
-  <body class="bg-[#fcf9f8] text-[#1b1c1c] font-['Manrope',sans-serif] antialiased selection:bg-[#d71920] selection:text-white overflow-x-hidden">
-    
-    <!-- Header / Navigation -->
-    <header className="header-wrapper">
-      <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 h-20 bg-white/80 backdrop-blur-xl border-b border-white/30 shadow-sm">
-        <div class="max-w-[1200px] mx-auto px-5 md:px-12 h-full flex justify-between items-center">
-          <!-- Logo -->
-          <a href="#" class="flex items-center gap-3 group" title="STB Singapore Home">
-            <img
-              src="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=120&q=80"
-              alt="Singapore Tour Booking (STB) Logo"
-              class="h-11 md:h-12 w-auto object-cover rounded-xl shadow-xs transition-transform group-hover:scale-105"
-            />
-            <span class="font-['Plus_Jakarta_Sans'] font-extrabold text-xl md:text-2xl text-[#ae0011] tracking-tight hidden sm:inline-block">
-              STB Singapore
-            </span>
+  <body>
+
+    <!-- ================= NAV ================= -->
+    <nav id="stb-nav" class="stb-nav" data-testid="main-nav">
+      <div class="stb-nav-inner">
+        <a href="#top" class="flex items-center gap-3" data-testid="brand-logo">
+          <img src="/stb-logo.png" alt="STB Singapore Logo" class="h-12 w-auto object-contain" />
+          <div class="hidden sm:block leading-tight">
+            <div class="font-display font-medium text-lg text-stb-charcoal tracking-tight">STB</div>
+            <div class="text-[0.6rem] font-bold tracking-[0.2em] text-stb-gold uppercase">Singapore</div>
+          </div>
+        </a>
+
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#services" class="stb-nav-link" data-testid="nav-services">Services</a>
+          <a href="#fleet" class="stb-nav-link" data-testid="nav-fleet">Fleet</a>
+          <a href="#destinations" class="stb-nav-link" data-testid="nav-destinations">Destinations</a>
+          <a href="#how-to-book" class="stb-nav-link" data-testid="nav-howto">How it Works</a>
+          <a href="#faq" class="stb-nav-link" data-testid="nav-faq">FAQ</a>
+
+          <div class="currency-pill" data-testid="currency-pill">
+            <span class="material-symbols-outlined text-sm text-stb-muted">payments</span>
+            <select id="currency-select" data-testid="currency-select">
+              <option value="SGD">SGD</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="AUD">AUD</option>
+              <option value="MYR">MYR</option>
+              <option value="INR">INR</option>
+            </select>
+          </div>
+
+          <button id="nav-btn-book" class="btn-primary" data-testid="nav-book-btn">
+            Book a Ride
+            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+          </button>
+        </div>
+
+        <button id="mobile-menu-toggle" class="md:hidden w-11 h-11 rounded-full bg-stb-red-soft text-stb-red flex items-center justify-center" data-testid="mobile-menu-toggle">
+          <span class="material-symbols-outlined text-2xl" id="menu-icon">menu</span>
+        </button>
+      </div>
+
+      <!-- Mobile Drawer -->
+      <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-stone-200 shadow-xl px-6 py-6" data-testid="mobile-menu">
+        <div class="flex flex-col gap-1">
+          <a href="#services" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal">
+            <span>Services</span>
+            <span class="material-symbols-outlined text-stone-400">chevron_right</span>
+          </a>
+          <a href="#fleet" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal">
+            <span>Our Fleet</span>
+            <span class="material-symbols-outlined text-stone-400">chevron_right</span>
+          </a>
+          <a href="#destinations" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal">
+            <span>Destinations</span>
+            <span class="material-symbols-outlined text-stone-400">chevron_right</span>
+          </a>
+          <a href="#faq" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal">
+            <span>FAQ</span>
+            <span class="material-symbols-outlined text-stone-400">chevron_right</span>
           </a>
 
-          <!-- Desktop Nav Links -->
-          <div class="hidden md:flex items-center gap-7">
-            <a href="#services" class="text-[#1b1c1c] hover:text-[#ae0011] font-medium text-base transition-colors">
-              Services
-            </a>
-            <a href="#fleet" class="text-[#1b1c1c] hover:text-[#ae0011] font-medium text-base transition-colors">
-              Fleet
-            </a>
-            <a href="#destinations" class="text-[#1b1c1c] hover:text-[#ae0011] font-medium text-base transition-colors">
-              Destinations
-            </a>
-            <a href="#how-to-book" class="text-[#1b1c1c] hover:text-[#ae0011] font-medium text-base transition-colors">
-              How to Book
-            </a>
-            <a href="#faq" class="text-[#1b1c1c] hover:text-[#ae0011] font-medium text-base transition-colors">
-              FAQ
-            </a>
-
-            <!-- Currency Selector -->
-            <div class="relative flex items-center bg-gray-100/90 rounded-full px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200">
-              <span class="material-symbols-outlined text-sm mr-1 text-gray-500">payments</span>
-              <select id="currency-select" class="bg-transparent border-none outline-none cursor-pointer font-bold text-gray-800 pr-1">
-                <option value="SGD">SGD (S$)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="AUD">AUD (A$)</option>
-                <option value="MYR">MYR (RM)</option>
-                <option value="INR">INR (₹)</option>
-              </select>
-            </div>
-
-            <!-- Instant Book Button -->
-            <button id="nav-btn-book" class="bg-[#ae0011] hover:bg-[#d71920] text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-1.5 shadow-md hover:shadow-lg active:scale-95 transition-all cursor-pointer">
-              <span>Book Ride</span>
-              <span class="material-symbols-outlined text-lg">arrow_forward</span>
-            </button>
-          </div>
-
-          <!-- Mobile Toggle Button -->
-          <div class="flex md:hidden items-center gap-3">
-            <button id="mobile-menu-toggle" class="text-[#ae0011] p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Toggle menu">
-              <span class="material-symbols-outlined text-3xl" id="menu-icon">menu</span>
-            </button>
+          <div class="flex items-center justify-between mt-3 mb-2">
+            <span class="text-xs font-bold text-stb-muted">Currency</span>
+            <select id="mobile-currency-select" class="currency-pill" style="padding: 0.4rem 0.9rem;" data-testid="mobile-currency-select">
+              <option value="SGD">SGD (S$)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="AUD">AUD (A$)</option>
+              <option value="MYR">MYR (RM)</option>
+              <option value="INR">INR (₹)</option>
+            </select>
           </div>
         </div>
+      </div>
+    </nav>
 
-        <!-- Mobile Drawer -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-gray-200 shadow-xl px-6 py-6 transition-all">
-          <div class="flex flex-col gap-4 text-left">
-            <a href="#services" class="mobile-nav-link text-lg font-semibold text-gray-800 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span>Services</span>
-              <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-            </a>
-            <a href="#fleet" class="mobile-nav-link text-lg font-semibold text-gray-800 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span>Our Fleet</span>
-              <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-            </a>
-            <a href="#destinations" class="mobile-nav-link text-lg font-semibold text-gray-800 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span>Destinations</span>
-              <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-            </a>
-            <a href="#faq" class="mobile-nav-link text-lg font-semibold text-gray-800 py-2 border-b border-gray-100 flex items-center justify-between">
-              <span>FAQ</span>
-              <span class="material-symbols-outlined text-gray-400">chevron_right</span>
-            </a>
+    <main id="top">
 
-            <div class="pt-2 flex items-center justify-between">
-              <span class="text-sm font-medium text-gray-600">Select Currency</span>
-              <select id="mobile-currency-select" class="bg-gray-100 rounded-lg px-3 py-1.5 font-bold text-sm">
-                <option value="SGD">SGD (S$)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="AUD">AUD (A$)</option>
-                <option value="MYR">MYR (RM)</option>
-                <option value="INR">INR (₹)</option>
-              </select>
-            </div>
-
-            <div class="pt-4">
-              <button id="mobile-drawer-book" class="w-full bg-[#ae0011] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-1">
-                <span>Book Now</span>
-              </button>
-            </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-    </header>
-
-    <!-- Main Content -->
-    <main>
-      <!-- Hero Section -->
-      <section class="relative min-h-[92vh] flex items-center overflow-hidden pt-24 pb-16">
-        <!-- Background Banner -->
-        <div class="absolute inset-0 z-0">
-          <img
-            src="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1920&q=80"
-            alt="Singapore Marina Bay Sands Skyline at Sunset"
-            class="w-full h-full object-cover object-center"
-          />
-          <div class="absolute inset-0 bg-gradient-to-r from-[#fcf9f8]/95 via-[#fcf9f8]/85 to-[#fcf9f8]/60"></div>
+      <!-- ================= HERO ================= -->
+      <section class="hero-wrap">
+        <div class="hero-bg">
+          <img src="https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=1920&q=80" alt="Singapore skyline at sunset" />
         </div>
 
-        <div class="relative z-10 max-w-[1200px] mx-auto px-5 md:px-12 w-full grid md:grid-cols-2 gap-12 items-center">
-          <!-- Left SEO Copy -->
-          <article class="text-left">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100/90 border border-amber-300 text-[#795900] text-xs font-bold uppercase tracking-wider mb-6 shadow-xs">
-              <span class="w-2.5 h-2.5 rounded-full bg-[#795900] animate-pulse"></span>
-              <span>Premium Chauffeur & Tour Booking</span>
-            </div>
+        <div class="container relative z-10">
+          <div class="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
 
-            <h1 class="font-['Plus_Jakarta_Sans'] font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[#1b1c1c] tracking-tight leading-[1.1] mb-6">
-              Singapore Private Transport & <span class="text-[#ae0011]">Tour Booking</span>
-            </h1>
-
-            <p class="font-['Manrope'] text-lg text-gray-700 mb-8 max-w-lg leading-relaxed">
-              Experience Majestic Hospitality with Singapore’s premier private transport service. From VIP airport transfers to bespoke city tours, we define luxury travel with guaranteed fixed rates.
-            </p>
-
-            <!-- SEO Feature Badges -->
-            <div class="flex flex-wrap gap-3 mb-10">
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-xs border border-white/60">
-                <span class="material-symbols-outlined text-[#ae0011] text-xl fill-1">verified_user</span>
-                <span class="font-semibold text-xs text-gray-800">Licensed Limo Chauffeurs</span>
-              </div>
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-xs border border-white/60">
-                <span class="material-symbols-outlined text-[#ae0011] text-xl fill-1">support_agent</span>
-                <span class="font-semibold text-xs text-gray-800">24/7 Dispatch Hotline</span>
-              </div>
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-xs border border-white/60">
-                <span class="material-symbols-outlined text-[#ae0011] text-xl fill-1">payments</span>
-                <span class="font-semibold text-xs text-gray-800">No Hidden ERP Tolls</span>
-              </div>
-            </div>
-          </article>
-
-          <!-- Right Booking Widget Container -->
-          <div id="booking-widget-container" class="w-full">
-            <div class="glass-card p-6 md:p-8 rounded-[2rem] shadow-2xl border border-white/50 text-left relative z-20 bg-white/90 backdrop-blur-xl">
-              <!-- Trip Mode Selector -->
-              <div class="flex gap-2 mb-6 border-b border-gray-200/60 pb-4 overflow-x-auto no-scrollbar">
-                <button id="trip-one-way" class="trip-mode-btn active whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold bg-[#ae0011] text-white shadow-md cursor-pointer">
-                  One Way
-                </button>
-                <button id="trip-return" class="trip-mode-btn whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer">
-                  Return Trip (-15%)
-                </button>
-                <button id="trip-hourly" class="trip-mode-btn whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer">
-                  Hourly / Disposal
-                </button>
+            <!-- Left copy -->
+            <div class="reveal" data-testid="hero-copy">
+              <div class="hero-eyebrow mb-6">
+                <span class="hero-eyebrow-dot"></span>
+                <span>Majestic Hospitality · Since 2014</span>
               </div>
 
-              <form id="calculator-form" class="space-y-4" onsubmit="return false;">
-                <!-- Service Type -->
+              <h1 class="hero-h1">
+                Singapore's <em>Private</em><br />
+                Chauffeur &amp;<br />
+                <span class="underline-swash">Tour Booking</span>
+              </h1>
+
+              <p class="text-lg text-stb-muted max-w-lg leading-relaxed mb-8">
+                Fixed all-inclusive fares. Licensed chauffeurs. Alphard, Mercedes, and touring coaches from Changi Airport across Singapore &amp; Malaysia.
+              </p>
+
+              <div class="flex flex-wrap gap-2.5 mb-10">
+                <div class="trust-badge"><span class="material-symbols-outlined fill-1">verified_user</span>Licensed LTA Chauffeurs</div>
+                <div class="trust-badge"><span class="material-symbols-outlined fill-1">payments</span>No ERP or Peak Tolls</div>
+                <div class="trust-badge"><span class="material-symbols-outlined fill-1">support_agent</span>24/7 WhatsApp Dispatch</div>
+              </div>
+
+              <!-- Stats strip -->
+              <div class="grid grid-cols-3 gap-6 pt-8 border-t border-stone-200 max-w-md">
                 <div>
-                  <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">
-                    Service Category
-                  </label>
-                  <select id="service-select" class="w-full h-13 px-4 bg-white border border-gray-300 rounded-xl focus:border-[#795900] outline-none font-medium text-gray-800 text-sm cursor-pointer shadow-xs">
-                    <option value="airport_arrival">Airport Arrival Meet & Greet (Changi)</option>
-                    <option value="airport_departure">Airport Departure Chauffeur (Changi)</option>
-                    <option value="jb_malaysia">Cross-Border Transfer (Johor Bahru / Malaysia)</option>
-                    <option value="hourly_disposal">Hourly Private Chauffeur Disposal</option>
-                  </select>
+                  <div class="font-display text-3xl text-stb-red font-medium">10<span class="text-stb-gold">+</span></div>
+                  <div class="text-xs font-bold text-stb-muted uppercase tracking-wider">Years</div>
+                </div>
+                <div>
+                  <div class="font-display text-3xl text-stb-red font-medium">42k</div>
+                  <div class="text-xs font-bold text-stb-muted uppercase tracking-wider">Rides</div>
+                </div>
+                <div>
+                  <div class="font-display text-3xl text-stb-red font-medium">4.9<span class="text-stb-gold">★</span></div>
+                  <div class="text-xs font-bold text-stb-muted uppercase tracking-wider">Rated</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Booking Widget -->
+            <div id="booking-widget-container" data-testid="booking-widget">
+              <div class="booking-card">
+                <!-- Trip Mode Tabs -->
+                <div class="flex gap-2 pb-4 mb-5 border-b border-stone-200 overflow-x-auto no-scrollbar">
+                  <button class="trip-tab active" data-mode="one_way" data-testid="trip-one-way">One Way</button>
+                  <button class="trip-tab" data-mode="return" data-testid="trip-return">Return · save 15%</button>
+                  <button class="trip-tab" data-mode="hourly" data-testid="trip-hourly">Hourly Disposal</button>
                 </div>
 
-                <!-- Flight Number (Conditional) -->
-                <div id="flight-no-container">
-                  <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>Flight Number (Optional)</span>
-                    <span class="text-[10px] text-gray-500 font-normal">Real-Time Landing Tracking</span>
-                  </label>
-                  <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xl">flight</span>
-                    <input type="text" id="flight-input" placeholder="e.g. SQ 321 or EK 404" class="w-full h-12 pl-11 pr-4 bg-white border border-gray-300 rounded-xl focus:border-[#795900] outline-none text-sm text-gray-800" />
-                  </div>
-                </div>
-
-                <!-- Pickup Address -->
-                <div class="relative">
-                  <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">Pickup Location</label>
-                  <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#ae0011] text-xl">location_on</span>
-                    <input type="text" id="pickup-input" value="Changi Airport Terminal 1" placeholder="Airport, hotel, or street name" class="w-full h-13 pl-11 pr-4 bg-white border border-gray-300 rounded-xl focus:border-[#795900] outline-none text-sm text-gray-800 font-medium" />
-                  </div>
-                  <div id="pickup-presets" class="hidden absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-48 overflow-y-auto"></div>
-                </div>
-
-                <!-- Destination Address -->
-                <div id="dest-address-container" class="relative">
-                  <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">Destination Address</label>
-                  <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#795900] text-xl">flag</span>
-                    <input type="text" id="dest-input" value="Marina Bay Sands Hotel Tower 1" placeholder="Hotel, attraction, or address" class="w-full h-13 pl-11 pr-4 bg-white border border-gray-300 rounded-xl focus:border-[#795900] outline-none text-sm text-gray-800 font-medium" />
-                  </div>
-                  <div id="dest-presets" class="hidden absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-200 z-50 max-h-48 overflow-y-auto"></div>
-                </div>
-
-                <!-- Interactive Route Map -->
-                <div id="route-map" class="h-[220px] w-full rounded-2xl overflow-hidden shadow-inner my-2 relative border border-gray-200/60 z-10"></div>
-
-                <!-- Passengers & Date Time -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <form id="booking-form" onsubmit="return false;" class="space-y-4">
                   <div>
-                    <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">Passengers</label>
-                    <select id="pax-select" class="w-full h-13 px-4 bg-white border border-gray-300 rounded-xl focus:border-[#795900] outline-none text-sm text-gray-800 font-medium cursor-pointer shadow-xs">
-                      <option value="1-3 Pax">1-3 Pax (Sedan / MPV)</option>
-                      <option value="4-7 Pax">4-7 Pax (Luxury Alphard MPV)</option>
-                      <option value="8-13 Pax">8-13 Pax (VIP HiAce Van)</option>
-                      <option value="Large Group">Large Group (23-45 Seater Bus)</option>
+                    <label class="field-label">Service</label>
+                    <select id="service-select" class="field-select" data-testid="service-select">
+                      <option value="airport_arrival">Airport Arrival · Meet &amp; Greet (Changi)</option>
+                      <option value="airport_departure">Airport Departure · Chauffeur (Changi)</option>
+                      <option value="jb_malaysia">Cross-Border · Johor Bahru / Malaysia</option>
+                      <option value="hourly_disposal">Hourly · Private Chauffeur Disposal</option>
                     </select>
                   </div>
 
+                  <div id="flight-no-container">
+                    <label class="field-label">
+                      <span class="flex items-center justify-between">
+                        <span>Flight number <span class="text-stone-400 font-normal normal-case tracking-normal">(optional)</span></span>
+                        <span class="text-[0.6rem] text-stb-gold-dark normal-case tracking-normal">Real-time tracking</span>
+                      </span>
+                    </label>
+                    <div class="relative">
+                      <span class="field-icon material-symbols-outlined">flight</span>
+                      <input type="text" id="flight-input" placeholder="e.g. SQ 321" class="field-input" data-testid="flight-input" />
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <label class="field-label">Pickup</label>
+                    <div class="relative">
+                      <span class="field-icon material-symbols-outlined">trip_origin</span>
+                      <input type="text" id="pickup-input" value="Changi Airport Terminal 1" placeholder="Airport, hotel, or address" class="field-input" data-testid="pickup-input" />
+                    </div>
+                    <div id="pickup-presets" class="preset-dropdown hidden"></div>
+                  </div>
+
+                  <div id="dest-address-container" class="relative">
+                    <label class="field-label">Destination</label>
+                    <div class="relative">
+                      <span class="field-icon material-symbols-outlined" style="color: var(--stb-gold-dark)">place</span>
+                      <input type="text" id="dest-input" value="Marina Bay Sands Hotel Tower 1" placeholder="Hotel, attraction, or address" class="field-input" data-testid="dest-input" />
+                    </div>
+                    <div id="dest-presets" class="preset-dropdown hidden"></div>
+                  </div>
+
+                  <div id="route-map"></div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="field-label">Passengers</label>
+                      <select id="pax-select" class="field-select" data-testid="pax-select">
+                        <option value="1-3 Pax">1-3 Pax</option>
+                        <option value="4-7 Pax">4-7 Pax</option>
+                        <option value="8-13 Pax">8-13 Pax</option>
+                        <option value="Large Group">23-45 Pax</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-label">Pickup date</label>
+                      <input type="datetime-local" id="datetime-input" class="field-select" data-testid="datetime-input" />
+                    </div>
+                  </div>
+
+                  <div id="hourly-duration-container" class="hidden">
+                    <label class="field-label">Chauffeur hours</label>
+                    <div class="flex gap-2">
+                      <button type="button" class="hourly-btn" data-hours="3">3h</button>
+                      <button type="button" class="hourly-btn active" data-hours="4">4h</button>
+                      <button type="button" class="hourly-btn" data-hours="6">6h</button>
+                      <button type="button" class="hourly-btn" data-hours="8">8h</button>
+                      <button type="button" class="hourly-btn" data-hours="12">12h</button>
+                    </div>
+                  </div>
+
                   <div>
-                    <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">Pickup Date & Time</label>
-                    <input type="datetime-local" id="datetime-input" class="w-full h-13 px-4 bg-white border border-gray-300 rounded-xl focus:border-[#795900] outline-none text-sm text-gray-800 font-medium cursor-pointer shadow-xs" />
+                    <label class="field-label">Vehicle class</label>
+                    <div id="vehicle-grid" class="grid grid-cols-3 gap-2"></div>
                   </div>
-                </div>
 
-                <!-- Hourly Buttons -->
-                <div id="hourly-duration-container" class="hidden">
-                  <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">Chauffeur Duration (Hours)</label>
-                  <div class="flex items-center gap-2">
-                    <button type="button" class="hourly-btn flex-1 py-2 rounded-lg font-bold text-xs border border-gray-300 hover:bg-gray-50" data-hours="3">3 Hrs</button>
-                    <button type="button" class="hourly-btn flex-1 py-2 rounded-lg font-bold text-xs border bg-[#795900] text-white border-[#795900]" data-hours="4">4 Hrs</button>
-                    <button type="button" class="hourly-btn flex-1 py-2 rounded-lg font-bold text-xs border border-gray-300 hover:bg-gray-50" data-hours="6">6 Hrs</button>
-                    <button type="button" class="hourly-btn flex-1 py-2 rounded-lg font-bold text-xs border border-gray-300 hover:bg-gray-50" data-hours="8">8 Hrs</button>
-                    <button type="button" class="hourly-btn flex-1 py-2 rounded-lg font-bold text-xs border border-gray-300 hover:bg-gray-50" data-hours="12">12 Hrs</button>
-                  </div>
-                </div>
-
-                <!-- Vehicle Selection Grid -->
-                <div>
-                  <label class="block font-semibold text-xs text-gray-600 uppercase tracking-wider mb-1.5">Select Vehicle Class</label>
-                  <div id="vehicle-grid" class="grid grid-cols-3 gap-2"></div>
-                </div>
-
-                <!-- Single Action Button -->
-                <div class="pt-2">
-                  <button type="button" id="btn-calc-confirm" class="w-full bg-[#ae0011] text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#d71920] active:scale-[0.98] transition-all shadow-md cursor-pointer">
-                    <span>Confirm & Reserve Chauffeur</span>
-                    <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                  <button type="button" id="btn-calc-confirm" class="confirm-btn" data-testid="confirm-book-btn">
+                    <span>Confirm &amp; Reserve</span>
+                    <span class="material-symbols-outlined">arrow_forward</span>
                   </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Services Section -->
-      <section class="py-24 bg-white" id="services">
-        <div class="max-w-[1200px] mx-auto px-5 md:px-12">
-          <div class="text-center mb-16">
-            <h2 class="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-bold text-[#1b1c1c] mb-4">
-              Majestic Travel Services
-            </h2>
-            <p class="text-gray-600 max-w-2xl mx-auto text-base leading-relaxed">
-              Comprehensive private transportation and tour chauffeur solutions tailored to your unique itinerary in Singapore and Malaysia.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Service Card 1 -->
-            <article class="p-8 rounded-3xl bg-[#F8F9FB] hover:bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group border border-gray-100 flex flex-col justify-between text-left">
-              <div>
-                <div class="flex items-center justify-between mb-6">
-                  <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-[#ae0011] group-hover:bg-[#ae0011] group-hover:text-white transition-all shadow-xs">
-                    <span class="material-symbols-outlined text-[32px]">flight_land</span>
-                  </div>
-                  <span class="bg-amber-100 text-[#795900] text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase">Most Popular</span>
-                </div>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#1b1c1c] mb-3">Changi Airport Arrival</h3>
-                <p class="text-gray-600 text-sm mb-6 leading-relaxed">60-minute free waiting time, live flight landing tracking, and personalized name board greeting inside arrival hall.</p>
-              </div>
-              <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-xs text-gray-500 font-medium">From <strong class="text-base font-bold text-[#1b1c1c] service-price" data-sgd="65">S$65</strong></span>
-                <button class="srv-book-btn text-[#ae0011] font-bold text-sm flex items-center gap-1 hover:underline cursor-pointer" data-service="airport_arrival">Book Service →</button>
-              </div>
-            </article>
-
-            <!-- Service Card 2 -->
-            <article class="p-8 rounded-3xl bg-[#F8F9FB] hover:bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group border border-gray-100 flex flex-col justify-between text-left">
-              <div>
-                <div class="flex items-center justify-between mb-6">
-                  <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-[#ae0011] group-hover:bg-[#ae0011] group-hover:text-white transition-all shadow-xs">
-                    <span class="material-symbols-outlined text-[32px]">flight_takeoff</span>
-                  </div>
-                </div>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#1b1c1c] mb-3">Changi Departure</h3>
-                <p class="text-gray-600 text-sm mb-6 leading-relaxed">Punctual pick-up from any hotel or residence direct to Terminals 1, 2, 3, 4, or Jewel drop-off curb.</p>
-              </div>
-              <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-xs text-gray-500 font-medium">From <strong class="text-base font-bold text-[#1b1c1c] service-price" data-sgd="60">S$60</strong></span>
-                <button class="srv-book-btn text-[#ae0011] font-bold text-sm flex items-center gap-1 hover:underline cursor-pointer" data-service="airport_departure">Book Service →</button>
-              </div>
-            </article>
-
-            <!-- Service Card 3 -->
-            <article class="p-8 rounded-3xl bg-[#F8F9FB] hover:bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group border border-gray-100 flex flex-col justify-between text-left">
-              <div>
-                <div class="flex items-center justify-between mb-6">
-                  <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-[#ae0011] group-hover:bg-[#ae0011] group-hover:text-white transition-all shadow-xs">
-                    <span class="material-symbols-outlined text-[32px]">directions_car</span>
-                  </div>
-                  <span class="bg-amber-100 text-[#795900] text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase">Cross-Border</span>
-                </div>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#1b1c1c] mb-3">Malaysia Transfer</h3>
-                <p class="text-gray-600 text-sm mb-6 leading-relaxed">Seamless cross-border travel to Johor Bahru, Legoland Malaysia, Desaru Coast, Melaka, and Kuala Lumpur without alighting for customs.</p>
-              </div>
-              <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-xs text-gray-500 font-medium">From <strong class="text-base font-bold text-[#1b1c1c] service-price" data-sgd="180">S$180</strong></span>
-                <button class="srv-book-btn text-[#ae0011] font-bold text-sm flex items-center gap-1 hover:underline cursor-pointer" data-service="jb_malaysia">Book Service →</button>
-              </div>
-            </article>
-
-            <!-- Service Card 4 -->
-            <article class="p-8 rounded-3xl bg-[#F8F9FB] hover:bg-white hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group border border-gray-100 flex flex-col justify-between text-left">
-              <div>
-                <div class="flex items-center justify-between mb-6">
-                  <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-[#ae0011] group-hover:bg-[#ae0011] group-hover:text-white transition-all shadow-xs">
-                    <span class="material-symbols-outlined text-[32px]">schedule</span>
-                  </div>
-                </div>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#1b1c1c] mb-3">Hourly Chauffeur</h3>
-                <p class="text-gray-600 text-sm mb-6 leading-relaxed">Dedicated luxury vehicle and professional chauffeur at your full disposal for city sightseeing, corporate roadshows, and weddings.</p>
-              </div>
-              <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-xs text-gray-500 font-medium">From <strong class="text-base font-bold text-[#1b1c1c] service-price" data-sgd="65">S$65/hr</strong></span>
-                <button class="srv-book-btn text-[#ae0011] font-bold text-sm flex items-center gap-1 hover:underline cursor-pointer" data-service="hourly_disposal">Book Service →</button>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Fleet Section -->
-      <section class="py-24 bg-[#f6f3f2]" id="fleet">
-        <div class="max-w-[1200px] mx-auto px-5 md:px-12">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-            <div class="max-w-xl text-left">
-              <h2 class="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-bold text-[#1b1c1c] mb-4">Our Elite Vehicle Fleet</h2>
-              <p class="text-gray-600 text-base leading-relaxed">From luxurious Toyota Alphards for families to Mercedes S-Class limousines and spacious 45-seater coaches.</p>
-            </div>
-
-            <!-- Fleet Filter Tabs -->
-            <div class="flex flex-wrap gap-2 bg-white/80 p-1.5 rounded-2xl border border-gray-200/60 shadow-xs">
-              <button class="fleet-filter-btn active px-4 py-2 rounded-xl text-xs font-bold bg-[#ae0011] text-white cursor-pointer" data-category="all">All Fleet</button>
-              <button class="fleet-filter-btn px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer" data-category="mpv">Luxury MPV</button>
-              <button class="fleet-filter-btn px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer" data-category="sedan">Sedan</button>
-              <button class="fleet-filter-btn px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer" data-category="luxury">VIP / Limo</button>
-              <button class="fleet-filter-btn px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer" data-category="coach">Coach</button>
-            </div>
-          </div>
-
-          <!-- Vehicle Fleet Grid -->
-          <div id="fleet-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-        </div>
-      </section>
-
-      <!-- Destinations Section -->
-      <section class="py-24 bg-white" id="destinations">
-        <div class="max-w-[1200px] mx-auto px-5 md:px-12">
-          <div class="text-center mb-16">
-            <h2 class="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-bold text-[#1b1c1c] mb-4">Explore Singapore Landmarks</h2>
-            <p class="text-gray-600 max-w-xl mx-auto text-base leading-relaxed">Visit the Lion City's most iconic destinations with your private tour chauffeur.</p>
-          </div>
-
-          <!-- Bento Grid Layout -->
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[550px]">
-            <!-- Card 1 -->
-            <div class="md:col-span-8 relative rounded-3xl overflow-hidden group cursor-pointer shadow-md hover:shadow-2xl transition-all duration-500 min-h-[280px] flex flex-col justify-end p-8 dest-card" data-location="Marina Bay Sands Hotel Tower 1">
-              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url('https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1000&q=80')"></div>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-              <div class="relative z-10 text-left text-white space-y-2">
-                <span class="bg-[#795900] text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase">Iconic Landmark</span>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-2xl md:text-3xl">Marina Bay Sands & SkyPark</h3>
-                <p class="text-white/80 text-sm max-w-md">World-famous infinity pool resort, luxury shopping at Shoppes, and ArtScience Museum.</p>
-                <div class="pt-2 flex items-center gap-1.5 text-amber-300 font-bold text-xs"><span>Book Transfer →</span></div>
-              </div>
-            </div>
-
-            <!-- Card 2 -->
-            <div class="md:col-span-4 relative rounded-3xl overflow-hidden group cursor-pointer shadow-md hover:shadow-2xl transition-all duration-500 min-h-[280px] flex flex-col justify-end p-8 dest-card" data-location="Gardens by the Bay">
-              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url('https://images.unsplash.com/photo-1506351421178-63b52a2d2562?auto=format&fit=crop&w=800&q=80')"></div>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-              <div class="relative z-10 text-left text-white space-y-2">
-                <span class="bg-[#795900] text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase">Nature & Flora</span>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-2xl">Gardens by the Bay</h3>
-                <p class="text-white/80 text-sm">Futuristic Supertree Grove and Flower Dome glass conservatories.</p>
-                <div class="pt-2 flex items-center gap-1.5 text-amber-300 font-bold text-xs"><span>Book Transfer →</span></div>
-              </div>
-            </div>
-
-            <!-- Card 3 -->
-            <div class="md:col-span-4 relative rounded-3xl overflow-hidden group cursor-pointer shadow-md hover:shadow-2xl transition-all duration-500 min-h-[280px] flex flex-col justify-end p-8 dest-card" data-location="Resorts World Sentosa">
-              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url('https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=800&q=80')"></div>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-              <div class="relative z-10 text-left text-white space-y-2">
-                <span class="bg-[#795900] text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase">Island Resort</span>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-2xl">Resorts World Sentosa</h3>
-                <p class="text-white/80 text-sm">Universal Studios Singapore, S.E.A. Aquarium, and Siloso Beach.</p>
-                <div class="pt-2 flex items-center gap-1.5 text-amber-300 font-bold text-xs"><span>Book Transfer →</span></div>
-              </div>
-            </div>
-
-            <!-- Card 4 -->
-            <div class="md:col-span-8 relative rounded-3xl overflow-hidden group cursor-pointer shadow-md hover:shadow-2xl transition-all duration-500 min-h-[280px] flex flex-col justify-end p-8 dest-card" data-location="Jewel Changi Airport">
-              <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style="background-image: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=1000&q=80')"></div>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
-              <div class="relative z-10 text-left text-white space-y-2">
-                <span class="bg-[#795900] text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase">World's Best Airport</span>
-                <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-2xl md:text-3xl">Jewel Changi Rain Vortex</h3>
-                <p class="text-white/80 text-sm max-w-md">Marvel at the 40-meter indoor waterfall surrounded by 2,000 lush rainforest trees.</p>
-                <div class="pt-2 flex items-center gap-1.5 text-amber-300 font-bold text-xs"><span>Book Transfer →</span></div>
+                </form>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- How to Book Section -->
-      <section class="py-24 bg-[#e5e2e1]/60" id="how-to-book">
-        <div class="max-w-[1200px] mx-auto px-5 md:px-12">
-          <div class="text-center mb-20">
-            <h2 class="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-bold text-[#1b1c1c] mb-4">How to Book Your Chauffeur</h2>
-            <p class="text-gray-600 text-base max-w-lg mx-auto">Simple 4-step process to secure your VIP ride with zero hassle.</p>
+      <!-- ================= SERVICES ================= -->
+      <section id="services" class="section" style="background: white;">
+        <div class="container">
+          <div class="max-w-2xl mb-14 reveal">
+            <div class="section-eyebrow">Services</div>
+            <h2 class="section-title">Every ride, <em>meticulously</em> curated</h2>
+            <p class="section-sub">Four flagship services covering airport arrival to Malaysia cross-border, each with a guaranteed all-inclusive rate and dedicated chauffeur.</p>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 relative">
-            <div class="relative z-10 text-center flex flex-col items-center">
-              <div class="w-20 h-20 rounded-full bg-white flex items-center justify-center text-[#ae0011] font-extrabold text-2xl shadow-lg mb-6 outline-8 outline-[#f0eded]">01</div>
-              <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-gray-900 mb-2">Request Itinerary</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">Use our fare calculator or tap WhatsApp to share your pickup date and vehicle preference.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="service-grid"></div>
+        </div>
+      </section>
+
+      <!-- ================= FLEET ================= -->
+      <section id="fleet" class="section" style="background: var(--stb-cream);">
+        <div class="container">
+          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 reveal">
+            <div class="max-w-xl">
+              <div class="section-eyebrow">The Fleet</div>
+              <h2 class="section-title">An <em>elite</em> vehicle lineup</h2>
+              <p class="section-sub">From Toyota Alphards for families to Mercedes S-Class limousines and 45-seater coaches — all under 3 years old, professionally detailed, and dashcam equipped.</p>
             </div>
 
-            <div class="relative z-10 text-center flex flex-col items-center">
-              <div class="w-20 h-20 rounded-full bg-white flex items-center justify-center text-[#ae0011] font-extrabold text-2xl shadow-lg mb-6 outline-8 outline-[#f0eded]">02</div>
-              <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-gray-900 mb-2">Instant Fixed Quote</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">Receive a guaranteed all-inclusive fixed-price quotation with no peak-hour surcharges.</p>
+            <div class="fleet-filters" data-testid="fleet-filters">
+              <button class="fleet-filter-btn active" data-category="all">All</button>
+              <button class="fleet-filter-btn" data-category="mpv">MPV</button>
+              <button class="fleet-filter-btn" data-category="sedan">Sedan</button>
+              <button class="fleet-filter-btn" data-category="luxury">VIP · Limo</button>
+              <button class="fleet-filter-btn" data-category="coach">Coach</button>
+            </div>
+          </div>
+
+          <div id="fleet-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+      </section>
+
+      <!-- ================= DESTINATIONS ================= -->
+      <section id="destinations" class="section" style="background: white;">
+        <div class="container">
+          <div class="max-w-2xl mb-14 reveal">
+            <div class="section-eyebrow">Destinations</div>
+            <h2 class="section-title">Explore the <em>Lion City</em></h2>
+            <p class="section-sub">Click any landmark to auto-fill your booking widget with the destination.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+            <div class="dest-card md:col-span-8 reveal" data-location="Marina Bay Sands Hotel Tower 1" data-testid="dest-mbs">
+              <div class="dest-card-img" style="background-image: url('https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=1400&q=80');"></div>
+              <div class="dest-card-overlay"></div>
+              <span class="dest-card-tag">Iconic Landmark</span>
+              <h3>Marina Bay Sands &amp; SkyPark</h3>
+              <p>World-famous infinity pool, luxury shopping at The Shoppes, and ArtScience Museum.</p>
+              <div class="dest-cta">Book transfer <span class="material-symbols-outlined text-base">arrow_forward</span></div>
             </div>
 
-            <div class="relative z-10 text-center flex flex-col items-center">
-              <div class="w-20 h-20 rounded-full bg-white flex items-center justify-center text-[#ae0011] font-extrabold text-2xl shadow-lg mb-6 outline-8 outline-[#f0eded]">03</div>
-              <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-gray-900 mb-2">Driver Assignment</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">Get chauffeur name, contact, vehicle plate number, and meeting location 24h prior.</p>
+            <div class="dest-card md:col-span-4 reveal" data-delay="1" data-location="Gardens by the Bay" data-testid="dest-gbtb">
+              <div class="dest-card-img" style="background-image: url('https://images.unsplash.com/photo-1506351421178-63b52a2d2562?auto=format&fit=crop&w=900&q=80');"></div>
+              <div class="dest-card-overlay"></div>
+              <span class="dest-card-tag">Nature</span>
+              <h3>Gardens by the Bay</h3>
+              <p>Supertree Grove &amp; Flower Dome.</p>
+              <div class="dest-cta">Book transfer <span class="material-symbols-outlined text-base">arrow_forward</span></div>
             </div>
 
-            <div class="relative z-10 text-center flex flex-col items-center">
-              <div class="w-20 h-20 rounded-full bg-white flex items-center justify-center text-[#ae0011] font-extrabold text-2xl shadow-lg mb-6 outline-8 outline-[#f0eded]">04</div>
-              <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-lg text-gray-900 mb-2">Relax & Travel</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">Enjoy smooth air-conditioned comfort, onboard 5G WiFi, complimentary water, and VIP treatment.</p>
+            <div class="dest-card md:col-span-4 reveal" data-delay="2" data-location="Resorts World Sentosa" data-testid="dest-sentosa">
+              <div class="dest-card-img" style="background-image: url('https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=900&q=80');"></div>
+              <div class="dest-card-overlay"></div>
+              <span class="dest-card-tag">Island Resort</span>
+              <h3>Sentosa &amp; Universal Studios</h3>
+              <p>Theme parks, aquariums, and beaches.</p>
+              <div class="dest-cta">Book transfer <span class="material-symbols-outlined text-base">arrow_forward</span></div>
+            </div>
+
+            <div class="dest-card md:col-span-8 reveal" data-delay="3" data-location="Jewel Changi Airport" data-testid="dest-jewel">
+              <div class="dest-card-img" style="background-image: url('https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=1400&q=80'); background-size: cover; background-position: center 60%;"></div>
+              <div class="dest-card-overlay" style="background: linear-gradient(to top, rgba(20,20,20,0.9) 0%, rgba(20,20,20,0.5) 50%, rgba(20,20,20,0.3) 100%);"></div>
+              <span class="dest-card-tag">World's Best Airport</span>
+              <h3>Jewel Changi Rain Vortex</h3>
+              <p>Marvel at the 40-meter indoor waterfall surrounded by 2,000 rainforest trees.</p>
+              <div class="dest-cta">Book transfer <span class="material-symbols-outlined text-base">arrow_forward</span></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Testimonials Section -->
-      <section class="py-24 bg-white overflow-hidden" id="testimonials">
-        <div class="max-w-[1200px] mx-auto px-5 md:px-12">
+      <!-- ================= HOW TO BOOK ================= -->
+      <section id="how-to-book" class="section" style="background: var(--stb-cream);">
+        <div class="container">
+          <div class="text-center max-w-xl mx-auto mb-16 reveal">
+            <div class="section-eyebrow">Booking Process</div>
+            <h2 class="section-title">Four steps to <em>majestic</em> travel</h2>
+            <p class="section-sub mx-auto">From request to riding, secure your VIP ride with zero hassle.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+            <div class="text-center reveal">
+              <div class="step-num mx-auto mb-6">01</div>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">Request itinerary</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Use the fare calculator or tap WhatsApp to share date &amp; vehicle preference.</p>
+            </div>
+            <div class="text-center reveal" data-delay="1">
+              <div class="step-num mx-auto mb-6">02</div>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">Instant fixed quote</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Receive a guaranteed all-inclusive quotation with no peak surcharges.</p>
+            </div>
+            <div class="text-center reveal" data-delay="2">
+              <div class="step-num mx-auto mb-6">03</div>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">Chauffeur assigned</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Get driver name, plate number, and meeting point 24 hours prior.</p>
+            </div>
+            <div class="text-center reveal" data-delay="3">
+              <div class="step-num mx-auto mb-6">04</div>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">Relax &amp; ride</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Onboard 5G WiFi, chilled water, and pure VIP treatment.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TESTIMONIALS ================= -->
+      <section id="testimonials" class="section" style="background: white;">
+        <div class="container">
           <div class="grid lg:grid-cols-3 gap-12 lg:gap-16 items-center">
-            <!-- Summary Column -->
-            <div class="text-left">
-              <h2 class="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-bold text-[#1b1c1c] mb-6">What Our VIP Guests Say</h2>
-              <p class="text-gray-600 text-base mb-8 leading-relaxed">Trusted by international tourists, corporate executives, and local families across Singapore and Malaysia.</p>
-              <div class="flex items-center gap-4">
-                <div class="font-extrabold text-2xl text-gray-900">4.9 / 5.0</div>
-                <div class="text-amber-500 text-lg">★★★★★</div>
+            <div class="reveal">
+              <div class="section-eyebrow">Guest Stories</div>
+              <h2 class="section-title">What our <em>VIP</em> guests say</h2>
+              <p class="section-sub mb-8">Trusted by international tourists, corporate executives, and local families across Singapore &amp; Malaysia.</p>
+              <div class="flex items-center gap-3 mb-6">
+                <div class="font-display text-4xl text-stb-red font-medium">4.9</div>
+                <div>
+                  <div class="text-stb-gold-dark text-lg tracking-widest">★★★★★</div>
+                  <div class="text-xs text-stb-muted font-bold">Based on 2,140+ reviews</div>
+                </div>
               </div>
-              <div class="mt-8">
-                <button id="btn-open-review-modal" class="px-5 py-2.5 rounded-full border border-gray-300 hover:border-[#ae0011] text-[#ae0011] font-bold text-xs transition-all cursor-pointer flex items-center gap-2">
-                  <span class="material-symbols-outlined text-base">rate_review</span>
-                  <span>Share Your Experience</span>
-                </button>
-              </div>
+              <button id="btn-open-review-modal" class="btn-ghost" data-testid="open-review-modal-btn">
+                <span class="material-symbols-outlined text-base">rate_review</span>
+                Share your experience
+              </button>
             </div>
 
-            <!-- Reviews Scroll Container -->
             <div class="lg:col-span-2">
-              <div id="reviews-container" class="flex gap-6 overflow-x-auto no-scrollbar snap-x pb-4"></div>
+              <div id="reviews-container" class="flex gap-5 overflow-x-auto no-scrollbar snap-x pb-4"></div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- FAQ Section -->
-      <section class="py-24 bg-[#f6f3f2]" id="faq">
-        <div class="max-w-[840px] mx-auto px-5">
-          <div class="text-center mb-12">
-            <h2 class="font-['Plus_Jakarta_Sans'] text-3xl md:text-4xl font-bold text-[#1b1c1c] mb-4">Frequently Asked Questions</h2>
-            <p class="text-gray-600 text-base max-w-md mx-auto">Everything you need to know about our private chauffeur services, rates, and Changi pick-ups.</p>
+      <!-- ================= FAQ ================= -->
+      <section id="faq" class="section" style="background: var(--stb-cream);">
+        <div class="container" style="max-width: 860px;">
+          <div class="text-center max-w-xl mx-auto mb-12 reveal">
+            <div class="section-eyebrow">Support</div>
+            <h2 class="section-title">Frequently asked <em>questions</em></h2>
+            <p class="section-sub mx-auto">Everything about rates, Changi pickups, cross-border trips, and child seats.</p>
           </div>
 
-          <!-- Search & Filters -->
-          <div class="space-y-4 mb-8">
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">search</span>
-              <input type="text" id="faq-search-input" placeholder="Search questions (e.g. ERP tolls, flight delays, child seats)..." class="w-full h-13 pl-12 pr-4 bg-white border border-gray-300/80 rounded-2xl shadow-xs outline-none text-sm text-gray-800 focus:border-[#ae0011]" />
+          <div class="mb-6">
+            <div class="relative mb-4">
+              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-stb-muted">search</span>
+              <input type="text" id="faq-search-input" placeholder="Search: ERP tolls, flight delays, child seats..." class="field-input" style="padding-left: 3rem;" data-testid="faq-search" />
             </div>
-
             <div class="flex flex-wrap gap-2 justify-center">
-              <button class="faq-cat-btn active px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#ae0011] text-white cursor-pointer" data-cat="all">All FAQs</button>
-              <button class="faq-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 cursor-pointer" data-cat="pricing">Pricing & Tolls</button>
-              <button class="faq-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 cursor-pointer" data-cat="booking">Booking & Delays</button>
-              <button class="faq-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 cursor-pointer" data-cat="airport">Airport Meet & Greet</button>
-              <button class="faq-cat-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 border border-gray-200 cursor-pointer" data-cat="vehicles">Vehicles & Child Seats</button>
+              <button class="faq-cat-btn active" data-cat="all">All</button>
+              <button class="faq-cat-btn" data-cat="pricing">Pricing &amp; Tolls</button>
+              <button class="faq-cat-btn" data-cat="booking">Booking &amp; Delays</button>
+              <button class="faq-cat-btn" data-cat="airport">Airport Meet &amp; Greet</button>
+              <button class="faq-cat-btn" data-cat="vehicles">Vehicles &amp; Child Seats</button>
             </div>
           </div>
 
-          <!-- Accordions List -->
-          <div id="faq-accordion-list" class="space-y-4 text-left"></div>
+          <div id="faq-accordion-list" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- ================= FINAL CTA ================= -->
+      <section class="section" style="background: linear-gradient(135deg, #141414 0%, #2a1010 100%); color: white; padding: 5rem 0;">
+        <div class="container text-center max-w-3xl">
+          <div class="section-eyebrow" style="background: rgba(212, 162, 74, 0.15); color: var(--stb-gold);">Ready to Ride</div>
+          <h2 class="section-title" style="color: white;">Your <em style="color: var(--stb-gold);">majestic</em> journey<br />is one tap away</h2>
+          <p class="text-white/70 text-lg leading-relaxed mb-8 max-w-xl mx-auto">Fixed all-inclusive fare. Licensed chauffeur. Guaranteed pickup. No hidden surcharges.</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <button id="cta-book" class="btn-primary" style="padding: 1rem 2rem;" data-testid="cta-book">
+              <span class="material-symbols-outlined">directions_car</span>
+              Book instant quote
+            </button>
+            <button id="cta-whatsapp" class="btn-gold" style="padding: 1rem 2rem; background: var(--stb-gold);" data-testid="cta-whatsapp">
+              <span class="material-symbols-outlined">chat</span>
+              Chat via WhatsApp
+            </button>
+          </div>
         </div>
       </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-[#e5e2e1] pt-16 pb-8 border-t border-gray-300/50 text-left text-gray-800">
-      <div class="max-w-[1200px] mx-auto px-5 md:px-12">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16">
-          <!-- Brand Column -->
-          <div class="col-span-1 md:col-span-1">
-            <div class="flex items-center gap-3 mb-6">
-              <img src="https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=120&q=80" alt="STB Logo" class="h-12 w-auto object-cover rounded-xl shadow-xs" />
-              <span class="font-['Plus_Jakarta_Sans'] font-extrabold text-xl text-[#ae0011]">STB Singapore</span>
+    <!-- ================= FOOTER ================= -->
+    <footer class="stb-footer">
+      <div class="container">
+        <div class="grid md:grid-cols-4 gap-10 mb-12">
+          <div class="md:col-span-2">
+            <div class="flex items-center gap-3 mb-5">
+              <img src="/stb-logo.png" alt="STB Singapore" class="h-14 w-auto object-contain" style="filter: brightness(1.1);" />
+              <div>
+                <div class="font-display text-xl font-medium text-white">STB Singapore</div>
+                <div class="text-[0.65rem] font-bold tracking-[0.2em] uppercase" style="color: var(--stb-gold);">Majestic Hospitality</div>
+              </div>
             </div>
-            <p class="text-gray-600 text-xs md:text-sm mb-6 leading-relaxed">
-              Premium private transport and tour booking service in Singapore & Malaysia. Committed to majestic hospitality, fixed pricing, and professional excellence.
-            </p>
+            <p class="text-sm leading-relaxed mb-6 max-w-md">Premium private transport and tour booking service across Singapore &amp; Malaysia. Committed to majestic hospitality, fixed pricing, and professional excellence since 2014.</p>
+            <div class="flex gap-3">
+              <a href="#" aria-label="WhatsApp" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">chat</span></a>
+              <a href="#" aria-label="Instagram" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">photo_camera</span></a>
+              <a href="#" aria-label="Email" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">mail</span></a>
+            </div>
           </div>
 
-          <!-- Quick Links -->
           <div>
-            <h4 class="font-['Plus_Jakarta_Sans'] font-bold text-gray-900 mb-6 text-base">Quick Links</h4>
-            <ul class="space-y-3 text-sm text-gray-600 font-medium">
-              <li><a href="#services" class="hover:text-[#ae0011]">Services</a></li>
-              <li><a href="#fleet" class="hover:text-[#ae0011]">Fleet Showcase</a></li>
-              <li><a href="#destinations" class="hover:text-[#ae0011]">Singapore Destinations</a></li>
-              <li><a href="#booking-widget-container" class="hover:text-[#ae0011]">Fare Calculator</a></li>
+            <h4>Explore</h4>
+            <ul class="space-y-2.5 text-sm">
+              <li><a href="#services">Services</a></li>
+              <li><a href="#fleet">Fleet Showcase</a></li>
+              <li><a href="#destinations">Destinations</a></li>
+              <li><a href="#booking-widget-container">Fare Calculator</a></li>
+              <li><a href="#faq">FAQ</a></li>
             </ul>
           </div>
 
-          <!-- Support -->
           <div>
-            <h4 class="font-['Plus_Jakarta_Sans'] font-bold text-gray-900 mb-6 text-base">Support & Info</h4>
-            <ul class="space-y-3 text-sm text-gray-600 font-medium">
-              <li><a href="#faq" class="hover:text-[#ae0011]">Contact Us</a></li>
-              <li><a href="#faq" class="hover:text-[#ae0011]">Privacy Policy</a></li>
-              <li><a href="#faq" class="hover:text-[#ae0011]">Terms of Service</a></li>
-              <li><a href="#faq" class="hover:text-[#ae0011]">FAQ</a></li>
+            <h4>Contact</h4>
+            <ul class="space-y-2.5 text-sm">
+              <li class="flex items-start gap-2"><span class="material-symbols-outlined text-base mt-0.5" style="color: var(--stb-gold);">location_on</span> 78 Airport Blvd,<br />Changi Airport, SG 819666</li>
+              <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">call</span> +65 9123 4567</li>
+              <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">schedule</span> 24/7 Dispatch</li>
             </ul>
           </div>
         </div>
 
-        <div class="pt-8 border-t border-gray-300/60 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-600 font-medium">
-          <p>© 2026 Singapore Tour Booking (STB). All rights reserved. Majestic Hospitality Group.</p>
-          <div class="flex gap-6">
-            <a href="#faq" class="hover:underline">Privacy Policy</a>
-            <a href="#faq" class="hover:underline">Terms of Service</a>
-            <a href="#faq" class="hover:underline">Travel Insurance</a>
-          </div>
+        <div class="pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+          <p>© 2026 Singapore Tour Booking (STB). Majestic Hospitality Group.</p>
+          <p style="color: var(--stb-gold);">Licensed by LTA · TA-2140-SG</p>
         </div>
       </div>
     </footer>
 
-    <!-- MODALS -->
+    <!-- ================= MOBILE BOTTOM BAR ================= -->
+    <nav class="mobile-bottom-bar" data-testid="mobile-bottom-bar">
+      <a href="#top" class="mbb-item" data-testid="mbb-home">
+        <span class="material-symbols-outlined">home</span>
+        <span>Home</span>
+      </a>
+      <a href="#fleet" class="mbb-item" data-testid="mbb-fleet">
+        <span class="material-symbols-outlined">directions_car</span>
+        <span>Fleet</span>
+      </a>
+      <button id="mbb-book-btn" class="mbb-item primary" data-testid="mbb-book">
+        <span class="material-symbols-outlined">confirmation_number</span>
+        <span>Book</span>
+      </button>
+      <button id="mbb-whatsapp-btn" class="mbb-item" data-testid="mbb-whatsapp">
+        <span class="material-symbols-outlined">chat</span>
+        <span>WhatsApp</span>
+      </button>
+    </nav>
 
-    <!-- Vehicle Details Modal -->
-    <div id="modal-vehicle" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 text-left relative">
-        <button id="close-modal-vehicle" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-700 hover:text-red-600 cursor-pointer">
-          <span class="material-symbols-outlined text-2xl">close</span>
-        </button>
-        <div id="modal-vehicle-content"></div>
+    <!-- ================= MODALS ================= -->
+
+    <!-- Vehicle Detail Modal -->
+    <div id="modal-vehicle" class="modal-backdrop" data-testid="modal-vehicle">
+      <div class="modal-card">
+        <div class="relative">
+          <button class="modal-close absolute top-4 right-4 z-10" onclick="closeModal('modal-vehicle')" data-testid="close-vehicle-modal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <div id="modal-vehicle-content"></div>
+        </div>
       </div>
     </div>
 
     <!-- Booking Confirmation Modal -->
-    <div id="modal-booking" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-      <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-gray-100 text-left relative p-6 md:p-8">
-        <button id="close-modal-booking" class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:text-black cursor-pointer">
-          <span class="material-symbols-outlined text-xl">close</span>
-        </button>
-        <div id="modal-booking-content"></div>
+    <div id="modal-booking" class="modal-backdrop" data-testid="modal-booking">
+      <div class="modal-card">
+        <div class="relative">
+          <button class="modal-close absolute top-4 right-4 z-10" onclick="closeModal('modal-booking')" data-testid="close-booking-modal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+          <div id="modal-booking-content" class="p-8"></div>
+        </div>
       </div>
     </div>
 
     <!-- WhatsApp Modal -->
-    <div id="modal-whatsapp" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm text-left">
-      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 relative">
-        <button id="close-modal-whatsapp" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:text-black cursor-pointer">
-          <span class="material-symbols-outlined text-xl">close</span>
-        </button>
+    <div id="modal-whatsapp" class="modal-backdrop" data-testid="modal-whatsapp">
+      <div class="modal-card" style="max-width: 440px;">
+        <div class="p-7 relative">
+          <button class="modal-close absolute top-4 right-4" onclick="closeModal('modal-whatsapp')" data-testid="close-whatsapp-modal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
 
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-12 h-12 rounded-2xl bg-[#25D366] text-white flex items-center justify-center shadow-md">
-            <span class="material-symbols-outlined text-2xl">chat</span>
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl">chat</span>
+            </div>
+            <div>
+              <h3 class="font-display font-medium text-xl text-stb-charcoal">WhatsApp Dispatch</h3>
+              <p class="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                24/7 concierge live
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 class="font-['Plus_Jakarta_Sans'] font-extrabold text-xl text-gray-900">STB VIP WhatsApp Dispatch</h3>
-            <p class="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>24/7 Concierge Active</span>
-            </p>
+
+          <p class="text-xs text-stb-muted mb-4">Send your itinerary directly to our dispatch team for instant confirmation.</p>
+
+          <div id="wa-preview-box" class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-xs text-emerald-900 mb-4 whitespace-pre-line max-h-48 overflow-y-auto font-mono"></div>
+
+          <div class="mb-5">
+            <label class="field-label">Additional notes</label>
+            <input type="text" id="wa-custom-notes" placeholder="e.g. Need child seat, extra luggage..." class="field-input" style="padding-left: 1rem;" />
           </div>
+
+          <a id="wa-final-link" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2" style="background: #25D366; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);" data-testid="wa-final-link">
+            <span class="material-symbols-outlined">chat</span>
+            Open WhatsApp chat now
+          </a>
         </div>
-
-        <p class="text-xs text-gray-600 mb-4 leading-relaxed">Send your travel itinerary directly to our WhatsApp dispatch team for instant confirmation.</p>
-
-        <div id="wa-preview-box" class="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 text-xs font-mono text-emerald-950 mb-4 whitespace-pre-line max-h-48 overflow-y-auto"></div>
-
-        <div class="mb-6">
-          <label class="block text-[11px] font-bold text-gray-600 uppercase mb-1">Additional Notes (Optional)</label>
-          <input type="text" id="wa-custom-notes" placeholder="e.g. Need child seats, extra luggage space..." class="w-full h-11 px-3 bg-gray-50 border border-gray-300 rounded-xl text-xs outline-none focus:border-[#25D366]" />
-        </div>
-
-        <a id="wa-final-link" href="#" target="_blank" rel="noopener noreferrer" class="w-full bg-[#25D366] hover:bg-[#20ba59] text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer">
-          <span class="material-symbols-outlined text-xl">chat</span>
-          <span>Open WhatsApp Chat Now</span>
-        </a>
       </div>
     </div>
 
     <!-- Share Review Modal -->
-    <div id="modal-review" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 text-left relative">
-        <button id="close-modal-review" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:text-black cursor-pointer">
-          <span class="material-symbols-outlined text-xl">close</span>
-        </button>
+    <div id="modal-review" class="modal-backdrop" data-testid="modal-review">
+      <div class="modal-card" style="max-width: 440px;">
+        <div class="p-7 relative">
+          <button class="modal-close absolute top-4 right-4" onclick="closeModal('modal-review')" data-testid="close-review-modal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
 
-        <h3 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-gray-900 mb-2">Share Your Experience</h3>
-        <p class="text-xs text-gray-500 mb-6">How was your private transfer or tour with STB Singapore?</p>
+          <h3 class="font-display font-medium text-2xl text-stb-charcoal mb-1">Share your experience</h3>
+          <p class="text-xs text-stb-muted mb-5">How was your ride with STB?</p>
 
-        <form id="add-review-form" class="space-y-4" onsubmit="return false;">
-          <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Your Name *</label>
-            <input type="text" id="rev-name" required placeholder="e.g. Eleanor Vance" class="w-full h-11 px-3 bg-gray-50 border border-gray-300 rounded-xl text-sm outline-none focus:border-[#ae0011]" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
+          <form id="add-review-form" onsubmit="return false;" class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Traveler Type</label>
-              <input type="text" id="rev-role" placeholder="e.g. Family Trip" class="w-full h-11 px-3 bg-gray-50 border border-gray-300 rounded-xl text-sm outline-none focus:border-[#ae0011]" />
+              <label class="field-label">Your name</label>
+              <input type="text" id="rev-name" required placeholder="Eleanor Vance" class="field-input" style="padding-left: 1rem;" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label">Traveler type</label>
+                <input type="text" id="rev-role" placeholder="Family trip" class="field-input" style="padding-left: 1rem;" />
+              </div>
+              <div>
+                <label class="field-label">Country</label>
+                <input type="text" id="rev-country" placeholder="USA" class="field-input" style="padding-left: 1rem;" />
+              </div>
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Country</label>
-              <input type="text" id="rev-country" placeholder="e.g. USA / Japan" class="w-full h-11 px-3 bg-gray-50 border border-gray-300 rounded-xl text-sm outline-none focus:border-[#ae0011]" />
+              <label class="field-label">Rating</label>
+              <div id="star-rating-selector" class="flex gap-1 text-3xl">
+                <span class="star-btn cursor-pointer" data-star="1" style="color: var(--stb-gold-dark);">★</span>
+                <span class="star-btn cursor-pointer" data-star="2" style="color: var(--stb-gold-dark);">★</span>
+                <span class="star-btn cursor-pointer" data-star="3" style="color: var(--stb-gold-dark);">★</span>
+                <span class="star-btn cursor-pointer" data-star="4" style="color: var(--stb-gold-dark);">★</span>
+                <span class="star-btn cursor-pointer" data-star="5" style="color: var(--stb-gold-dark);">★</span>
+              </div>
             </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Rating</label>
-            <div id="star-rating-selector" class="flex gap-2 text-2xl text-amber-500 cursor-pointer">
-              <span class="star-btn text-amber-500 cursor-pointer" data-star="1">★</span>
-              <span class="star-btn text-amber-500 cursor-pointer" data-star="2">★</span>
-              <span class="star-btn text-amber-500 cursor-pointer" data-star="3">★</span>
-              <span class="star-btn text-amber-500 cursor-pointer" data-star="4">★</span>
-              <span class="star-btn text-amber-500 cursor-pointer" data-star="5">★</span>
+            <div>
+              <label class="field-label">Review</label>
+              <textarea id="rev-comment" rows="3" required placeholder="Cleanliness, punctuality, hospitality..." class="field-input" style="padding: 0.75rem 1rem; height: auto;"></textarea>
             </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Review Comments *</label>
-            <textarea id="rev-comment" rows="3" required placeholder="Describe vehicle cleanliness, driver punctuality, hospitality..." class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm outline-none focus:border-[#ae0011]"></textarea>
-          </div>
-
-          <button type="submit" class="w-full bg-[#ae0011] text-white py-3.5 rounded-xl font-bold text-sm hover:bg-[#d71920] shadow-md cursor-pointer">Submit Review</button>
-        </form>
+            <button type="submit" class="confirm-btn" data-testid="submit-review-btn">Publish review</button>
+          </form>
+        </div>
       </div>
     </div>
 
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    
-    <!-- Pure Vanilla Application JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
