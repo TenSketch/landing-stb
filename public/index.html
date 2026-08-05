@@ -131,7 +131,7 @@
       </div>
 
       <!-- Mobile Drawer -->
-      <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-stone-200 shadow-xl px-6 py-6" data-testid="mobile-menu">
+      <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-stone-200 shadow-xl px-4 py-6" data-testid="mobile-menu">
         <div class="flex flex-col gap-1">
           <a href="#services" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal">
             <span>Services</span>
@@ -274,7 +274,7 @@
                   <div id="route-summary" style="display:none;align-items:center;gap:.5rem;padding:.75rem 1rem;background:var(--stb-cream);border-radius:12px;font-size:.8rem;font-weight:600;color:var(--stb-charcoal);" data-testid="route-summary"></div>
 
                   <div class="grid grid-cols-2 gap-3">
-                    <div>
+                    <div class="min-w-0">
                       <label class="field-label">Passengers</label>
                       <select id="pax-select" class="field-select" data-testid="pax-select">
                         <option value="1-3 Pax">1-3 Pax</option>
@@ -283,7 +283,7 @@
                         <option value="Large Group">23-45 Pax</option>
                       </select>
                     </div>
-                    <div>
+                    <div class="min-w-0">
                       <label class="field-label">Pickup date</label>
                       <input type="datetime-local" id="datetime-input" class="field-select" data-testid="datetime-input" />
                     </div>
@@ -456,7 +456,7 @@
               </button>
             </div>
 
-            <div class="lg:col-span-2">
+            <div class="lg:col-span-2 min-w-0">
               <div id="reviews-container" class="flex gap-5 overflow-x-auto no-scrollbar snap-x pb-4"></div>
             </div>
           </div>

@@ -21,15 +21,26 @@
   --shadow-xl: 0 32px 64px -20px rgba(227, 30, 36, 0.15);
 }
 
-* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-html { scroll-behavior: smooth; }
+*, *::before, *::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+html { scroll-behavior: smooth; overflow-x: hidden; }
+
+img, video, canvas, svg, iframe {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
 
 body {
   font-family: 'Manrope', -apple-system, sans-serif;
   background: var(--stb-cream);
   color: var(--stb-charcoal);
   overflow-x: hidden;
-  padding-bottom: 0;
+  padding: 0;
+  margin: 0;
 }
 @media (max-width: 767px) {
   body { padding-bottom: 76px; } /* space for mobile bottom bar */
@@ -139,7 +150,7 @@ body {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 1px 20px rgba(20, 20, 20, 0.04);
 }
-.stb-nav-inner { height: 76px; max-width: 1240px; margin: 0 auto; padding: 0 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+.stb-nav-inner { height: 76px; max-width: 1240px; margin: 0 auto; padding: 0 1rem; display: flex; align-items: center; justify-content: space-between; }
 @media (min-width: 768px) { .stb-nav-inner { padding: 0 2.5rem; } }
 
 .stb-nav-link {
@@ -232,11 +243,12 @@ body {
 .hero-h1 {
   font-family: 'Fraunces', serif;
   font-weight: 500;
-  font-size: clamp(2.5rem, 5.5vw, 4.75rem);
-  line-height: 1.02;
+  font-size: clamp(2rem, 5.5vw, 4.75rem);
+  line-height: 1.05;
   letter-spacing: -0.03em;
   color: var(--stb-charcoal);
   margin-bottom: 1.5rem;
+  overflow-wrap: break-word;
 }
 .hero-h1 em { font-style: italic; color: var(--stb-red); font-variation-settings: "SOFT" 80, "WONK" 1; }
 .hero-h1 .underline-swash {
@@ -259,6 +271,7 @@ body {
 .trust-badge {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.55rem;
   padding: 0.7rem 1rem;
   background: white;
@@ -268,6 +281,9 @@ body {
   font-weight: 700;
   font-size: 0.775rem;
   color: var(--stb-charcoal);
+}
+@media (max-width: 480px) {
+  .trust-badge { font-size: 0.7rem; padding: 0.55rem 0.85rem; }
 }
 .trust-badge .material-symbols-outlined { color: var(--stb-red); font-size: 1.1rem; }
 
@@ -324,6 +340,8 @@ body {
 
 .field-input, .field-select {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 3rem;
   padding: 0 1rem 0 2.75rem;
   background: white;
@@ -358,6 +376,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 .vehicle-chip:hover { border-color: var(--stb-gold); transform: translateY(-1px); }
 .vehicle-chip.active {
@@ -438,7 +458,10 @@ body {
   overflow: hidden;
   border: 1px solid var(--stb-line);
   z-index: 5;
+  max-width: 100%;
+  min-width: 0;
 }
+#route-map .leaflet-container { max-width: 100%; }
 
 /* ============================================
    Section Framework
@@ -471,8 +494,26 @@ body {
 .section-title em { font-style: italic; color: var(--stb-red); }
 .section-sub { color: var(--stb-muted); font-size: 1rem; line-height: 1.6; max-width: 560px; }
 
-.container { max-width: 1240px; margin: 0 auto; padding: 0 1.25rem; }
+.container { max-width: 1240px; margin: 0 auto; padding: 0 1rem; width: 100%; box-sizing: border-box; }
 @media (min-width: 768px) { .container { padding: 0 2.5rem; } }
+
+/* Prevent flex/grid items from expanding past parent on narrow screens */
+.min-w-0 { min-width: 0; }
+
+/* Ensure all Tailwind-style grid columns shrink properly */
+[class*="grid-cols-"] > * { min-width: 0; }
+
+/* Hero-specific mobile adjustments */
+@media (max-width: 480px) {
+  .hero-h1 { font-size: clamp(1.75rem, 8vw, 2.5rem); }
+  .hero-wrap { padding-top: 88px; padding-bottom: 2rem; }
+  .booking-card { padding: 1.25rem; }
+  .fleet-filters { gap: 0.25rem; padding: 0.25rem; }
+  .fleet-filter-btn { padding: 0.45rem 0.75rem; font-size: 0.7rem; }
+  .section { padding: 3rem 0; }
+  .container { padding: 0 0.875rem; }
+  .stb-nav-inner { padding: 0 0.875rem; }
+}
 
 /* ============================================
    Service Cards
@@ -545,14 +586,14 @@ body {
    Fleet Cards
    ============================================ */
 .fleet-filters {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
   padding: 0.35rem;
   background: white;
   border: 1px solid var(--stb-line);
   border-radius: 14px;
   box-shadow: var(--shadow-sm);
-  flex-wrap: wrap;
 }
 .fleet-filter-btn {
   padding: 0.55rem 1.1rem;
@@ -701,7 +742,7 @@ body {
    ============================================ */
 .review-card {
   flex-shrink: 0;
-  width: 340px;
+  width: min(300px, 82vw);
   background: white;
   border: 1px solid var(--stb-line);
   border-radius: 22px;
