@@ -21,8 +21,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static assets — mirror how Vercel serves them (everything at root, /src, /public)
-app.use(express.static(__dirname, { index: false, extensions: ["html"] }));
+// Static assets — mirror how Vercel serves them (from /public folder at root URL)
+app.use(express.static(path.join(__dirname, "public"), { index: false, extensions: ["html"] }));
 
 // ---------- Warm SMTP + log ----------
 const transporter = getTransporter();
@@ -76,7 +76,7 @@ app.post("/assign/:voucherCode", async (req, res) => {
 
 // ---------- SPA-ish fallback ----------
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.listen(PORT, "0.0.0.0", () => {
