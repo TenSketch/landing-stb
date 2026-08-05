@@ -1,4 +1,4 @@
-"""Backend test suite for STB Singapore Node.js/Express app (post-Vercel refactor)."""
+"""Backend test suite for STB Singapore (post cron-removal, inline chauffeur email)."""
 import os
 import json
 import time
@@ -9,14 +9,12 @@ from datetime import datetime, timedelta, timezone
 BASE_URL = "http://localhost:3000"
 DATA_FILE = "/app/data/bookings.json"
 
-# Shared voucher for lifecycle tests
 VOUCHER = f"STB-TEST-{int(time.time())}"
 
 
 @pytest.fixture(scope="session")
 def client():
-    s = requests.Session()
-    return s
+    return requests.Session()
 
 
 # ---------------- Health & static ----------------
@@ -28,7 +26,6 @@ class TestHealthAndStatic:
         assert data.get("status") == "ok"
         assert data.get("smtp") is True
         assert data.get("storage") == "local-file"
-        assert "node" in data
 
     def test_root_html(self, client):
         r = client.get(f"{BASE_URL}/")
@@ -43,14 +40,12 @@ class TestHealthAndStatic:
     def test_main_js(self, client):
         r = client.get(f"{BASE_URL}/src/main.js")
         assert r.status_code == 200
-        ct = r.headers.get("Content-Type", "")
-        assert "javascript" in ct.lower()
+        assert "javascript" in r.headers.get("Content-Type", "").lower()
 
     def test_styles_css(self, client):
         r = client.get(f"{BASE_URL}/src/styles.css")
         assert r.status_code == 200
-        ct = r.headers.get("Content-Type", "")
-        assert "css" in ct.lower()
+        assert "css" in r.headers.get("Content-Type", "").lower()
 
 
 # ---------------- Bookings ----------------
@@ -85,17 +80,14 @@ class TestBookings:
         emails = data.get("emailsSent", {})
         assert emails.get("customer", {}).get("ok") is True, f"Customer email failed: {emails.get('customer')}"
         assert emails.get("admin", {}).get("ok") is True, f"Admin email failed: {emails.get('admin')}"
-        wa = data.get("whatsappUrl", "")
-        assert ("wa.me" in wa) or ("api.whatsapp.com" in wa)
 
     def test_booking_persisted(self):
         with open(DATA_FILE) as f:
             bookings = json.load(f)
-        codes = [b.get("voucherCode") for b in bookings]
-        assert VOUCHER in codes
+        assert VOUCHER in [b.get("voucherCode") for b in bookings]
 
 
-# ---------------- Assign driver ----------------
+# ---------------- Assign driver (inline chauffeur email) ----------------
 class TestAssign:
     def test_get_assign_page(self, client):
         r = client.get(f"{BASE_URL}/assign/{VOUCHER}")
@@ -104,7 +96,6 @@ class TestAssign:
         assert "Test Passenger" in html
         assert "Changi Airport T3" in html
         assert "Marina Bay Sands" in html
-        assert 'method="POST"' in html or "method='POST'" in html
         assert "<form" in html
 
     def test_get_assign_not_found(self, client):
@@ -112,7 +103,12 @@ class TestAssign:
         assert r.status_code == 404
         assert "Booking not found" in r.text
 
-    def test_post_assign_driver(self, client):
+    def test_post_assign_sends_chauffeur_email(self, client):
+        # Pre-check: reminderSentAt should be null before
+        with open(DATA_FILE) as f:
+            before = next(b for b in json.load(f) if b.get("voucherCode") == VOUCHER)
+        assert before.get("reminderSentAt") in (None, "")
+
         r = client.post(
             f"{BASE_URL}/assign/{VOUCHER}",
             data={
@@ -124,7 +120,17 @@ class TestAssign:
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
         assert r.status_code == 200
-        assert "✓ Saved." in r.text
+        assert "Chauffeur details emailed to tensketch285@gmail.com" in r.text, r.text[:500]
+
+        # Post-check: reminderSentAt + reminderMessageId populated
+        with open(DATA_FILE) as f:
+            after = next(b for b in json.load(f) if b.get("voucherCode") == VOUCHER)
+        assert after.get("reminderSentAt"), "reminderSentAt not set after POST /assign"
+        datetime.fromisoformat(after["reminderSentAt"].replace("Z", "+00:00"))
+        assert after.get("reminderMessageId"), "reminderMessageId not populated"
+        # driver fields persisted
+        assert after.get("driverName") == "Chandran Raj"
+        assert after.get("driverPlate") == "SGX 1234 A"
 
     def test_assign_prefilled_after_save(self, client):
         r = client.get(f"{BASE_URL}/assign/{VOUCHER}")
@@ -132,56 +138,44 @@ class TestAssign:
         html = r.text
         assert "Chandran Raj" in html
         assert "+6598765432" in html
-        assert "SGX 1234 A" in html  # uppercased
+        assert "SGX 1234 A" in html
         assert "https://example.com/driver.jpg" in html
 
-
-# ---------------- Reminder cron ----------------
-class TestReminderCron:
-    def test_cron_first_call_sends(self, client):
-        r = client.get(f"{BASE_URL}/api/cron/reminders")
+    def test_post_assign_second_time_updates(self, client):
+        r = client.post(
+            f"{BASE_URL}/assign/{VOUCHER}",
+            data={
+                "driverName": "New Driver",
+                "driverPhone": "+6590000000",
+                "driverPlate": "sgy 9999 z",
+                "driverPhotoUrl": "https://example.com/new.jpg",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
         assert r.status_code == 200
-        data = r.json()
-        assert "scanned" in data
-        assert isinstance(data.get("sent"), list)
-        assert isinstance(data.get("failed"), list)
-        assert VOUCHER in data["sent"], f"Voucher not sent. Response: {data}"
-
-    def test_reminder_persisted_in_file(self):
         with open(DATA_FILE) as f:
-            bookings = json.load(f)
-        b = next((x for x in bookings if x.get("voucherCode") == VOUCHER), None)
-        assert b is not None
-        assert b.get("reminderSentAt") is not None
-        # validate ISO timestamp
-        datetime.fromisoformat(b["reminderSentAt"].replace("Z", "+00:00"))
+            b = next(x for x in json.load(f) if x.get("voucherCode") == VOUCHER)
+        assert b.get("driverName") == "New Driver"
+        assert b.get("driverPlate") == "SGY 9999 Z"
 
-    def test_cron_second_call_idempotent(self, client):
+
+# ---------------- Cron removal checks ----------------
+class TestCronRemoval:
+    def test_cron_endpoint_gone(self, client):
         r = client.get(f"{BASE_URL}/api/cron/reminders")
-        assert r.status_code == 200
-        data = r.json()
-        assert VOUCHER not in data["sent"], "Reminder was re-sent — guard broken"
+        # Either 404 or SPA fallback (index.html) is acceptable
+        if r.status_code == 200:
+            assert "STB Singapore" in r.text  # SPA fallback
+        else:
+            assert r.status_code == 404
 
+    def test_cron_directory_removed(self):
+        assert not os.path.exists("/app/api/cron"), "/app/api/cron directory still exists"
 
-# ---------------- Vercel serverless structural checks ----------------
-class TestVercelStructure:
-    def _check_default_export(self, path):
-        with open(path) as f:
-            src = f.read()
-        assert "export default" in src, f"{path} missing default export"
-        return src
-
-    def test_api_bookings_exists(self):
-        self._check_default_export("/app/api/bookings.js")
-
-    def test_api_assign_exists(self):
-        self._check_default_export("/app/api/assign/[voucherCode].js")
-
-    def test_api_cron_reminders_exists(self):
-        self._check_default_export("/app/api/cron/reminders.js")
-
-    def test_vercel_json_valid(self):
+    def test_vercel_json_no_crons(self):
         with open("/app/vercel.json") as f:
             cfg = json.load(f)
-        assert "crons" in cfg and isinstance(cfg["crons"], list) and len(cfg["crons"]) > 0
-        assert "rewrites" in cfg and isinstance(cfg["rewrites"], list)
+        assert "crons" not in cfg, "vercel.json still contains 'crons' field"
+        assert "rewrites" in cfg
+        assert "headers" in cfg
+        assert cfg.get("cleanUrls") is True

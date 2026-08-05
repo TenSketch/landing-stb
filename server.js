@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import {
-  handleCreateBooking, handleGetAssign, handlePostAssign, handleRemindersCron,
+  handleCreateBooking, handleGetAssign, handlePostAssign,
   getTransporter,
 } from "./lib/handlers.js";
 import { storageMode } from "./lib/store.js";
@@ -68,20 +68,11 @@ app.get("/assign/:voucherCode", async (req, res) => {
 });
 
 app.post("/assign/:voucherCode", async (req, res) => {
-  const r = await handlePostAssign(req.params.voucherCode, req.body || {});
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const r = await handlePostAssign(req.params.voucherCode, req.body || {}, baseUrl);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(r.status).send(r.html);
 });
-
-// ---------- Manual cron trigger (dev only) ----------
-app.get("/api/cron/reminders", async (_req, res) => {
-  const r = await handleRemindersCron();
-  res.status(r.status).json(r.body);
-});
-
-// ---------- Local-dev cron loop (Vercel Cron replaces this in prod) ----------
-setInterval(() => { handleRemindersCron().catch(() => {}); }, 60 * 1000);
-setTimeout(() => { handleRemindersCron().catch(() => {}); }, 8 * 1000);
 
 // ---------- SPA-ish fallback ----------
 app.get("*", (_req, res) => {

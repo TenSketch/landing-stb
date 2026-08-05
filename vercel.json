@@ -2,12 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "crons": [
-    {
-      "path": "/api/cron/reminders",
-      "schedule": "0 * * * *"
-    }
-  ],
   "rewrites": [
     { "source": "/assign/:voucherCode", "destination": "/api/assign/:voucherCode" }
   ],

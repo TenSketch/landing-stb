@@ -556,7 +556,7 @@ function adminText(booking) {
 }
 
 // ============================================
-// GUEST — 12-HOUR REMINDER
+// GUEST — CHAUFFEUR ASSIGNED (fires on driver assignment)
 // ============================================
 function reminderEmail(booking, brand) {
   const b = {
@@ -577,6 +577,22 @@ function reminderEmail(booking, brand) {
   };
 
   const hasDriver = Boolean(booking.driverName && booking.driverPlate);
+
+  // Relative countdown to pickup
+  let countdown = 'Pickup ahead';
+  try {
+    const pickupMs = new Date(booking.dateTime).getTime();
+    const diff = pickupMs - Date.now();
+    if (!Number.isNaN(diff) && diff > 0) {
+      const hours = Math.round(diff / (60 * 60 * 1000));
+      if (hours < 1) countdown = 'Pickup in under an hour';
+      else if (hours < 24) countdown = `Pickup in ~${hours} hour${hours === 1 ? '' : 's'}`;
+      else countdown = `Pickup in ~${Math.round(hours / 24)} day${Math.round(hours / 24) === 1 ? '' : 's'}`;
+    } else if (!Number.isNaN(diff)) {
+      countdown = 'Pickup scheduled';
+    }
+  } catch { /* ignore */ }
+
   const waNumber = (brand.whatsapp || '').replace(/[^0-9]/g, '');
   const waMsg = encodeURIComponent(`Hello STB, this is ${booking.passengerName} regarding booking ${b.voucherCode}.`);
   const waLink = `https://wa.me/${waNumber}?text=${waMsg}`;
@@ -636,12 +652,12 @@ function reminderEmail(booking, brand) {
   `;
 
   const bodyHtml = `
-    <!-- Reminder badge -->
+    <!-- Assigned badge -->
     <tr>
       <td class="px" align="center" style="padding:8px 40px 4px 40px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="background:#FBF3E1;color:#B08536;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
-            ⏰ 12 Hours to Pickup
+          <tr><td style="background:#E8F5E9;color:#1B7B3F;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
+            ${hasDriver ? '✓ Chauffeur Assigned' : '⏰ Ride Update'}
           </td></tr>
         </table>
       </td>
@@ -651,7 +667,9 @@ function reminderEmail(booking, brand) {
     <tr>
       <td class="px" align="center" style="padding:16px 40px 8px 40px;">
         <h1 class="serif h1" style="margin:0;font-family:Georgia,serif;font-size:30px;line-height:1.15;font-weight:500;color:#141414;letter-spacing:-0.02em;">
-          ${b.firstName}, your ride is <span style="color:#E31E24;font-style:italic;">tomorrow.</span>
+          ${hasDriver
+            ? `Meet your chauffeur, <span style="color:#E31E24;font-style:italic;">${b.driverName.split(' ')[0]}.</span>`
+            : `${b.firstName}, your ride is <span style="color:#E31E24;font-style:italic;">coming up.</span>`}
         </h1>
       </td>
     </tr>
@@ -659,7 +677,7 @@ function reminderEmail(booking, brand) {
     <tr>
       <td class="px" align="center" style="padding:0 40px 20px 40px;">
         <p style="margin:0;font-size:14px;line-height:1.6;color:#6B6B6B;max-width:440px;">
-          Here's everything you need for a smooth ride. Save this email or screenshot the plate number.
+          <strong style="color:#B08536;">${countdown}.</strong> Here's everything you need for a smooth ride — save this email or screenshot the plate number.
         </p>
       </td>
     </tr>
@@ -736,10 +754,12 @@ function reminderEmail(booking, brand) {
   `;
 
   return shell({
-    title: `Your ride is tomorrow — ${b.voucherCode}`,
+    title: hasDriver
+      ? `Chauffeur assigned — ${b.voucherCode}`
+      : `Ride update — ${b.voucherCode}`,
     preheader: hasDriver
-      ? `Chauffeur ${booking.driverName} · Plate ${booking.driverPlate} · Pickup ${booking.dateTime}`
-      : `Pickup in 12 hours · ${b.pickup} · Voucher ${b.voucherCode}`,
+      ? `${booking.driverName} · Plate ${booking.driverPlate} · ${countdown}`
+      : `${countdown} · ${b.pickup} · Voucher ${b.voucherCode}`,
     bodyHtml,
     brand,
   });

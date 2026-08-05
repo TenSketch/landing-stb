@@ -12,7 +12,10 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     result = await handleGetAssign(voucherCode);
   } else if (req.method === "POST") {
-    result = await handlePostAssign(voucherCode, req.body || {});
+    const proto = req.headers["x-forwarded-proto"] || "https";
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    const baseUrl = `${proto}://${host}`;
+    result = await handlePostAssign(voucherCode, req.body || {}, baseUrl);
   } else {
     res.status(405).send("Method not allowed");
     return;
