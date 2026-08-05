@@ -1,64 +1,56 @@
 # STB Singapore — Product Requirements Document
 
 ## Original Problem Statement
-Rebuild landing page as pure HTML + CSS + Vanilla JS (no React) for SEO. Extract brand palette from uploaded logo. Add SMTP for guest + admin booking emails. Add route-based distance pricing and guest reminder emails 12 hours before pickup. Keep it a simple landing page — no admin dashboard.
+Landing page for STB Singapore (private-chauffeur / tour-booking). Pure HTML + Vanilla JS + CSS for SEO. Extract brand from logo. SMTP guest+admin booking emails via Gmail. Route-based distance pricing. Guest reminder email 12 hours before pickup. Deploy target: **Vercel** (static + serverless).
+
+## Deployment Architecture (Vercel-native)
+- Static frontend (`index.html`, `/src/*`, `/stb-logo.png`) — served from Vercel CDN
+- Serverless functions in `/api/*`:
+  - `POST /api/bookings` — create booking, send guest + admin emails
+  - `GET/POST /api/assign/[voucherCode]` — driver assignment form + save
+  - `GET /api/cron/reminders` — Vercel Cron target
+- **Vercel KV** for booking persistence (auto-detected via `KV_REST_API_URL` env)
+- **Vercel Cron** hourly hits `/api/cron/reminders` (see `vercel.json`)
+- Local dev: `node server.js` uses same handlers with file-based storage fallback
 
 ## Tech Stack
-- Pure HTML (`index.html`) + Vanilla JS (`src/main.js`) + Plain CSS (`src/styles.css`)
-- Tailwind CSS via CDN, Google Fonts (Fraunces + Manrope)
-- Leaflet map, Material Symbols icons
-- Express (`server.js`), Nodemailer + Gmail SMTP, `node-cron`-style setInterval for reminders
-- File-based persistence: `/app/data/bookings.json`
+- Pure HTML + Vanilla JS + Plain CSS + Tailwind CDN
+- Google Fonts (Fraunces + Manrope), Leaflet, Material Symbols
+- Node.js 20 + Nodemailer + @vercel/kv + Express (dev only)
 
 ## Brand Palette (from logo)
-- Red `#E31E24` / Deep `#B8171C` / Soft `#FDECEC`
-- Gold `#D4A24A` / Deep `#B08536` / Soft `#FBF3E1`
-- Cream `#FBF7F0` / Charcoal `#141414`
+- Red `#E31E24` / Deep `#B8171C` / Gold `#D4A24A` / Cream `#FBF7F0` / Charcoal `#141414`
 
-## Implemented (2026-01-05)
-### Landing page
-- STB logo everywhere, Fraunces serif hero, minimal mobile bottom bar (4 items)
-- Booking widget with trip modes, live Leaflet map, autocomplete, currency selector (7)
-- Services / Fleet / Destinations / How-to-Book / Testimonials / FAQ / Final CTA
-- Real Singapore landmark photos on destinations
-- Modals: Vehicle Specs, Booking Confirmation, WhatsApp, Review
-
-### Route-based pricing (NEW)
-- Each vehicle has `baseFareSGD` + `perKmSGD` + `minFareSGD`
-- Haversine distance × 1.25 road factor
-- Live route summary strip below map: `21.4 km · ~32 min drive · S$98`
-- Vehicle chips update prices live as pickup/destination change
-- Return trips × 1.85 multiplier; Hourly falls back to `hourlySGD × hours`
-- Fallback to `minFareSGD` for freeform (non-preset) addresses
-
-### Email dispatch
-- Gmail SMTP (`smtp.gmail.com:587`) with app password
-- On booking POST: guest confirmation + admin alert (parallel)
-- Guest: VIP-Pass card, booking summary, WhatsApp CTA, "what happens next"
-- Admin: 2-col passenger + trip blocks, dark fare strip, **"Assign Driver" primary CTA** + WhatsApp / Email quick actions + dispatch checklist
-- Human-readable date formatting: `6 Aug 2026, 2:14 AM`
-
-### Driver assignment (NEW)
-- `GET /assign/:voucherCode` — branded form (no login, voucher acts as auth token)
-- `POST /assign/:voucherCode` — saves driverName / driverPhone / driverPlate / driverPhotoUrl
-- Idempotent: admin can re-open and edit anytime before pickup
-
-### 12-hour reminder email (NEW)
-- setInterval(60s) scans `bookings.json` for pickups within 12h and `reminderSentAt == null`
-- Sends branded reminder email; marks `reminderSentAt` to prevent duplicates
-- **If driver assigned**: dark chauffeur card with photo, name, phone, gold plate badge
-- **If not assigned**: friendly "driver details incoming via WhatsApp" placeholder
+## Implemented (2026-01)
+- Landing page with hero (Fraunces serif), booking widget (live Leaflet map, route pricing, currency switcher), services, fleet (6 vehicles), destinations bento, testimonials, FAQ, mobile bottom bar
+- Route-based pricing: base + per-km × Haversine × 1.25 road factor, min-fare floor, return × 1.85, hourly × hours
+- SMTP: guest confirmation, admin alert (with Assign Driver CTA), 12h reminder — all branded HTML templates + text fallbacks + human date format
+- Driver assignment page (no login, voucher-code URL is the token)
+- Reminder cron: idempotent (marks `reminderSentAt`), scans within 12h window
+- Storage abstraction: Vercel KV auto-switch when env present, file fallback otherwise
 
 ## Files
-- `/app/index.html`, `/app/src/main.js`, `/app/src/styles.css`, `/app/public/stb-logo.png`
-- `/app/emails/templates.js` — guestEmail, adminEmail, reminderEmail (+ text fallbacks)
-- `/app/server.js` — Express + SMTP + cron + assign endpoint
-- `/app/data/bookings.json` — persisted bookings
+- `/app/index.html`, `/app/src/main.js`, `/app/src/styles.css`, `/app/stb-logo.png`
+- `/app/emails/templates.js`
+- `/app/lib/store.js` — KV/file dual-mode storage
+- `/app/lib/handlers.js` — shared handlers (booking, assign, cron)
+- `/app/api/bookings.js`, `/app/api/assign/[voucherCode].js`, `/app/api/cron/reminders.js`
+- `/app/server.js` — local dev wrapper
+- `/app/vercel.json`, `/app/README-DEPLOY.md`
 - `/app/.env` — SMTP + brand + admin config
 
+## Testing
+- 19/19 backend tests passed (see `/app/backend/tests/backend_test.py`)
+- Live Gmail SMTP verified end-to-end (guest, admin, and 12h reminder emails all deliver)
+- Booking persistence + assignment + reminder idempotency all confirmed
+
+## Deployment
+See `README-DEPLOY.md` for step-by-step Vercel setup (GitHub → Vercel import → Create KV → Add env vars → Redeploy).
+
 ## Backlog / P1
-- Real fleet vehicle photos (user managing locally)
-- Migrate Tailwind CDN → local build for production
+- Post-ride review-request email
+- Voucher auto-cancel if pickup passes without driver assigned
+- Duplicate-booking guard (same email in 30 min)
 
 ## Backlog / P2
 - Multi-language toggle (EN / ZH / MS)
