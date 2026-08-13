@@ -1,0 +1,61 @@
+{
+  "name": "STB Singapore | Private Transport & Tour Booking",
+  "short_name": "STB Singapore",
+  "description": "Book premium private transport and tours in Singapore & Malaysia. VIP airport transfers, luxury MPVs, and professional chauffeurs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF7F0",
+  "theme_color": "#E31E24",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["travel", "transportation", "tourism", "business"],
+  "icons": [
+    {
+      "src": "/stb-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/stb-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book a Ride",
+      "short_name": "Book",
+      "description": "Start booking a private chauffeur",
+      "url": "/#booking-widget-container",
+      "icons": [{ "src": "/stb-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Our Fleet",
+      "short_name": "Fleet",
+      "description": "Browse our luxury vehicle lineup",
+      "url": "/#fleet",
+      "icons": [{ "src": "/stb-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Destinations",
+      "short_name": "Destinations",
+      "description": "Explore Singapore landmarks",
+      "url": "/#destinations",
+      "icons": [{ "src": "/stb-logo.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/stb-logo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "STB Singapore Homepage"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

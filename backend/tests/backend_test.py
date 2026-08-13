@@ -6,7 +6,7 @@ import pytest
 import requests
 from datetime import datetime, timedelta, timezone
 
-BASE_URL = "http://localhost:3000"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:3003")
 DATA_FILE = "/app/data/bookings.json"
 
 VOUCHER = f"STB-TEST-{int(time.time())}"

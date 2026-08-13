@@ -2,70 +2,212 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#E31E24" />
+    <meta name="color-scheme" content="light" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <!-- SEO Meta -->
-    <title>STB Singapore | Private Transport, Changi Airport Transfer & Tour Booking</title>
-    <meta name="title" content="STB Singapore | Private Transport, Changi Airport Transfer & Tour Booking" />
-    <meta name="description" content="Book premium private transport and tours in Singapore & Malaysia. VIP Changi airport transfers, Toyota Alphard MPV, Mercedes limousines, Johor Bahru cross-border rides, and hourly disposal with fixed all-inclusive rates." />
-    <meta name="keywords" content="Singapore tour booking, private transport Singapore, airport transfer Changi, limousine service Singapore, Alphard rental Singapore, Johor Bahru transfer, Singapore tour guide, private chauffeur Singapore, STB Singapore" />
-    <meta name="robots" content="index, follow" />
+    <title>Singapore Airport Transfer &amp; Private Transport | STB</title>
+    <meta name="title" content="Singapore Airport Transfer &amp; Private Transport | STB" />
+    <meta name="description" content="Book private airport transfers in Singapore with STB. Changi Airport pickup and drop-off, professional drivers, hourly chauffeur and daily transport. No prepayment required." />
+    <meta name="keywords" content="Singapore airport transfer, Changi airport pickup, Singapore private transport, Singapore chauffeur service, Changi airport dropoff, point to point transport Singapore, hourly chauffeur Singapore, daily vehicle booking Singapore, STB Singapore" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="author" content="Singapore Tour Booking (STB)" />
-    <link rel="canonical" href="https://stb-singapore.com/" />
-    <link rel="icon" href="/stb-logo.png" type="image/png" />
+    <meta name="creator" content="Singapore Tour Booking (STB)" />
+    <meta name="publisher" content="Singapore Tour Booking (STB)" />
+    <meta name="application-name" content="STB Singapore" />
+    <meta name="category" content="Travel &amp; Transportation" />
+    <meta name="classification" content="Business &amp; Economy / Travel / Transportation" />
+    <meta name="geo.region" content="SG" />
+    <meta name="geo.placename" content="Singapore" />
+    <meta name="geo.position" content="1.3644;103.9915" />
+    <meta name="ICBM" content="1.3644, 103.9915" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://singaporetourbooking.com/" />
+
+    <!-- Favicons & Icons -->
+    <link rel="icon" href="/stb-logo.png" type="image/png" sizes="any" />
+    <link rel="apple-touch-icon" href="/stb-logo.png" />
+    <link rel="mask-icon" href="/stb-logo.png" color="#E31E24" />
+    <meta name="msapplication-TileColor" content="#E31E24" />
+
+    <!-- Web Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Search Console / Bing Verification (add values in .env when ready) -->
+    <!-- <meta name="google-site-verification" content="YOUR_GSC_CODE" /> -->
+    <!-- <meta name="msvalidate.01" content="YOUR_BING_CODE" /> -->
+
+    <!-- DNS Prefetch & Preconnect -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://unpkg.com" />
+    <link rel="dns-prefetch" href="https://images.unsplash.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://stb-singapore.com/" />
-    <meta property="og:title" content="STB Singapore | Private Transport & Tour Booking" />
-    <meta property="og:description" content="Experience Majestic Hospitality with Singapore's premier private transport service. Fixed pricing, no ERP tolls, 24/7 WhatsApp concierge." />
-    <meta property="og:image" content="/stb-logo.png" />
+    <meta property="og:url" content="https://singaporetourbooking.com/" />
+    <meta property="og:site_name" content="STB Singapore" />
+    <meta property="og:locale" content="en_SG" />
+    <meta property="og:title" content="Singapore Airport Transfer &amp; Private Transport | STB" />
+    <meta property="og:description" content="Book private airport transfers in Singapore with STB. Changi Airport pickup and drop-off, professional drivers, hourly chauffeur and daily transport. No prepayment required." />
+    <meta property="og:image" content="https://singaporetourbooking.com/stb-logo.png" />
+    <meta property="og:image:alt" content="STB Singapore — Private Airport Transfer &amp; Transport" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content="STB Singapore | Private Transport & Tour Booking" />
-    <meta property="twitter:description" content="Book VIP Changi airport transfers, luxury MPVs, and private tour chauffeurs with instant fixed pricing." />
-    <meta property="twitter:image" content="/stb-logo.png" />
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@stbsingapore" />
+    <meta name="twitter:creator" content="@stbsingapore" />
+    <meta name="twitter:title" content="Singapore Airport Transfer &amp; Private Transport | STB" />
+    <meta name="twitter:description" content="Book private airport transfers in Singapore with STB. Changi Airport pickup, professional drivers, hourly chauffeur, and daily vehicle booking. No prepayment required." />
+    <meta name="twitter:image" content="https://singaporetourbooking.com/stb-logo.png" />
+    <meta name="twitter:image:alt" content="STB Singapore — Private Airport Transfer &amp; Transport" />
 
-    <!-- JSON-LD LimoService Schema -->
+    <!-- Google Analytics 4 + Consent Mode v2 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L1SLZX61TK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      // Consent Mode defaults (denied until user consents)
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted'
+      });
+      gtag('config', 'G-L1SLZX61TK', {
+        send_page_view: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+        cookie_flags: 'SameSite=None;Secure',
+        custom_map: { 'dimension1': 'currency', 'dimension2': 'trip_mode' }
+      });
+    </script>
+
+    <!-- Google Tag Manager (enable by setting GTM_CONTAINER_ID in .env) -->
+    <!--
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+    -->
+
+    <!-- Structured Data: Organization + LocalBusiness + Website + WebPage + BreadcrumbList + ContactPoint -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "LimoService",
-      "name": "Singapore Tour Booking (STB)",
-      "image": "https://stb-singapore.com/stb-logo.png",
-      "@id": "https://stb-singapore.com",
-      "url": "https://stb-singapore.com",
-      "telephone": "+6591234567",
-      "priceRange": "$$$",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "78 Airport Blvd, Changi Airport",
-        "addressLocality": "Singapore",
-        "postalCode": "819666",
-        "addressCountry": "SG"
-      },
-      "geo": { "@type": "GeoCoordinates", "latitude": 1.3644, "longitude": 103.9915 },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-        "opens": "00:00", "closes": "23:59"
-      },
-      "areaServed": ["Singapore", "Johor Bahru", "Kuala Lumpur"],
-      "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "2140" }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://singaporetourbooking.com/#organization",
+          "name": "Singapore Tour Booking (STB)",
+          "alternateName": "STB Singapore",
+          "url": "https://singaporetourbooking.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://singaporetourbooking.com/stb-logo.png",
+            "width": 512,
+            "height": 512,
+            "caption": "STB Singapore Logo"
+          },
+          "image": "https://singaporetourbooking.com/stb-logo.png",
+          "description": "Singapore airport transfer and private transport service operating across Singapore & Malaysia since 2014.",
+          "foundingDate": "2014",
+          "sameAs": [
+            "https://wa.me/6591234567"
+          ],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+65-9123-4567",
+            "contactType": "customer service",
+            "availableLanguage": ["English", "Chinese", "Malay"],
+            "areaServed": "SG"
+          }
+        },
+        {
+          "@type": "LocalBusiness",
+          "@id": "https://singaporetourbooking.com/#localbusiness",
+          "name": "STB Singapore Airport Transfer & Private Transport",
+          "description": "Private chauffeur transport and Changi Airport pickup service in Singapore. No prepayment required.",
+          "url": "https://singaporetourbooking.com",
+          "telephone": "+65-9123-4567",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "78 Airport Blvd, Changi Airport",
+            "addressLocality": "Singapore",
+            "postalCode": "819666",
+            "addressCountry": "SG"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": 1.3644,
+            "longitude": 103.9915
+          },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+            "opens": "00:00",
+            "closes": "23:59"
+          },
+          "areaServed": [
+            { "@type": "Place", "name": "Singapore" },
+            { "@type": "Place", "name": "Changi Airport" },
+            { "@type": "Place", "name": "Johor Bahru" }
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://singaporetourbooking.com/#website",
+          "url": "https://singaporetourbooking.com",
+          "name": "STB Singapore",
+          "publisher": { "@id": "https://singaporetourbooking.com/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://singaporetourbooking.com/?search={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://singaporetourbooking.com/#webpage",
+          "url": "https://singaporetourbooking.com/",
+          "name": "Singapore Airport Transfer & Private Transport | STB",
+          "description": "Book private airport transfers in Singapore with STB. Changi Airport pickup and drop-off, professional drivers, hourly chauffeur and daily transport. No prepayment required.",
+          "isPartOf": { "@id": "https://singaporetourbooking.com/#website" },
+          "about": { "@id": "https://singaporetourbooking.com/#organization" },
+          "breadcrumb": { "@id": "https://singaporetourbooking.com/#breadcrumb" }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://singaporetourbooking.com/#breadcrumb",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://singaporetourbooking.com/" }
+          ]
+        }
+      ]
     }
     </script>
 
-    <!-- FAQ Schema -->
+    <!-- FAQ Schema (FAQPage) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Are tolls (ERP) and parking fees included in the fare?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! All quoted prices on STB Singapore are 100% all-inclusive. ERP gantry tolls, peak hour surcharges, airport pick-up fees, and fuel are strictly included." } },
-        { "@type": "Question", "name": "What happens if my flight to Changi Airport is delayed?", "acceptedAnswer": { "@type": "Answer", "text": "We monitor real-time flight landing times automatically. Your assigned chauffeur will adjust their arrival accordingly with 60 minutes of complimentary waiting time from actual landing." } },
-        { "@type": "Question", "name": "Can I book a private transfer from Singapore to Johor Bahru, Malaysia?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, we specialize in cross-border transfers between Singapore and Malaysia. You stay comfortably inside the air-conditioned vehicle during immigration clearance." } }
+        { "@type": "Question", "name": "Do I need to pay in advance?", "acceptedAnswer": { "@type": "Answer", "text": "No prepayment is required. You can submit your transport inquiry and book your ride first. Payment takes place after your trip is completed." } },
+        { "@type": "Question", "name": "How do I book an airport transfer?", "acceptedAnswer": { "@type": "Answer", "text": "Select Airport Transfer on the form, enter your pickup terminal or address, destination, date, time, and flight number, then submit your inquiry or tap WhatsApp to receive instant team confirmation." } },
+        { "@type": "Question", "name": "What happens if my flight to Changi Airport is delayed?", "acceptedAnswer": { "@type": "Answer", "text": "We monitor flight arrival times in real time. Your assigned chauffeur automatically adjusts pickup timing with 60 minutes of complimentary waiting time from touchdown." } },
+        { "@type": "Question", "name": "Are tolls (ERP) and airport fees included in the quote?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! All STB transport quotes are 100% all-inclusive. ERP tolls, peak hour surcharges, airport fees, and fuel are strictly included." } }
       ]
     }
     </script>
@@ -87,15 +229,22 @@
   </head>
 
   <body>
+    <!-- Skip to content (accessibility) -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Google Tag Manager (noscript fallback) -->
+    <!--
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    -->
 
     <!-- ================= NAV ================= -->
     <nav id="stb-nav" class="stb-nav" data-testid="main-nav">
       <div class="stb-nav-inner">
         <a href="#top" class="flex items-center gap-3" data-testid="brand-logo">
-          <img src="/stb-logo.png" alt="STB Singapore Logo" class="h-12 w-auto object-contain" />
-          <div class="hidden sm:block leading-tight">
-            <div class="font-display font-medium text-lg text-stb-charcoal tracking-tight">STB</div>
-            <div class="text-[0.6rem] font-bold tracking-[0.2em] text-stb-gold uppercase">Singapore</div>
+          <img src="/stb-logo.png" alt="Singapore Tour Booking Logo" class="h-12 w-auto object-contain" />
+          <div class="leading-tight">
+            <div class="font-display font-bold text-base sm:text-lg text-stb-charcoal tracking-tight">Singapore Tour Booking</div>
+            <div class="text-[0.6rem] font-bold tracking-[0.2em] text-stb-red uppercase">Official Transport</div>
           </div>
         </a>
 
@@ -166,149 +315,238 @@
       </div>
     </nav>
 
-    <main id="top">
+    <main id="main-content" tabindex="-1">
 
       <!-- ================= HERO ================= -->
-      <section class="hero-wrap">
-        <div class="hero-bg">
-          <img src="https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=1920&q=80" alt="Singapore skyline at sunset" />
+      <section class="hero-wrap relative min-h-[85vh] flex items-center pt-24 pb-12 overflow-hidden">
+        <div class="hero-bg absolute inset-0 z-0">
+          <img src="/hero-bg.jpg" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=2000&q=90';" alt="Singapore Marina Bay Sands skyline with luxury Mercedes private chauffeur vehicle at sunset" class="w-full h-full object-cover object-center" />
+          <div class="absolute inset-0 bg-gradient-to-b from-stone-900/60 via-stone-900/35 to-stone-900/65 lg:to-stone-900/50"></div>
         </div>
 
-        <div class="container relative z-10">
-          <div class="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
+        <div class="container relative z-10 mx-auto px-4 max-w-6xl">
+          <div class="grid lg:grid-cols-[1fr_1.05fr] gap-8 lg:gap-14 items-center">
 
-            <!-- Left copy -->
-            <div class="reveal" data-testid="hero-copy">
-              <div class="hero-eyebrow mb-6">
-                <span class="hero-eyebrow-dot"></span>
-                <span>Majestic Hospitality · Since 2014</span>
+            <!-- Left Copy Card (Centered on Mobile, Rich & Left-Aligned on Desktop) -->
+            <div class="reveal text-white text-center flex flex-col items-center justify-center lg:text-left lg:items-start mb-4 lg:mb-0" data-testid="hero-copy">
+              <!-- Desktop Eyebrow -->
+              <div class="hidden lg:flex items-center gap-2 mb-4 text-xs font-bold tracking-wider uppercase text-stb-red bg-stb-red-soft/20 px-3.5 py-1.5 rounded-full border border-stb-red/30">
+                <span class="w-2 h-2 rounded-full bg-stb-red animate-pulse"></span>
+                <span>Majestic Hospitality · Singapore Private Transport</span>
               </div>
 
-              <h1 class="hero-h1">
-                Singapore's <em>Private</em><br />
-                Chauffeur &amp;<br />
-                <span class="underline-swash">Tour Booking</span>
+              <!-- Compact Mobile H1 (28-32px on mobile) -->
+              <h1 class="text-2xl sm:text-3xl lg:text-5xl font-display font-medium leading-tight text-white mb-3 lg:mb-4 text-center lg:text-left">
+                Singapore Tour Booking
               </h1>
 
-              <p class="text-lg text-stb-muted max-w-lg leading-relaxed mb-8">
-                Fixed all-inclusive fares. Licensed chauffeurs. Alphard, Mercedes, and touring coaches from Changi Airport across Singapore &amp; Malaysia.
+              <!-- Subtitle: Desktop Only -->
+              <p class="hidden lg:block text-stone-200 text-base lg:text-lg max-w-lg mb-6 leading-relaxed text-left">
+                Private transport &amp; luxury chauffeur across Singapore. Book your ride first with <strong>zero prepayment required</strong> — pay after your trip is completed.
               </p>
 
-              <div class="flex flex-wrap gap-2.5 mb-10">
-                <div class="trust-badge"><span class="material-symbols-outlined fill-1">verified_user</span>Licensed LTA Chauffeurs</div>
-                <div class="trust-badge"><span class="material-symbols-outlined fill-1">payments</span>No ERP or Peak Tolls</div>
-                <div class="trust-badge"><span class="material-symbols-outlined fill-1">support_agent</span>24/7 WhatsApp Dispatch</div>
+              <!-- Single High-Visibility NO PREPAYMENT REQUIRED Badge -->
+              <div class="inline-flex flex-col items-center justify-center bg-stone-950/85 backdrop-blur-md border-2 border-stb-red/90 rounded-2xl px-5 py-3 mb-5 lg:mb-6 shadow-2xl pulse-red-badge">
+                <div class="font-black text-stb-red text-base sm:text-lg tracking-wider uppercase flex items-center justify-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-stb-red animate-ping"></span>
+                  <span>NO PREPAYMENT REQUIRED</span>
+                </div>
+                <div class="text-white text-xs font-bold mt-1 text-center">Book first. Pay after your trip is completed.</div>
               </div>
 
-              <!-- Stats strip -->
-              <div class="grid grid-cols-3 gap-6 pt-8 border-t border-stone-200 max-w-md">
+              <!-- Desktop Trust Badges -->
+              <div class="hidden lg:flex flex-wrap gap-2 text-xs font-semibold mb-6">
+                <span class="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white">✓ No Online Payment</span>
+                <span class="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white">✓ Professional Drivers</span>
+                <span class="px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-sm text-white">✓ WhatsApp Support</span>
+              </div>
+
+              <!-- Desktop Stats Strip (Numbers in STB Red) -->
+              <div class="hidden lg:grid grid-cols-3 gap-6 pt-6 border-t border-white/20 max-w-md w-full">
                 <div>
-                  <div class="font-display text-3xl text-stb-red font-medium">10<span class="text-stb-gold">+</span></div>
-                  <div class="text-xs font-bold text-stb-muted uppercase tracking-wider">Years</div>
+                  <div class="font-display text-3xl text-stb-red font-medium">10<span class="text-white">+</span></div>
+                  <div class="text-xs font-bold text-stone-300 uppercase tracking-wider">Years</div>
                 </div>
                 <div>
                   <div class="font-display text-3xl text-stb-red font-medium">42k</div>
-                  <div class="text-xs font-bold text-stb-muted uppercase tracking-wider">Rides</div>
+                  <div class="text-xs font-bold text-stone-300 uppercase tracking-wider">Rides</div>
                 </div>
                 <div>
-                  <div class="font-display text-3xl text-stb-red font-medium">4.9<span class="text-stb-gold">★</span></div>
-                  <div class="text-xs font-bold text-stb-muted uppercase tracking-wider">Rated</div>
+                  <div class="font-display text-3xl text-stb-red font-medium">24/7</div>
+                  <div class="text-xs font-bold text-stone-300 uppercase tracking-wider">Dispatch</div>
                 </div>
               </div>
             </div>
 
-            <!-- Right Booking Widget -->
+            <!-- Right Glassmorphic Mobile Booking Card -->
             <div id="booking-widget-container" data-testid="booking-widget">
-              <div class="booking-card">
-                <!-- Trip Mode Tabs -->
-                <div class="flex gap-2 pb-4 mb-5 border-b border-stone-200 overflow-x-auto no-scrollbar">
-                  <button class="trip-tab active" data-mode="one_way" data-testid="trip-one-way">One Way</button>
-                  <button class="trip-tab" data-mode="return" data-testid="trip-return">Return · save 15%</button>
-                  <button class="trip-tab" data-mode="hourly" data-testid="trip-hourly">Hourly Disposal</button>
+              <div class="bg-white/95 backdrop-blur-xl border border-white/80 rounded-3xl p-5 sm:p-6 shadow-2xl text-stb-charcoal">
+                
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-stone-200/80">
+                  <div class="text-[0.7rem] font-black uppercase tracking-widest text-stb-red flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">directions_car</span>
+                    <span>BOOK TRANSPORT</span>
+                  </div>
+                  <div class="text-[0.65rem] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    No Prepayment Required
+                  </div>
                 </div>
 
-                <form id="booking-form" onsubmit="return false;" class="space-y-4">
-                  <div>
-                    <label class="field-label">Service</label>
-                    <select id="service-select" class="field-select" data-testid="service-select">
-                      <option value="airport_arrival">Airport Arrival · Meet &amp; Greet (Changi)</option>
-                      <option value="airport_departure">Airport Departure · Chauffeur (Changi)</option>
-                      <option value="jb_malaysia">Cross-Border · Johor Bahru / Malaysia</option>
-                      <option value="hourly_disposal">Hourly · Private Chauffeur Disposal</option>
-                    </select>
-                  </div>
+                <form id="booking-form" onsubmit="return false;" class="space-y-3.5">
+                  <input type="hidden" id="service-select-hidden" value="one_way" />
+                  <input type="hidden" id="booking-type-hidden" value="one_way" />
 
-                  <div id="flight-no-container">
-                    <label class="field-label">
-                      <span class="flex items-center justify-between">
-                        <span>Flight number <span class="text-stone-400 font-normal normal-case tracking-normal">(optional)</span></span>
-                        <span class="text-[0.6rem] text-stb-gold-dark normal-case tracking-normal">Real-time tracking</span>
-                      </span>
-                    </label>
-                    <div class="relative">
-                      <span class="field-icon material-symbols-outlined">flight</span>
-                      <input type="text" id="flight-input" placeholder="e.g. SQ 321" class="field-input" data-testid="flight-input" />
-                    </div>
-                  </div>
-
+                  <!-- Pickup Location -->
                   <div class="relative">
-                    <label class="field-label">Pickup</label>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500">Pickup Location</label>
+                      <button type="button" id="btn-geo-pickup" class="text-[0.65rem] font-bold text-stb-red hover:underline flex items-center gap-1" data-testid="btn-geo-pickup">
+                        <span class="material-symbols-outlined text-xs">my_location</span>
+                        <span>Use my location</span>
+                      </button>
+                    </div>
                     <div class="relative">
-                      <span class="field-icon material-symbols-outlined">trip_origin</span>
-                      <input type="text" id="pickup-input" value="Changi Airport Terminal 1" placeholder="Airport, hotel, or address" class="field-input" data-testid="pickup-input" />
+                      <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-lg">trip_origin</span>
+                      <input type="text" id="pickup-input" value="" placeholder="Where are you being picked up?" class="w-full pl-9 pr-14 py-2.5 text-xs sm:text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="pickup-input" />
+                      <button type="button" id="btn-clear-pickup" class="hidden absolute right-8 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stb-red font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-stone-200 transition-colors" title="Clear pickup">✕</button>
+                      <button type="button" id="btn-geo-icon" class="absolute right-2 top-1/2 -translate-y-1/2 text-stb-red hover:text-red-700 p-1 rounded-lg" title="Detect my current location">
+                        <span class="material-symbols-outlined text-base">my_location</span>
+                      </button>
+                    </div>
+                    <div id="pickup-help-msg" class="hidden mt-1 text-[0.68rem] font-bold text-stb-red flex items-center gap-1">
+                      <span class="material-symbols-outlined text-xs">info</span>
+                      <span>Enter your pickup point (e.g. Changi Airport, hotel, address, or landmark)</span>
                     </div>
                     <div id="pickup-presets" class="preset-dropdown hidden"></div>
                   </div>
 
+                  <!-- Progressive Pickup Terminal (revealed if Pickup = Changi Airport) -->
+                  <div id="pickup-terminal-container" class="hidden relative">
+                    <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stb-red mb-1">Pickup Terminal</label>
+                    <select id="pickup-terminal-select" class="w-full px-3 py-2 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stb-red/40 rounded-xl focus:outline-none" data-testid="pickup-terminal-select">
+                      <option value="" disabled selected>Select Terminal...</option>
+                      <option value="Terminal 1">Terminal 1</option>
+                      <option value="Terminal 2">Terminal 2</option>
+                      <option value="Terminal 3">Terminal 3</option>
+                      <option value="Terminal 4">Terminal 4</option>
+                      <option value="Jewel Changi">Jewel Changi</option>
+                    </select>
+                  </div>
+
+                  <!-- Destination -->
                   <div id="dest-address-container" class="relative">
-                    <label class="field-label">Destination</label>
+                    <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1" id="lbl-dest">Destination</label>
                     <div class="relative">
-                      <span class="field-icon material-symbols-outlined" style="color: var(--stb-gold-dark)">place</span>
-                      <input type="text" id="dest-input" value="Marina Bay Sands Hotel Tower 1" placeholder="Hotel, attraction, or address" class="field-input" data-testid="dest-input" />
+                      <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stb-gold-dark text-lg">place</span>
+                      <input type="text" id="dest-input" value="" placeholder="Where are you going?" class="w-full pl-9 pr-9 py-2.5 text-xs sm:text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="dest-input" />
+                      <button type="button" id="btn-clear-dest" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stb-red font-bold w-6 h-6 flex items-center justify-center rounded-full hover:bg-stone-200 transition-colors" title="Clear destination">✕</button>
+                    </div>
+                    <div id="dest-help-msg" class="hidden mt-1 text-[0.68rem] font-bold text-stb-red flex items-center gap-1">
+                      <span class="material-symbols-outlined text-xs">info</span>
+                      <span>Enter your drop point (e.g. Hotel, Marina Bay Sands, attraction, or address)</span>
                     </div>
                     <div id="dest-presets" class="preset-dropdown hidden"></div>
                   </div>
 
-                  <div id="route-map"></div>
+                  <!-- Progressive Drop-off Terminal (revealed if Destination = Changi Airport) -->
+                  <div id="drop-terminal-container" class="hidden relative">
+                    <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stb-red mb-1">Drop-off Terminal</label>
+                    <select id="drop-terminal-select" class="w-full px-3 py-2 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stb-red/40 rounded-xl focus:outline-none" data-testid="drop-terminal-select">
+                      <option value="" disabled selected>Select Terminal...</option>
+                      <option value="Terminal 1">Terminal 1 Departure</option>
+                      <option value="Terminal 2">Terminal 2 Departure</option>
+                      <option value="Terminal 3">Terminal 3 Departure</option>
+                      <option value="Terminal 4">Terminal 4 Departure</option>
+                    </select>
+                  </div>
 
-                  <div id="route-summary" style="display:none;align-items:center;gap:.5rem;padding:.75rem 1rem;background:var(--stb-cream);border-radius:12px;font-size:.8rem;font-weight:600;color:var(--stb-charcoal);" data-testid="route-summary"></div>
-
-                  <div class="grid grid-cols-2 gap-3">
+                  <!-- Separate Modern Date & Time Pickers + Passengers -->
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <!-- Travel Date Trigger -->
                     <div class="min-w-0">
-                      <label class="field-label">Passengers</label>
-                      <select id="pax-select" class="field-select" data-testid="pax-select">
-                        <option value="1-3 Pax">1-3 Pax</option>
-                        <option value="4-7 Pax">4-7 Pax</option>
-                        <option value="8-13 Pax">8-13 Pax</option>
-                        <option value="Large Group">23-45 Pax</option>
+                      <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Travel Date</label>
+                      <div class="relative cursor-pointer" id="trigger-date-modal">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base">calendar_month</span>
+                        <input type="text" id="date-display-input" readonly placeholder="Select Date" class="w-full pl-8 pr-2 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl cursor-pointer focus:outline-none focus:border-stb-red transition-all" data-testid="date-display-input" />
+                      </div>
+                    </div>
+
+                    <!-- Travel Time Trigger -->
+                    <div class="min-w-0">
+                      <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Travel Time</label>
+                      <div class="relative cursor-pointer" id="trigger-time-modal">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base">schedule</span>
+                        <input type="text" id="time-display-input" readonly placeholder="Select Time" class="w-full pl-8 pr-2 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl cursor-pointer focus:outline-none focus:border-stb-red transition-all" data-testid="time-display-input" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Passengers & Booking Type -->
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div class="min-w-0">
+                      <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Passengers</label>
+                      <select id="pax-select" class="w-full px-2.5 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="pax-select">
+                        <option value="1-3 Pax">1-3 Passengers</option>
+                        <option value="4-7 Pax">4-7 Passengers</option>
+                        <option value="8-13 Pax">8-13 Passengers</option>
+                        <option value="Large Group">23-45 Group</option>
                       </select>
                     </div>
                     <div class="min-w-0">
-                      <label class="field-label">Pickup date</label>
-                      <input type="datetime-local" id="datetime-input" class="field-select" data-testid="datetime-input" />
+                      <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Booking Type</label>
+                      <div class="grid grid-cols-3 gap-1 p-0.5 bg-stone-100/90 rounded-xl text-[0.65rem] font-bold text-center">
+                        <button type="button" class="type-btn active py-2 rounded-lg bg-white text-stb-red shadow-sm transition-all" data-type="one_way" data-testid="type-one-way">One Way</button>
+                        <button type="button" class="type-btn py-2 rounded-lg text-stone-600 hover:text-stb-charcoal transition-all" data-type="hourly" data-testid="type-hourly">Hourly</button>
+                        <button type="button" class="type-btn py-2 rounded-lg text-stone-600 hover:text-stb-charcoal transition-all" data-type="daily" data-testid="type-daily">Daily</button>
+                      </div>
                     </div>
                   </div>
 
-                  <div id="hourly-duration-container" class="hidden">
-                    <label class="field-label">Chauffeur hours</label>
-                    <div class="flex gap-2">
-                      <button type="button" class="hourly-btn" data-hours="3">3h</button>
-                      <button type="button" class="hourly-btn active" data-hours="4">4h</button>
-                      <button type="button" class="hourly-btn" data-hours="6">6h</button>
-                      <button type="button" class="hourly-btn" data-hours="8">8h</button>
-                      <button type="button" class="hourly-btn" data-hours="12">12h</button>
+                  <!-- Progressive Hours Required (revealed if Hourly) -->
+                  <div id="hourly-duration-container" class="hidden pt-1">
+                    <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stb-gold-dark mb-1">Hours Required</label>
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 active" data-hours="3">3h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="4">4h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="6">6h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="8">8h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="12">12h</button>
                     </div>
                   </div>
 
-                  <div>
-                    <label class="field-label">Vehicle class</label>
-                    <div id="vehicle-grid" class="grid grid-cols-3 gap-2"></div>
+                  <!-- Progressive Days Required (revealed if Daily) -->
+                  <div id="daily-duration-container" class="hidden pt-1">
+                    <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stb-gold-dark mb-1">Days Required</label>
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 active" data-days="1">1 day</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="2">2 days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="3">3 days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="5">5 days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="7">7 days</button>
+                    </div>
                   </div>
 
-                  <button type="button" id="btn-calc-confirm" class="confirm-btn" data-testid="confirm-book-btn">
-                    <span>Confirm &amp; Reserve</span>
-                    <span class="material-symbols-outlined">arrow_forward</span>
+                  <!-- Collapsible Flight Number -->
+                  <div id="flight-toggle-wrap" class="pt-0.5">
+                    <button type="button" id="btn-toggle-flight" class="text-[0.7rem] font-bold text-stb-red hover:underline inline-flex items-center gap-1">
+                      <span>+ Add flight number</span>
+                      <span class="text-stone-400 font-normal">(optional)</span>
+                    </button>
+                    <div id="flight-no-container" class="hidden mt-2">
+                      <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base">flight</span>
+                        <input type="text" id="flight-input" placeholder="e.g. SQ 321" class="w-full pl-9 pr-3 py-2 text-xs font-medium text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red" data-testid="flight-input" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Primary CTA: Red STB Brand Color & Text SUBMIT BOOKING -->
+                  <button type="button" id="btn-calc-confirm" class="w-full py-3.5 px-4 rounded-2xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98" style="background: var(--stb-red); box-shadow: 0 8px 24px rgba(227, 30, 36, 0.35);" data-testid="confirm-book-btn">
+                    <span>SUBMIT BOOKING</span>
+                    <span class="material-symbols-outlined text-base">arrow_forward</span>
                   </button>
+
+                  <p class="text-[0.68rem] text-center text-stone-500 font-medium">No prepayment • Pay after service</p>
                 </form>
               </div>
             </div>
@@ -316,16 +554,16 @@
         </div>
       </section>
 
-      <!-- ================= SERVICES ================= -->
+      <!-- ================= SECONDARY SERVICES ================= -->
       <section id="services" class="section" style="background: white;">
         <div class="container">
-          <div class="max-w-2xl mb-14 reveal">
-            <div class="section-eyebrow">Services</div>
-            <h2 class="section-title">Every ride, <em>meticulously</em> curated</h2>
-            <p class="section-sub">Four flagship services covering airport arrival to Malaysia cross-border, each with a guaranteed all-inclusive rate and dedicated chauffeur.</p>
+          <div class="max-w-2xl mb-10 reveal">
+            <div class="section-eyebrow">Additional Transport</div>
+            <h2 class="section-title text-2xl font-bold text-stb-charcoal mb-2">Need transport after you arrive?</h2>
+            <p class="section-sub text-sm">Private transport for the rest of your Singapore trip.</p>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="service-grid"></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="service-grid"></div>
         </div>
       </section>
 
@@ -349,6 +587,13 @@
           </div>
 
           <div id="fleet-card-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+          <div class="mt-8 text-center md:hidden">
+            <button id="btn-toggle-fleet" class="btn-ghost text-xs font-bold py-2.5 px-5">
+              <span>View all vehicles</span>
+              <span class="material-symbols-outlined text-sm">expand_more</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -401,35 +646,30 @@
         </div>
       </section>
 
-      <!-- ================= HOW TO BOOK ================= -->
+      <!-- ================= HOW IT WORKS ================= -->
       <section id="how-to-book" class="section" style="background: var(--stb-cream);">
         <div class="container">
           <div class="text-center max-w-xl mx-auto mb-16 reveal">
-            <div class="section-eyebrow">Booking Process</div>
-            <h2 class="section-title">Four steps to <em>majestic</em> travel</h2>
-            <p class="section-sub mx-auto">From request to riding, secure your VIP ride with zero hassle.</p>
+            <div class="section-eyebrow">How It Works</div>
+            <h2 class="section-title">Three steps to your <em>private</em> ride</h2>
+            <p class="section-sub mx-auto">No prepayment required. Booking your transport is fast, transparent, and hassle-free.</p>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="text-center reveal">
               <div class="step-num mx-auto mb-6">01</div>
-              <h3 class="font-display text-xl text-stb-charcoal mb-2">Request itinerary</h3>
-              <p class="text-sm text-stb-muted leading-relaxed">Use the fare calculator or tap WhatsApp to share date &amp; vehicle preference.</p>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">Tell us your trip</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Enter your pickup location, destination, travel date, time, and passenger count in our form or via WhatsApp.</p>
             </div>
             <div class="text-center reveal" data-delay="1">
               <div class="step-num mx-auto mb-6">02</div>
-              <h3 class="font-display text-xl text-stb-charcoal mb-2">Instant fixed quote</h3>
-              <p class="text-sm text-stb-muted leading-relaxed">Receive a guaranteed all-inclusive quotation with no peak surcharges.</p>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">We confirm your vehicle</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Our dispatch team verifies availability, confirms your fixed fare quote, and assigns a licensed professional chauffeur.</p>
             </div>
             <div class="text-center reveal" data-delay="2">
               <div class="step-num mx-auto mb-6">03</div>
-              <h3 class="font-display text-xl text-stb-charcoal mb-2">Chauffeur assigned</h3>
-              <p class="text-sm text-stb-muted leading-relaxed">Get driver name, plate number, and meeting point 24 hours prior.</p>
-            </div>
-            <div class="text-center reveal" data-delay="3">
-              <div class="step-num mx-auto mb-6">04</div>
-              <h3 class="font-display text-xl text-stb-charcoal mb-2">Relax &amp; ride</h3>
-              <p class="text-sm text-stb-muted leading-relaxed">Onboard 5G WiFi, chilled water, and pure VIP treatment.</p>
+              <h3 class="font-display text-xl text-stb-charcoal mb-2">Travel &amp; pay after trip</h3>
+              <p class="text-sm text-stb-muted leading-relaxed">Enjoy your comfortable journey across Singapore. Pay cash to driver or via PayNow SG after your trip is completed.</p>
             </div>
           </div>
         </div>
@@ -493,13 +733,13 @@
       <!-- ================= FINAL CTA ================= -->
       <section class="section" style="background: linear-gradient(135deg, #141414 0%, #2a1010 100%); color: white; padding: 5rem 0;">
         <div class="container text-center max-w-3xl">
-          <div class="section-eyebrow" style="background: rgba(212, 162, 74, 0.15); color: var(--stb-gold);">Ready to Ride</div>
-          <h2 class="section-title" style="color: white;">Your <em style="color: var(--stb-gold);">majestic</em> journey<br />is one tap away</h2>
-          <p class="text-white/70 text-lg leading-relaxed mb-8 max-w-xl mx-auto">Fixed all-inclusive fare. Licensed chauffeur. Guaranteed pickup. No hidden surcharges.</p>
+          <div class="section-eyebrow" style="background: rgba(212, 162, 74, 0.15); color: var(--stb-gold);">No Prepayment Required</div>
+          <h2 class="section-title" style="color: white;">Book your Singapore transport<br />and <em style="color: var(--stb-gold);">pay after service</em></h2>
+          <p class="text-white/70 text-lg leading-relaxed mb-8 max-w-xl mx-auto">Changi Airport transfers, point-to-point rides, and hourly chauffeurs. Fixed all-inclusive fares with 24/7 WhatsApp confirmation.</p>
           <div class="flex justify-center">
             <button id="cta-book" class="btn-primary" style="padding: 1rem 2.5rem;" data-testid="cta-book">
               <span class="material-symbols-outlined">directions_car</span>
-              Book instant quote
+              Submit Transport Inquiry
             </button>
           </div>
         </div>
@@ -520,9 +760,7 @@
             </div>
             <p class="text-sm leading-relaxed mb-6 max-w-md">Premium private transport and tour booking service across Singapore &amp; Malaysia. Committed to majestic hospitality, fixed pricing, and professional excellence since 2014.</p>
             <div class="flex gap-3">
-              <a href="#" aria-label="WhatsApp" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">chat</span></a>
-              <a href="#" aria-label="Instagram" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">photo_camera</span></a>
-              <a href="#" aria-label="Email" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">mail</span></a>
+              <a href="mailto:bala@tensketch.com" aria-label="Email" class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center"><span class="material-symbols-outlined text-lg">mail</span></a>
             </div>
           </div>
 
@@ -541,7 +779,8 @@
             <h4>Contact</h4>
             <ul class="space-y-2.5 text-sm">
               <li class="flex items-start gap-2"><span class="material-symbols-outlined text-base mt-0.5" style="color: var(--stb-gold);">location_on</span> 78 Airport Blvd,<br />Changi Airport, SG 819666</li>
-              <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">call</span> +65 9123 4567</li>
+              <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">call</span> +65 9062 9107</li>
+              <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">mail</span> bala@tensketch.com</li>
               <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">schedule</span> 24/7 Dispatch</li>
             </ul>
           </div>
@@ -554,25 +793,19 @@
       </div>
     </footer>
 
-    <!-- ================= MOBILE BOTTOM BAR ================= -->
-    <nav class="mobile-bottom-bar" data-testid="mobile-bottom-bar">
-      <a href="#top" class="mbb-item" data-testid="mbb-home">
-        <span class="material-symbols-outlined">home</span>
-        <span>Home</span>
-      </a>
-      <a href="#fleet" class="mbb-item" data-testid="mbb-fleet">
-        <span class="material-symbols-outlined">directions_car</span>
-        <span>Fleet</span>
-      </a>
-      <button id="mbb-book-btn" class="mbb-item primary" data-testid="mbb-book">
-        <span class="material-symbols-outlined">confirmation_number</span>
-        <span>Book</span>
-      </button>
-      <button id="mbb-whatsapp-btn" class="mbb-item" data-testid="mbb-whatsapp">
-        <span class="material-symbols-outlined">chat</span>
-        <span>WhatsApp</span>
-      </button>
-    </nav>
+    <!-- ================= STICKY MOBILE WHATSAPP BAR (Appears on Scroll) ================= -->
+    <div id="mobile-sticky-whatsapp" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3 md:hidden shadow-xl transition-all duration-300 transform translate-y-full opacity-0" data-testid="mobile-sticky-whatsapp">
+      <div class="flex items-center justify-between gap-3 max-w-md mx-auto">
+        <div class="text-xs">
+          <div class="font-bold text-stb-charcoal">Singapore Airport Transfer</div>
+          <div class="text-[0.65rem] text-emerald-700 font-semibold">No Prepayment • Pay After Trip</div>
+        </div>
+        <button id="mbb-whatsapp-btn" class="py-2.5 px-4 rounded-xl font-bold text-xs text-white flex items-center gap-2 shadow-md active:scale-95 transition-all" style="background: #25D366;" data-testid="sticky-whatsapp-btn">
+          <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
+          <span>Get Quote on WhatsApp</span>
+        </button>
+      </div>
+    </div>
 
     <!-- ================= MODALS ================= -->
 
@@ -610,7 +843,7 @@
 
           <div class="flex items-center gap-3 mb-5">
             <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center">
-              <span class="material-symbols-outlined text-2xl">chat</span>
+              <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
             </div>
             <div>
               <h3 class="font-display font-medium text-xl text-stb-charcoal">WhatsApp Dispatch</h3>
@@ -631,7 +864,7 @@
           </div>
 
           <a id="wa-final-link" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2" style="background: #25D366; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);" data-testid="wa-final-link">
-            <span class="material-symbols-outlined">chat</span>
+            <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
             Open WhatsApp chat now
           </a>
         </div>
@@ -684,8 +917,62 @@
       </div>
     </div>
 
+    <!-- Floating WhatsApp Chat Button -->
+    <a href="https://wa.me/919840167444?text=Hello%20STB%20Singapore%2C%20I%20have%20an%20inquiry%20about%20private%20transport%20booking." target="_blank" rel="noopener noreferrer" class="floating-whatsapp-btn" aria-label="Chat on WhatsApp with STB" data-testid="floating-whatsapp-btn">
+      <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
+    </a>
+
+    <!-- Modern Custom Calendar Modal (Section 12 & 13) -->
+    <div id="modal-calendar" class="modal-backdrop hidden" data-testid="modal-calendar">
+      <div class="modal-card max-w-sm w-full bg-white rounded-3xl p-5 shadow-2xl relative">
+        <button class="modal-close absolute top-4 right-4 text-stone-400 hover:text-stb-red p-1" onclick="closeModal('modal-calendar')">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+
+        <div class="flex items-center justify-between mb-4 pr-6">
+          <h3 id="cal-month-title" class="font-display font-bold text-lg text-stb-charcoal">August 2026</h3>
+          <div class="flex gap-1">
+            <button type="button" id="btn-cal-prev" class="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 font-bold">‹</button>
+            <button type="button" id="btn-cal-next" class="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 font-bold">›</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-[0.7rem] font-bold text-stone-400 uppercase mb-2">
+          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+        </div>
+
+        <div id="cal-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs font-semibold"></div>
+
+        <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+          <button type="button" id="btn-cal-today" class="text-stb-red font-bold hover:underline">Select Today</button>
+          <button type="button" onclick="closeModal('modal-calendar')" class="text-stone-500 hover:text-stone-800 font-semibold">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Custom Time Selector Modal (Section 14 & 15) -->
+    <div id="modal-time-picker" class="modal-backdrop hidden" data-testid="modal-time-picker">
+      <div class="modal-card max-w-sm w-full bg-white rounded-3xl p-5 shadow-2xl relative">
+        <button class="modal-close absolute top-4 right-4 text-stone-400 hover:text-stb-red p-1" onclick="closeModal('modal-time-picker')">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+
+        <h3 class="font-display font-bold text-lg text-stb-charcoal mb-1">Select Pickup Time</h3>
+        <p class="text-xs text-stone-500 mb-4">Choose your preferred pickup / travel time</p>
+
+        <div id="time-slots-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1 no-scrollbar text-xs font-semibold"></div>
+
+        <div class="mt-4 pt-3 border-t border-stone-100 text-right">
+          <button type="button" onclick="closeModal('modal-time-picker')" class="text-xs font-semibold text-stone-500 hover:text-stone-800">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <!-- Analytics + Cookie Consent -->
+    <script src="/src/analytics.js"></script>
+    <script src="/src/cookie-consent.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

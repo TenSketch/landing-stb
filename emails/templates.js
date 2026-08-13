@@ -151,7 +151,7 @@ function guestEmail(booking, brand) {
       <td class="px" align="center" style="padding:8px 40px 4px 40px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background:#E8F5E9;color:#1B7B3F;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
-            ✓ Reservation Confirmed
+            ✓ Transport Inquiry Received
           </td></tr>
         </table>
       </td>
@@ -161,7 +161,7 @@ function guestEmail(booking, brand) {
     <tr>
       <td class="px" align="center" style="padding:16px 40px 8px 40px;">
         <h1 class="serif h1" style="margin:0;font-family:Georgia,serif;font-size:32px;line-height:1.15;font-weight:500;color:#141414;letter-spacing:-0.02em;">
-          Thank you, ${b.firstName}. <span style="color:#E31E24;font-style:italic;">Your ride is booked.</span>
+          Thank you, ${b.firstName}. <span style="color:#E31E24;font-style:italic;">Inquiry received.</span>
         </h1>
       </td>
     </tr>
@@ -169,7 +169,7 @@ function guestEmail(booking, brand) {
     <tr>
       <td class="px" align="center" style="padding:0 40px 24px 40px;">
         <p style="margin:0;font-size:14px;line-height:1.6;color:#6B6B6B;max-width:440px;">
-          A chauffeur will be assigned within 24 hours of your pickup. You'll receive the driver's name and vehicle plate details on WhatsApp.
+          Our dispatch team has received your transport request. We will verify chauffeur availability and confirm your booking via WhatsApp. <strong>No prepayment is required</strong> — pay after your trip is completed.
         </p>
       </td>
     </tr>
