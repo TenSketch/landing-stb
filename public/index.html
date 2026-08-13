@@ -318,7 +318,7 @@
     <main id="main-content" tabindex="-1">
 
       <!-- ================= HERO ================= -->
-      <section class="hero-wrap relative min-h-[85vh] flex items-center pt-24 pb-12 overflow-hidden">
+      <section class="hero-wrap relative min-h-[100vh] flex items-center pt-24 pb-12 overflow-hidden">
         <div class="hero-bg absolute inset-0 z-0">
           <img src="/hero-bg.jpg" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=2000&q=90';" alt="Singapore Marina Bay Sands skyline with luxury Mercedes private chauffeur vehicle at sunset" class="w-full h-full object-cover object-center" />
           <div class="absolute inset-0 bg-gradient-to-b from-stone-900/60 via-stone-900/35 to-stone-900/65 lg:to-stone-900/50"></div>
@@ -690,10 +690,10 @@
                   <div class="text-xs text-stb-muted font-bold">Based on 2,140+ reviews</div>
                 </div>
               </div>
-              <button id="btn-open-review-modal" class="btn-ghost" data-testid="open-review-modal-btn">
+              <a href="https://g.page/r/CUCWckeTDtZ2EAI/review" target="_blank" rel="noopener noreferrer" class="btn-ghost inline-flex items-center gap-2">
                 <span class="material-symbols-outlined text-base">rate_review</span>
-                Share your experience
-              </button>
+                Review us on Google
+              </a>
             </div>
 
             <div class="lg:col-span-2 min-w-0">
@@ -746,6 +746,25 @@
       </section>
     </main>
 
+    <!-- ================= STICKY MOBILE WHATSAPP BAR (Appears on Scroll) ================= -->
+    <div id="mobile-sticky-whatsapp" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3 md:hidden shadow-xl transition-all duration-300 transform translate-y-full opacity-0" data-testid="mobile-sticky-whatsapp">
+      <div class="flex items-center justify-between gap-3 max-w-md mx-auto">
+        <div class="text-xs">
+          <div class="font-bold text-stb-charcoal">Singapore Airport Transfer</div>
+          <div class="text-[0.65rem] text-emerald-700 font-semibold">No Prepayment • Pay After Trip</div>
+        </div>
+        <button id="mbb-whatsapp-btn" class="py-2.5 px-4 rounded-xl font-bold text-xs text-white flex items-center gap-2 shadow-md active:scale-95 transition-all" style="background: #25D366;" data-testid="sticky-whatsapp-btn">
+          <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
+          <span>Get Quote on WhatsApp</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating WhatsApp Chat Button -->
+    <a href="https://wa.me/919840167444?text=Hello%20STB%20Singapore%2C%20I%20have%20an%20inquiry%20about%20private%20transport%20booking." target="_blank" rel="noopener noreferrer" class="floating-whatsapp-btn" aria-label="Chat on WhatsApp with STB" data-testid="floating-whatsapp-btn">
+      <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
+    </a>
+
     <!-- ================= FOOTER ================= -->
     <footer class="stb-footer">
       <div class="container">
@@ -780,32 +799,20 @@
             <ul class="space-y-2.5 text-sm">
               <li class="flex items-start gap-2"><span class="material-symbols-outlined text-base mt-0.5" style="color: var(--stb-gold);">location_on</span> 78 Airport Blvd,<br />Changi Airport, SG 819666</li>
               <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">call</span> +65 9062 9107</li>
-              <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">mail</span> bala@tensketch.com</li>
+
               <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base" style="color: var(--stb-gold);">schedule</span> 24/7 Dispatch</li>
             </ul>
           </div>
         </div>
 
-        <div class="pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-          <p>© 2026 Singapore Tour Booking (STB). Majestic Hospitality Group.</p>
-          <p style="color: var(--stb-gold);">Licensed by LTA · TA-2140-SG</p>
+        <div class="pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/50">
+          <p class="text-center md:text-left">© 2026 Singapore Tour Booking (STB). Majestic Hospitality Group.</p>
+          <p>Technology Partner: <a href="https://tensketch.com" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">TenSketch ↗</a></p>
         </div>
       </div>
     </footer>
 
-    <!-- ================= STICKY MOBILE WHATSAPP BAR (Appears on Scroll) ================= -->
-    <div id="mobile-sticky-whatsapp" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-stone-200 p-3 md:hidden shadow-xl transition-all duration-300 transform translate-y-full opacity-0" data-testid="mobile-sticky-whatsapp">
-      <div class="flex items-center justify-between gap-3 max-w-md mx-auto">
-        <div class="text-xs">
-          <div class="font-bold text-stb-charcoal">Singapore Airport Transfer</div>
-          <div class="text-[0.65rem] text-emerald-700 font-semibold">No Prepayment • Pay After Trip</div>
-        </div>
-        <button id="mbb-whatsapp-btn" class="py-2.5 px-4 rounded-xl font-bold text-xs text-white flex items-center gap-2 shadow-md active:scale-95 transition-all" style="background: #25D366;" data-testid="sticky-whatsapp-btn">
-          <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
-          <span>Get Quote on WhatsApp</span>
-        </button>
-      </div>
-    </div>
+
 
     <!-- ================= MODALS ================= -->
 
@@ -871,56 +878,9 @@
       </div>
     </div>
 
-    <!-- Share Review Modal -->
-    <div id="modal-review" class="modal-backdrop" data-testid="modal-review">
-      <div class="modal-card" style="max-width: 440px;">
-        <div class="p-7 relative">
-          <button class="modal-close absolute top-4 right-4" onclick="closeModal('modal-review')" data-testid="close-review-modal">
-            <span class="material-symbols-outlined">close</span>
-          </button>
 
-          <h3 class="font-display font-medium text-2xl text-stb-charcoal mb-1">Share your experience</h3>
-          <p class="text-xs text-stb-muted mb-5">How was your ride with STB?</p>
 
-          <form id="add-review-form" onsubmit="return false;" class="space-y-3">
-            <div>
-              <label class="field-label">Your name</label>
-              <input type="text" id="rev-name" required placeholder="Eleanor Vance" class="field-input" style="padding-left: 1rem;" />
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="field-label">Traveler type</label>
-                <input type="text" id="rev-role" placeholder="Family trip" class="field-input" style="padding-left: 1rem;" />
-              </div>
-              <div>
-                <label class="field-label">Country</label>
-                <input type="text" id="rev-country" placeholder="USA" class="field-input" style="padding-left: 1rem;" />
-              </div>
-            </div>
-            <div>
-              <label class="field-label">Rating</label>
-              <div id="star-rating-selector" class="flex gap-1 text-3xl">
-                <span class="star-btn cursor-pointer" data-star="1" style="color: var(--stb-gold-dark);">★</span>
-                <span class="star-btn cursor-pointer" data-star="2" style="color: var(--stb-gold-dark);">★</span>
-                <span class="star-btn cursor-pointer" data-star="3" style="color: var(--stb-gold-dark);">★</span>
-                <span class="star-btn cursor-pointer" data-star="4" style="color: var(--stb-gold-dark);">★</span>
-                <span class="star-btn cursor-pointer" data-star="5" style="color: var(--stb-gold-dark);">★</span>
-              </div>
-            </div>
-            <div>
-              <label class="field-label">Review</label>
-              <textarea id="rev-comment" rows="3" required placeholder="Cleanliness, punctuality, hospitality..." class="field-input" style="padding: 0.75rem 1rem; height: auto;"></textarea>
-            </div>
-            <button type="submit" class="confirm-btn" data-testid="submit-review-btn">Publish review</button>
-          </form>
-        </div>
-      </div>
-    </div>
 
-    <!-- Floating WhatsApp Chat Button -->
-    <a href="https://wa.me/919840167444?text=Hello%20STB%20Singapore%2C%20I%20have%20an%20inquiry%20about%20private%20transport%20booking." target="_blank" rel="noopener noreferrer" class="floating-whatsapp-btn" aria-label="Chat on WhatsApp with STB" data-testid="floating-whatsapp-btn">
-      <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
-    </a>
 
     <!-- Modern Custom Calendar Modal (Section 12 & 13) -->
     <div id="modal-calendar" class="modal-backdrop hidden" data-testid="modal-calendar">

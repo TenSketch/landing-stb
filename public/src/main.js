@@ -271,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFleet('all');
   initFAQ();
   initReviews();
+
   initModals();
   initPresets();
   initFormWiring();
@@ -722,29 +723,6 @@ function renderFAQ() {
 // ============================================
 function initReviews() {
   renderReviews();
-
-  $$('.star-btn').forEach(sb => {
-    sb.addEventListener('click', () => {
-      const n = parseInt(sb.dataset.star || '5', 10);
-      state.selectedStars = n;
-      $$('.star-btn').forEach((btn, i) => {
-        btn.style.color = i < n ? 'var(--stb-gold-dark)' : '#D1D5DB';
-      });
-    });
-  });
-
-  $('#btn-open-review-modal')?.addEventListener('click', () => openModal('modal-review'));
-
-  $('#add-review-form')?.addEventListener('submit', e => {
-    e.preventDefault();
-    const name = $('#rev-name').value;
-    const role = $('#rev-role').value || 'Tourist';
-    const country = $('#rev-country').value || 'International';
-    const comment = $('#rev-comment').value;
-    REVIEWS.unshift({ id: 'rev-' + Date.now(), name, role, country, stars: state.selectedStars, date: 'Just now', comment });
-    renderReviews();
-    closeModal('modal-review');
-  });
 }
 function renderReviews() {
   const c = $('#reviews-container');
@@ -1672,7 +1650,7 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 
 function initModals() {
-  ['modal-vehicle', 'modal-booking', 'modal-whatsapp', 'modal-review'].forEach(id => {
+  ['modal-vehicle', 'modal-booking', 'modal-whatsapp'].forEach(id => {
     const modal = document.getElementById(id);
     modal?.addEventListener('click', e => {
       if (e.target === modal) closeModal(id);
@@ -1680,7 +1658,7 @@ function initModals() {
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      ['modal-vehicle', 'modal-booking', 'modal-whatsapp', 'modal-review'].forEach(id => closeModal(id));
+      ['modal-vehicle', 'modal-booking', 'modal-whatsapp'].forEach(id => closeModal(id));
     }
   });
 }
