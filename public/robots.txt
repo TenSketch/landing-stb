@@ -26,8 +26,5 @@ Allow: /
 User-agent: AhrefsBot
 Allow: /
 
-# Crawl rate
-Crawl-delay: 1
-
 # Sitemap
 Sitemap: https://singaporetourbooking.com/sitemap.xml
