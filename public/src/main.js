@@ -438,14 +438,14 @@ function loadGoogleMapsScript(apiKey, callback) {
     callback();
     return;
   }
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&loading=async`;
-  script.async = true;
-  script.defer = true;
-  script.onload = () => {
+  // Use a global callback for loading=async reliability
+  window.__onGoogleMapsLoaded = () => {
     state.googleMapsLoaded = true;
     callback();
   };
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&loading=async&callback=__onGoogleMapsLoaded`;
+  script.async = true;
   script.onerror = () => {
     console.warn('[GOOGLE MAPS] Script failed to load. Falling back to local landmarks.');
     setupLocalPresetsFallback();
@@ -705,6 +705,11 @@ function updateGoogleMapPreview() {
           { featureType: 'transit', stylers: [{ visibility: 'off' }] },
         ],
       });
+    }
+
+    // Ensure map resizes if container was previously hidden
+    if (typeof google !== 'undefined' && google.maps && google.maps.event) {
+      google.maps.event.trigger(state.googleMap, 'resize');
     }
 
     if (state.googlePickupMarker) state.googlePickupMarker.setMap(null);
@@ -1200,7 +1205,7 @@ function validateAdvanceNotice() {
 // ============================================
 function showReviewView() {
   $('#hero-booking-section')?.classList.add('hidden');
-  
+
   const reviewView = $('#review-booking-view');
   if (reviewView) {
     reviewView.classList.remove('hidden');
@@ -1234,7 +1239,7 @@ function showReviewView() {
 
   const reviewPickup = $('#review-pickup-val');
   if (reviewPickup) reviewPickup.textContent = finalPickup;
-  
+
   const reviewDest = $('#review-dest-val');
   if (reviewDest) reviewDest.textContent = finalDest;
 
@@ -1255,8 +1260,10 @@ function showReviewView() {
   // Scroll to review section top
   reviewView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Update Google maps preview route display
-  updateGoogleMapPreview();
+  // Defer map init so the container has layout before Google Maps measures it
+  requestAnimationFrame(() => {
+    updateGoogleMapPreview();
+  });
 }
 
 function hideReviewView() {
@@ -1315,7 +1322,12 @@ function handleContinueToReview() {
 // ============================================
 // FINAL BOOKING SUBMISSION & CONFIRMATION
 // ============================================
+let _isBookingSubmitting = false;
+
 async function handleBookingSubmit() {
+  if (_isBookingSubmitting) return; // prevent double / spot submits
+  _isBookingSubmitting = true;
+
   const pickup = ($('#pickup-input')?.value || '').trim();
   const dest = ($('#dest-input')?.value || '').trim();
   const dateVal = $('#date-display-input')?.value || '';
@@ -1333,6 +1345,7 @@ async function handleBookingSubmit() {
   if (!pickup) {
     alert('Please enter your pickup location.');
     $('#pickup-input')?.focus();
+    _isBookingSubmitting = false;
     return;
   }
 
@@ -1340,6 +1353,7 @@ async function handleBookingSubmit() {
   if (state.tripMode === 'one_way' && !dest) {
     alert('Please enter your destination.');
     $('#dest-input')?.focus();
+    _isBookingSubmitting = false;
     return;
   }
 
@@ -1348,18 +1362,21 @@ async function handleBookingSubmit() {
     alert('Please select your travel date.');
     renderCalendarGrid();
     openModal('modal-calendar');
+    _isBookingSubmitting = false;
     return;
   }
   if (!timeVal) {
     alert('Please select your travel time.');
     renderTimeSlots();
     openModal('modal-time-picker');
+    _isBookingSubmitting = false;
     return;
   }
 
   // 4. Validate 1-Hour Advance Booking Requirement
   if (!validateAdvanceNotice()) {
     alert('Please select a pickup time at least 1 hour from now.');
+    _isBookingSubmitting = false;
     return;
   }
 
@@ -1367,17 +1384,20 @@ async function handleBookingSubmit() {
   if (!name) {
     alert('Please enter your name.');
     $('#cust-name')?.focus();
+    _isBookingSubmitting = false;
     return;
   }
   if (!phone || phone.length < 7) {
     alert('Please enter a valid WhatsApp / contact phone number.');
     $('#cust-phone')?.focus();
+    _isBookingSubmitting = false;
     return;
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
     alert('Please enter a valid email address.');
     $('#cust-email')?.focus();
+    _isBookingSubmitting = false;
     return;
   }
 
@@ -1447,6 +1467,7 @@ async function handleBookingSubmit() {
   } finally {
     if (btn) btn.disabled = false;
     if (btnLabel) btnLabel.textContent = 'SUBMIT BOOKING REQUEST';
+    _isBookingSubmitting = false;
   }
 
   if (bookingSuccessful) {
