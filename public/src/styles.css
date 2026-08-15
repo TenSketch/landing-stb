@@ -1177,3 +1177,154 @@ body {
     height: 52px;
   }
 }
+
+/* ============================================
+   Language Pill
+   ============================================ */
+.lang-pill {
+  background: white;
+  border: 1px solid var(--stb-line);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--stb-charcoal);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+.lang-pill select {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--stb-charcoal);
+  outline: none;
+  cursor: pointer;
+}
+
+/* ============================================
+   Input Clear "×" Button
+   ============================================ */
+.input-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  background: #E8E4DE;
+  color: #6B6B6B;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+.input-clear-btn:hover {
+  background: var(--stb-red);
+  color: white;
+}
+
+/* ============================================
+   Google Places Autocomplete Styling
+   ============================================ */
+.pac-container {
+  background-color: #FFFFFF !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 36px rgba(20, 20, 20, 0.14) !important;
+  border: 1px solid #E8E4DE !important;
+  font-family: 'Manrope', sans-serif !important;
+  margin-top: 6px !important;
+  z-index: 9999 !important;
+  overflow: hidden;
+}
+.pac-item {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: #141414 !important;
+  cursor: pointer !important;
+  border-top: 1px solid #F5F3EF !important;
+  transition: background-color 0.15s ease !important;
+}
+.pac-item:first-child {
+  border-top: none !important;
+}
+.pac-item:hover, .pac-item-selected {
+  background-color: var(--stb-red-soft) !important;
+}
+.pac-item-query {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #141414 !important;
+}
+.pac-matched {
+  font-weight: 800 !important;
+  color: var(--stb-red) !important;
+}
+.pac-icon {
+  margin-top: 4px !important;
+}
+
+/* ============================================
+   Google Maps Preview
+   ============================================ */
+#google-map-preview-wrap {
+  transition: all 0.3s ease;
+}
+#google-map-preview {
+  background: #FBF7F0;
+}
+
+/* ============================================
+   Confirmation View
+   ============================================ */
+#confirmation-view {
+  scroll-margin-top: 80px;
+}
+
+/* ============================================
+   Fade-in Animation
+   ============================================ */
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Float WhatsApp above footer transition */
+.floating-whatsapp-btn {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.floating-whatsapp-btn.above-footer {
+  bottom: 12rem; /* Shifts above footer info on desktop */
+}
+@media (max-width: 768px) {
+  .floating-whatsapp-btn.above-footer {
+    bottom: 22rem; /* Shifts above footer info on mobile */
+  }
+}
+
+/* Premium subtle glow trust badge pulse */
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.15);
+    background-color: rgba(209, 250, 229, 0.6);
+    border-color: rgba(16, 185, 129, 0.3) !important;
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(16, 185, 129, 0.35);
+    background-color: rgba(209, 250, 229, 0.95);
+    border-color: rgba(16, 185, 129, 0.55) !important;
+  }
+}
+.badge-pulse {
+  animation: subtle-glow 3.5s infinite ease-in-out;
+  transition: all 0.3s ease;
+}
+

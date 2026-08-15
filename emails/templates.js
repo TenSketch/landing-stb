@@ -25,6 +25,55 @@ function fmtDateTime(iso) {
   } catch { return String(iso); }
 }
 
+function rowTd(label, val, color) {
+  if (!val) return '';
+  return `<tr>
+    <td style="padding:6px 0;font-size:12px;color:#6B6B6B;vertical-align:top;width:40%;">${escape(label)}</td>
+    <td style="padding:6px 0;font-size:13px;font-weight:700;color:${color || '#141414'};vertical-align:top;width:60%;">${escape(val)}</td>
+  </tr>`;
+}
+
+function nextStep(num, title, desc) {
+  return `<tr>
+    <td style="vertical-align:top;padding:8px 12px 8px 0;width:32px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:#FDECEC;color:#E31E24;font-size:11px;font-weight:800;line-height:28px;text-align:center;">${escape(num)}</div>
+    </td>
+    <td style="vertical-align:top;padding:8px 0;">
+      <div style="font-size:13px;font-weight:700;color:#141414;">${escape(title)}</div>
+      <div style="font-size:12px;color:#6B6B6B;line-height:1.5;">${escape(desc)}</div>
+    </td>
+  </tr>`;
+}
+
+function adminBlock(title, rows) {
+  if (!rows || (Array.isArray(rows) && rows.length === 0)) return '';
+  const renderedRows = Array.isArray(rows)
+    ? rows.map(([label, val]) => `
+      <tr>
+        <td style="padding:4px 0;font-size:11px;color:#888888;width:40%;vertical-align:top;">${escape(label)}</td>
+        <td style="padding:4px 0;font-size:12px;font-weight:700;color:#141414;width:60%;vertical-align:top;">${val}</td>
+      </tr>
+    `).join('')
+    : `<tr><td style="padding:4px 0;font-size:12px;color:#141414;">${rows}</td></tr>`;
+
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FBF7F0;border-radius:14px;padding:16px;margin-bottom:12px;">
+      <tr>
+        <td style="font-size:10px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid rgba(20,20,20,0.06);">
+          ${escape(title)}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-top:8px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            ${renderedRows}
+          </table>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
 // ============================================
 // SHARED HEAD + WRAPPER
 // ============================================
@@ -121,7 +170,7 @@ function shell({ title, preheader, bodyHtml, footerHtml, brand }) {
 }
 
 // ============================================
-// GUEST — RESERVATION CONFIRMED
+// GUEST — INQUIRY RECEIVED
 // ============================================
 function guestEmail(booking, brand) {
   const b = {
@@ -130,20 +179,23 @@ function guestEmail(booking, brand) {
     firstName: escape((booking.passengerName || 'Guest').split(' ')[0]),
     passengerEmail: escape(booking.passengerEmail || ''),
     passengerPhone: escape(booking.passengerPhone || ''),
-    vehicle: escape(booking.vehicle || ''),
+    vehicle: escape(booking.vehicle || 'Private Transport'),
+    bookingType: escape(booking.bookingType || 'One Way'),
     pickup: escape(booking.pickup || ''),
     destination: escape(booking.destination || ''),
-    dateTime: escape(fmtDateTime(booking.dateTime) || 'To be confirmed'),
+    dateTime: escape(fmtDateTime(booking.dateTime) || booking.dateTime || 'To be confirmed'),
     flightNo: escape(booking.flightNo || ''),
-    fare: escape(booking.fare || ''),
+    notes: escape(booking.notes || ''),
+    fare: escape(booking.fare || 'Fixed quote on dispatch'),
     currency: escape(booking.currency || 'SGD'),
-    paymentMethod: escape(booking.paymentMethod || ''),
-    pax: escape(booking.pax || ''),
+    paymentMethod: escape(booking.paymentMethod || 'Pay after service'),
+    pax: escape(booking.pax || '1-3 Passengers'),
   };
 
   const waNumber = (brand.whatsapp || '').replace(/[^0-9]/g, '');
-  const waMsg = encodeURIComponent(`Hello STB, I would like to confirm my booking ${b.voucherCode} (Passenger: ${booking.passengerName}).`);
+  const waMsg = encodeURIComponent(`Hello STB Dispatch, I submitted transport inquiry ${b.voucherCode} (Passenger: ${booking.passengerName}). Please confirm availability.`);
   const waLink = `https://wa.me/${waNumber}?text=${waMsg}`;
+  const callLink = `tel:${(brand.phone || '+6590629107').replace(/[^0-9+]/g, '')}`;
 
   const bodyHtml = `
     <!-- Success badge -->
@@ -160,7 +212,7 @@ function guestEmail(booking, brand) {
     <!-- Headline -->
     <tr>
       <td class="px" align="center" style="padding:16px 40px 8px 40px;">
-        <h1 class="serif h1" style="margin:0;font-family:Georgia,serif;font-size:32px;line-height:1.15;font-weight:500;color:#141414;letter-spacing:-0.02em;">
+        <h1 class="serif h1" style="margin:0;font-family:Georgia,serif;font-size:30px;line-height:1.15;font-weight:500;color:#141414;letter-spacing:-0.02em;">
           Thank you, ${b.firstName}. <span style="color:#E31E24;font-style:italic;">Inquiry received.</span>
         </h1>
       </td>
@@ -168,13 +220,13 @@ function guestEmail(booking, brand) {
 
     <tr>
       <td class="px" align="center" style="padding:0 40px 24px 40px;">
-        <p style="margin:0;font-size:14px;line-height:1.6;color:#6B6B6B;max-width:440px;">
-          Our dispatch team has received your transport request. We will verify chauffeur availability and confirm your booking via WhatsApp. <strong>No prepayment is required</strong> — pay after your trip is completed.
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#6B6B6B;max-width:460px;">
+          Your transport booking request has been received. Our Singapore dispatch team is verifying chauffeur availability and will confirm your booking via WhatsApp. <strong>No prepayment is required</strong> — pay after your trip is completed.
         </p>
       </td>
     </tr>
 
-    <!-- VIP PASS -->
+    <!-- VIP INQUIRY PASS -->
     <tr>
       <td class="px" style="padding:0 40px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#FDECEC 0%,#FBF3E1 100%);border-radius:20px;border:2px dashed #E31E24;">
@@ -183,7 +235,7 @@ function guestEmail(booking, brand) {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="font-size:11px;font-weight:800;letter-spacing:0.22em;color:#E31E24;text-transform:uppercase;">
-                    STB VIP Pass
+                    STB Transport Inquiry
                   </td>
                   <td align="right" style="font-family:'Courier New',monospace;background:#E31E24;color:#ffffff;font-size:12px;font-weight:800;padding:6px 12px;border-radius:8px;letter-spacing:0.05em;">
                     ${b.voucherCode}
@@ -192,21 +244,24 @@ function guestEmail(booking, brand) {
               </table>
 
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(227,30,36,0.15);">
-                ${rowTd('Passenger', b.passengerName)}
-                ${rowTd('Vehicle', b.vehicle)}
-                ${rowTd('Pickup', b.pickup)}
+                ${rowTd('Passenger Name', b.passengerName)}
+                ${rowTd('WhatsApp / Phone', b.passengerPhone)}
+                ${rowTd('Email', b.passengerEmail)}
+                ${rowTd('Booking Type', b.bookingType)}
+                ${rowTd('Pickup Location', b.pickup)}
                 ${b.destination ? rowTd('Destination', b.destination) : ''}
-                ${rowTd('Date &amp; Time', b.dateTime)}
-                ${b.flightNo ? rowTd('Flight', b.flightNo, '#E31E24') : ''}
+                ${rowTd('Travel Date &amp; Time', b.dateTime)}
+                ${b.flightNo ? rowTd('Flight Number', b.flightNo, '#E31E24') : ''}
+                ${b.notes ? rowTd('Special Notes', b.notes) : ''}
                 ${rowTd('Passengers', b.pax)}
-                ${rowTd('Payment', b.paymentMethod)}
+                ${rowTd('Payment Option', b.paymentMethod)}
               </table>
 
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(227,30,36,0.2);">
                 <tr>
-                  <td style="font-size:13px;font-weight:700;color:#141414;">Total (guaranteed)</td>
-                  <td align="right" class="serif" style="font-family:Georgia,serif;font-size:26px;font-weight:500;color:#E31E24;letter-spacing:-0.02em;">
-                    ${b.fare} <span style="font-size:12px;color:#6B6B6B;font-family:Helvetica,sans-serif;font-weight:600;">${b.currency}</span>
+                  <td style="font-size:13px;font-weight:700;color:#141414;">Status</td>
+                  <td align="right" style="font-size:13px;font-weight:800;color:#E31E24;">
+                    Dispatch Availability Verification In Progress
                   </td>
                 </tr>
               </table>
@@ -216,45 +271,58 @@ function guestEmail(booking, brand) {
       </td>
     </tr>
 
-    <!-- WhatsApp CTA -->
+    <!-- Contact & Action CTAs -->
     <tr>
-      <td class="px" align="center" style="padding:28px 40px 8px 40px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <td class="px" style="padding:28px 40px 8px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td align="center" style="background:#25D366;border-radius:14px;">
-              <a href="${waLink}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
-                💬 &nbsp;Chat with dispatch on WhatsApp
-              </a>
+            <td class="stack" style="padding-right:6px;width:50%;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#25D366;border-radius:14px;">
+                <tr><td align="center">
+                  <a href="${waLink}" style="display:block;padding:14px 20px;color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
+                    💬 &nbsp;WhatsApp Dispatch
+                  </a>
+                </td></tr>
+              </table>
+            </td>
+            <td class="stack stack-pad" style="padding-left:6px;width:50%;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#141414;border-radius:14px;">
+                <tr><td align="center">
+                  <a href="${callLink}" style="display:block;padding:14px 20px;color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
+                    ✆ &nbsp;Call STB Support
+                  </a>
+                </td></tr>
+              </table>
             </td>
           </tr>
         </table>
-        <div style="margin-top:12px;font-size:11px;color:#6B6B6B;">Or reply to this email — we respond within 30 minutes, 24/7.</div>
+        <div style="margin-top:12px;font-size:11px;color:#6B6B6B;text-align:center;">Dispatch Hotline: <strong>${escape(brand.phone)}</strong> (24/7 Available)</div>
       </td>
     </tr>
 
-    <!-- What happens next -->
+    <!-- Next Steps -->
     <tr>
-      <td class="px" style="padding:32px 40px 8px 40px;">
+      <td class="px" style="padding:28px 40px 8px 40px;">
         <div class="serif" style="font-family:Georgia,serif;font-size:18px;font-weight:600;color:#141414;letter-spacing:-0.01em;margin-bottom:12px;">
-          What happens next
+          What to expect next
         </div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          ${nextStep('01', 'Chauffeur assigned', 'You will receive driver name, contact, and vehicle plate 24 hours before pickup.')}
-          ${nextStep('02', 'Live tracking', b.flightNo ? `We are monitoring flight ${b.flightNo} in real-time. Your chauffeur adjusts automatically.` : 'We monitor traffic conditions and adjust arrival timing accordingly.')}
-          ${nextStep('03', 'Enjoy your ride', 'Onboard 5G WiFi, complimentary water, and VIP treatment. Zero surcharges.')}
+          ${nextStep('01', 'Inquiry review', 'Our dispatch team confirms chauffeur allocation and message you via WhatsApp.')}
+          ${nextStep('02', 'Driver & Vehicle details', 'You will receive the chauffeur name, direct phone, and vehicle registration before your trip.')}
+          ${nextStep('03', 'Pay after trip', 'Zero prepayment. Settle directly with the driver in cash or PayNow SG after service.')}
         </table>
       </td>
     </tr>
 
-    <!-- Contact info block -->
+    <!-- Change info -->
     <tr>
-      <td class="px" style="padding:24px 40px 40px 40px;">
+      <td class="px" style="padding:16px 40px 40px 40px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FBF7F0;border-radius:14px;">
           <tr>
-            <td style="padding:20px;">
-              <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:8px;">Need to change something?</div>
-              <div style="font-size:13px;color:#141414;line-height:1.6;">
-                Cancel or reschedule free of charge up to <strong>2 hours before pickup</strong>. Reply to this email with your voucher code <strong>${b.voucherCode}</strong> or ping WhatsApp.
+            <td style="padding:18px 22px;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:6px;">Need to modify your inquiry?</div>
+              <div style="font-size:12px;color:#141414;line-height:1.6;">
+                Reply directly to this email or contact WhatsApp with your reference <strong>${b.voucherCode}</strong>.
               </div>
             </td>
           </tr>
@@ -264,39 +332,65 @@ function guestEmail(booking, brand) {
   `;
 
   return shell({
-    title: `Reservation Confirmed — ${b.voucherCode}`,
-    preheader: `Your STB VIP chauffeur is booked. Voucher ${b.voucherCode} · ${b.fare} ${b.currency}`,
+    title: `STB Transport Inquiry Received — ${b.voucherCode}`,
+    preheader: `Transport inquiry received for ${b.passengerName}. Reference ${b.voucherCode} · Availability verification in progress.`,
     bodyHtml,
     brand,
   });
 }
 
 // ============================================
-// ADMIN — NEW BOOKING ALERT
+// ADMIN — NEW INQUIRY ALERT
 // ============================================
 function adminEmail(booking, brand) {
   const b = {
     voucherCode: escape(booking.voucherCode || ''),
-    passengerName: escape(booking.passengerName || ''),
-    passengerEmail: escape(booking.passengerEmail || ''),
-    passengerPhone: escape(booking.passengerPhone || ''),
-    vehicle: escape(booking.vehicle || ''),
-    pickup: escape(booking.pickup || ''),
-    destination: escape(booking.destination || ''),
-    dateTime: escape(fmtDateTime(booking.dateTime) || ''),
+    passengerName: escape(booking.passengerName || '—'),
+    passengerEmail: escape(booking.passengerEmail || '—'),
+    passengerPhone: escape(booking.passengerPhone || '—'),
+    vehicle: escape(booking.vehicle || 'Standard Private Transport'),
+    bookingType: escape(booking.bookingType || 'One Way'),
+    pickup: escape(booking.pickup || '—'),
+    destination: escape(booking.destination || '—'),
+    dateTime: escape(fmtDateTime(booking.dateTime) || booking.dateTime || '—'),
     flightNo: escape(booking.flightNo || ''),
-    fare: escape(booking.fare || ''),
+    notes: escape(booking.notes || ''),
+    fare: escape(booking.fare || 'Pending Quote'),
     currency: escape(booking.currency || 'SGD'),
-    paymentMethod: escape(booking.paymentMethod || ''),
-    pax: escape(booking.pax || ''),
+    paymentMethod: escape(booking.paymentMethod || 'Pay after service'),
+    pax: escape(booking.pax || '1-3 Passengers'),
+    pickupPlaceId: escape(booking.pickupPlaceId || ''),
+    destPlaceId: escape(booking.destPlaceId || ''),
+    pickupCoords: booking.pickupCoords ? `${booking.pickupCoords.lat}, ${booking.pickupCoords.lng}` : '',
+    destCoords: booking.destCoords ? `${booking.destCoords.lat}, ${booking.destCoords.lng}` : '',
     createdAt: escape(booking.createdAt || new Date().toISOString()),
   };
 
-  const waNumber = (booking.passengerPhone || '').replace(/[^0-9]/g, '');
-  const custWaLink = waNumber
-    ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hello ${booking.passengerName}, this is STB Dispatch confirming your booking ${b.voucherCode}.`)}`
+  const waDigits = (booking.passengerPhone || '').replace(/[^0-9]/g, '');
+  const custWaLink = waDigits
+    ? `https://wa.me/${waDigits}?text=${encodeURIComponent(`Hello ${booking.passengerName}, this is STB Singapore Dispatch regarding your transport inquiry ${b.voucherCode}.`)}`
     : '#';
-  const mailtoLink = `mailto:${b.passengerEmail}?subject=${encodeURIComponent('STB Singapore — Chauffeur Assignment for ' + b.voucherCode)}`;
+  const mailtoLink = `mailto:${b.passengerEmail}?subject=${encodeURIComponent('STB Singapore — Transport Inquiry ' + b.voucherCode)}`;
+
+  const customerRows = [
+    ['Name', b.passengerName],
+    ['WhatsApp Number', `<a href="${custWaLink}" style="color:#1B7B3F;font-weight:800;text-decoration:underline;">${b.passengerPhone} ↗</a>`],
+    ['Email', `<a href="${mailtoLink}" style="color:#E31E24;">${b.passengerEmail}</a>`],
+    ['Passengers', b.pax],
+  ];
+
+  const tripRows = [
+    ['Booking Type', b.bookingType],
+    ['Pickup Location', b.pickup],
+    ...(b.pickupPlaceId ? [['Pickup Place ID', `<span style="font-family:monospace;font-size:11px;">${b.pickupPlaceId}</span>`]] : []),
+    ...(b.pickupCoords ? [['Pickup Coordinates', b.pickupCoords]] : []),
+    ['Destination', b.destination],
+    ...(b.destPlaceId ? [['Dest Place ID', `<span style="font-family:monospace;font-size:11px;">${b.destPlaceId}</span>`]] : []),
+    ...(b.destCoords ? [['Dest Coordinates', b.destCoords]] : []),
+    ['Travel Date / Time', b.dateTime],
+    ...(b.flightNo ? [['Flight Number', b.flightNo]] : []),
+    ...(b.notes ? [['Special Notes', b.notes]] : []),
+  ];
 
   const bodyHtml = `
     <!-- Alert badge -->
@@ -304,7 +398,7 @@ function adminEmail(booking, brand) {
       <td class="px" align="center" style="padding:8px 40px 4px 40px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0">
           <tr><td style="background:#FDECEC;color:#B8171C;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">
-            ⚡ New Booking · Action Required
+            ⚡ New Transport Inquiry · Action Required
           </td></tr>
         </table>
       </td>
@@ -314,7 +408,7 @@ function adminEmail(booking, brand) {
     <tr>
       <td class="px" align="center" style="padding:16px 40px 4px 40px;">
         <h1 class="serif h1" style="margin:0;font-family:Georgia,serif;font-size:28px;line-height:1.15;font-weight:500;color:#141414;letter-spacing:-0.02em;">
-          Booking <span style="color:#E31E24;">${b.voucherCode}</span>
+          Inquiry <span style="color:#E31E24;">${b.voucherCode}</span>
         </h1>
       </td>
     </tr>
@@ -324,53 +418,16 @@ function adminEmail(booking, brand) {
       </td>
     </tr>
 
-    <!-- Two-column summary: PASSENGER + TRIP -->
+    <!-- Two-column summary: CUSTOMER + TRIP -->
     <tr>
       <td class="px" style="padding:0 40px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td class="stack" style="vertical-align:top;width:50%;padding-right:8px;">
-              ${adminBlock('Passenger', [
-                ['Name', b.passengerName],
-                ['Phone', b.passengerPhone],
-                ['Email', b.passengerEmail],
-                ['Pax', b.pax],
-              ])}
+              ${adminBlock('CUSTOMER', customerRows)}
             </td>
             <td class="stack stack-pad" style="vertical-align:top;width:50%;padding-left:8px;">
-              ${adminBlock('Trip', [
-                ['Vehicle', b.vehicle],
-                ['Pickup', b.pickup],
-                ['Destination', b.destination || '—'],
-                ['Date/Time', b.dateTime],
-                ...(b.flightNo ? [['Flight', b.flightNo]] : []),
-              ])}
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-
-    <!-- Payment strip -->
-    <tr>
-      <td class="px" style="padding:16px 40px 0 40px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#141414;border-radius:14px;">
-          <tr>
-            <td style="padding:18px 22px;color:#ffffff;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td>
-                    <div style="font-size:10px;font-weight:800;letter-spacing:0.2em;color:#D4A24A;text-transform:uppercase;margin-bottom:2px;">Fare</div>
-                    <div class="serif" style="font-family:Georgia,serif;font-size:24px;font-weight:500;color:#ffffff;letter-spacing:-0.01em;">
-                      ${b.fare} <span style="font-size:12px;color:#B0B0B0;font-family:Helvetica,sans-serif;font-weight:600;">${b.currency}</span>
-                    </div>
-                  </td>
-                  <td align="right">
-                    <div style="font-size:10px;font-weight:800;letter-spacing:0.2em;color:#D4A24A;text-transform:uppercase;margin-bottom:2px;">Payment Method</div>
-                    <div style="font-size:14px;font-weight:700;color:#ffffff;">${b.paymentMethod}</div>
-                  </td>
-                </tr>
-              </table>
+              ${adminBlock('TRIP DETAILS', tripRows)}
             </td>
           </tr>
         </table>
@@ -381,28 +438,16 @@ function adminEmail(booking, brand) {
     <tr>
       <td class="px" style="padding:24px 40px 8px 40px;">
         <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:12px;">
-          Quick Actions
+          Quick Dispatch Actions
         </div>
 
-        <!-- Primary: Assign Driver (opens tiny form) -->
-        ${brand.assignUrl ? `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#E31E24,#B8171C);border-radius:12px;margin-bottom:10px;">
-          <tr><td align="center">
-            <a href="${brand.assignUrl}" style="display:block;padding:16px 20px;color:#ffffff;font-size:14px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
-              🚗 &nbsp;Assign Driver &amp; Vehicle
-              <span style="display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,0.7);margin-top:3px;letter-spacing:0.08em;">Guest reminder auto-fires 12h before pickup</span>
-            </a>
-          </td></tr>
-        </table>
-        ` : ''}
-
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
           <tr>
             <td class="stack" style="padding-right:6px;width:50%;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#25D366;border-radius:12px;">
                 <tr><td align="center">
                   <a href="${custWaLink}" style="display:block;padding:14px 20px;color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
-                    💬 &nbsp;WhatsApp Customer
+                    💬 &nbsp;WhatsApp Customer (${b.passengerPhone})
                   </a>
                 </td></tr>
               </table>
@@ -418,89 +463,27 @@ function adminEmail(booking, brand) {
             </td>
           </tr>
         </table>
-      </td>
-    </tr>
 
-    <!-- Checklist -->
-    <tr>
-      <td class="px" style="padding:20px 40px 40px 40px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FBF7F0;border-radius:14px;">
-          <tr>
-            <td style="padding:18px 22px;">
-              <div style="font-size:11px;font-weight:800;letter-spacing:0.18em;color:#B08536;text-transform:uppercase;margin-bottom:10px;">Dispatch Checklist</div>
-              <div style="font-size:13px;color:#141414;line-height:1.9;">
-                ☐ &nbsp;Assign chauffeur &amp; confirm vehicle availability<br>
-                ☐ &nbsp;Send driver name + plate to guest via WhatsApp (24h prior)<br>
-                ${b.flightNo ? '☐ &nbsp;Set flight tracking alert for ' + b.flightNo + '<br>' : ''}
-                ☐ &nbsp;Confirm payment method &amp; collect if PayNow/Card<br>
-                ☐ &nbsp;Log booking in dispatch sheet
-              </div>
-            </td>
-          </tr>
+        ${brand.assignUrl ? `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(135deg,#E31E24,#B8171C);border-radius:12px;">
+          <tr><td align="center">
+            <a href="${brand.assignUrl}" style="display:block;padding:14px 20px;color:#ffffff;font-size:13px;font-weight:800;text-decoration:none;letter-spacing:0.02em;">
+              🚗 &nbsp;Assign Driver &amp; Notify Guest
+            </a>
+          </td></tr>
         </table>
+        ` : ''}
       </td>
     </tr>
   `;
 
   return shell({
-    title: `[NEW BOOKING] ${b.voucherCode} — ${b.passengerName}`,
-    preheader: `${b.passengerName} · ${b.vehicle} · ${b.pickup} → ${b.destination || 'Hourly'} · ${b.fare} ${b.currency}`,
+    title: `New STB Transport Inquiry — ${b.voucherCode}`,
+    preheader: `Customer: ${b.passengerName} (${b.passengerPhone}) · ${b.pickup} → ${b.destination} · ${b.dateTime}`,
     bodyHtml,
-    footerHtml: `Internal dispatch email — do not forward. © ${new Date().getFullYear()} STB Singapore Dispatch.`,
+    footerHtml: `Internal dispatch notification — do not forward. © ${new Date().getFullYear()} STB Singapore Dispatch.`,
     brand,
   });
-}
-
-// ============================================
-// Small helpers for table rows
-// ============================================
-function rowTd(label, value, valueColor = '#141414') {
-  return `
-    <tr>
-      <td style="padding:5px 0;font-size:12px;color:#6B6B6B;">${label}</td>
-      <td align="right" style="padding:5px 0;font-size:13px;font-weight:700;color:${valueColor};">${value}</td>
-    </tr>
-  `;
-}
-
-function nextStep(num, title, desc) {
-  return `
-    <tr>
-      <td style="padding:10px 0;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-          <tr>
-            <td width="44" style="vertical-align:top;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                <tr><td align="center" width="32" height="32" style="background:#FDECEC;color:#E31E24;border-radius:16px;font-family:Georgia,serif;font-size:12px;font-weight:700;">${num}</td></tr>
-              </table>
-            </td>
-            <td style="vertical-align:top;">
-              <div style="font-size:13px;font-weight:700;color:#141414;margin-bottom:2px;">${title}</div>
-              <div style="font-size:12px;color:#6B6B6B;line-height:1.55;">${desc}</div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  `;
-}
-
-function adminBlock(title, rows) {
-  return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FBF7F0;border-radius:14px;height:100%;">
-      <tr>
-        <td style="padding:16px 18px;">
-          <div style="font-size:10px;font-weight:800;letter-spacing:0.2em;color:#B08536;text-transform:uppercase;margin-bottom:10px;">${title}</div>
-          ${rows.map(([label, value]) => `
-            <div style="margin-bottom:8px;">
-              <div style="font-size:10px;font-weight:700;color:#6B6B6B;text-transform:uppercase;letter-spacing:0.06em;">${label}</div>
-              <div style="font-size:13px;font-weight:700;color:#141414;word-break:break-word;">${value || '—'}</div>
-            </div>
-          `).join('')}
-        </td>
-      </tr>
-    </table>
-  `;
 }
 
 // ============================================
@@ -508,23 +491,25 @@ function adminBlock(title, rows) {
 // ============================================
 function guestText(booking) {
   return [
-    `STB Singapore — Reservation Confirmed`,
+    `STB Singapore — Transport Inquiry Received`,
     ``,
-    `Thank you, ${booking.passengerName}. Your ride is booked.`,
+    `Thank you, ${booking.passengerName}. Your transport inquiry has been received.`,
     ``,
-    `Voucher: ${booking.voucherCode}`,
-    `Vehicle: ${booking.vehicle}`,
+    `Inquiry Reference: ${booking.voucherCode}`,
+    `Booking Type: ${booking.bookingType || 'One Way'}`,
     `Pickup: ${booking.pickup}`,
     booking.destination ? `Destination: ${booking.destination}` : ``,
     `Date/Time: ${booking.dateTime}`,
     booking.flightNo ? `Flight: ${booking.flightNo}` : ``,
+    booking.notes ? `Notes: ${booking.notes}` : ``,
     `Passengers: ${booking.pax}`,
-    `Payment: ${booking.paymentMethod}`,
-    `Total (guaranteed): ${booking.fare} ${booking.currency}`,
+    `Payment: No prepayment required (Pay after trip)`,
     ``,
-    `A chauffeur will be assigned within 24h of pickup. You'll receive the driver's name, contact, and vehicle plate on WhatsApp.`,
+    `Our Singapore dispatch team is verifying chauffeur availability and will confirm your booking via WhatsApp.`,
     ``,
-    `Questions? Reply to this email — 24/7 dispatch response within 30 minutes.`,
+    `Questions or urgent changes?`,
+    `WhatsApp: ${booking.whatsapp || '+65 9062 9107'}`,
+    `Hotline: +65 9062 9107`,
     ``,
     `© Singapore Tour Booking (STB) · Majestic Hospitality Group`,
   ].filter(Boolean).join('\n');
@@ -532,26 +517,25 @@ function guestText(booking) {
 
 function adminText(booking) {
   return [
-    `[NEW BOOKING] ${booking.voucherCode}`,
+    `[NEW TRANSPORT INQUIRY] ${booking.voucherCode}`,
     ``,
-    `PASSENGER`,
+    `CUSTOMER`,
     `  Name: ${booking.passengerName}`,
-    `  Phone: ${booking.passengerPhone}`,
+    `  WhatsApp: ${booking.passengerPhone}`,
     `  Email: ${booking.passengerEmail}`,
     `  Pax: ${booking.pax}`,
     ``,
     `TRIP`,
-    `  Vehicle: ${booking.vehicle}`,
+    `  Booking Type: ${booking.bookingType || 'One Way'}`,
     `  Pickup: ${booking.pickup}`,
-    `  Destination: ${booking.destination || '—'}`,
+    booking.pickupPlaceId ? `  Pickup Place ID: ${booking.pickupPlaceId}` : ``,
+    booking.destination ? `  Destination: ${booking.destination}` : ``,
+    booking.destPlaceId ? `  Dest Place ID: ${booking.destPlaceId}` : ``,
     `  Date/Time: ${booking.dateTime}`,
     booking.flightNo ? `  Flight: ${booking.flightNo}` : ``,
+    booking.notes ? `  Notes: ${booking.notes}` : ``,
     ``,
-    `PAYMENT`,
-    `  Fare: ${booking.fare} ${booking.currency}`,
-    `  Method: ${booking.paymentMethod}`,
-    ``,
-    `ACTION: assign chauffeur, send driver details to guest 24h prior.`,
+    `ACTION: Verify vehicle availability & contact customer via WhatsApp (${booking.passengerPhone}).`,
   ].filter(Boolean).join('\n');
 }
 

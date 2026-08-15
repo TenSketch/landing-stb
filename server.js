@@ -42,12 +42,12 @@ app.use((req, res, next) => {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdn.tailwindcss.com https://unpkg.com",
+      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdn.tailwindcss.com https://unpkg.com https://maps.googleapis.com https://maps.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-      "img-src 'self' data: https: blob:",
+      "img-src 'self' data: https: blob: https://maps.gstatic.com https://*.googleapis.com https://*.ggpht.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.google-analytics.com https://*.googletagmanager.com https://nominatim.openstreetmap.org https://unpkg.com",
-      "frame-src 'self' https://www.googletagmanager.com",
+      "connect-src 'self' https://*.google-analytics.com https://*.googletagmanager.com https://nominatim.openstreetmap.org https://unpkg.com https://maps.googleapis.com https://places.googleapis.com https://*.googleapis.com",
+      "frame-src 'self' https://www.googletagmanager.com https://maps.google.com https://www.google.com",
       "media-src 'self'",
       "object-src 'none'",
       "base-uri 'self'",
@@ -61,7 +61,7 @@ app.use((req, res, next) => {
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader(
     "Permissions-Policy",
-    "accelerometer=(), camera=(), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
   );
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.removeHeader("X-Powered-By");
@@ -85,6 +85,16 @@ if (transporter) {
   console.warn("[SMTP] not configured — bookings will log to console only.");
 }
 console.log("[STORAGE]", storageMode);
+
+// ---------- Config (public) ----------
+app.get("/api/config", (_req, res) => {
+  res.json({
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+    brandName: process.env.BRAND_NAME || "STB Singapore",
+    contactPhone: process.env.CONTACT_PHONE || "+65 9062 9107",
+    adminWhatsApp: process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || "+6590629107",
+  });
+});
 
 // ---------- Health ----------
 app.get("/api/health", (_req, res) => {
@@ -117,9 +127,12 @@ app.get("/assign/:voucherCode", async (req, res) => {
   res.status(r.status).send(r.html);
 });
 
-app.post("/assign/:voucherCode", async (req, res) => {
+app.post(["/assign/:voucherCode", "/api/assign/:voucherCode"], async (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   const r = await handlePostAssign(req.params.voucherCode, req.body || {}, baseUrl);
+  if (req.path.startsWith("/api/")) {
+    return res.status(r.status).json(r);
+  }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(r.status).send(r.html);
 });

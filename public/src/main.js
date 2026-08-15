@@ -1,10 +1,11 @@
-// STB Singapore — Vanilla JavaScript App
-// Pure JS, no framework. Handles booking widget, currency, map, modals, filters.
+// STB Singapore — Production JavaScript App
+// Advance Transport Booking & Inquiry Platform
 
 // ============================================
 // STATE
 // ============================================
 const state = {
+  language: 'en',
   currency: 'SGD',
   currencySymbol: 'S$',
   exchangeRate: 1.0,
@@ -15,25 +16,33 @@ const state = {
   dailyDuration: 2,
   faqCategory: 'all',
   fleetCategory: 'all',
-  selectedStars: 5,
-  // Clean Form State (Section 1 & 2)
+  // Location & Place State (Initially completely empty)
   pickupText: '',
+  pickupPlaceId: null,
   pickupCoords: null,
   pickupTerminal: null,
+  pickupFormattedAddress: null,
   destText: '',
+  destPlaceId: null,
   destCoords: null,
   dropTerminal: null,
+  destFormattedAddress: null,
   travelDate: null,
   travelTime: null,
+  // Google Maps State
+  googleMapsLoaded: false,
+  googleMap: null,
+  googlePickupMarker: null,
+  googleDestMarker: null,
+  googleRoutePolyline: null,
 };
 
-let mapInstance = null;
-let pickupMarker = null;
-let destMarker = null;
-let routePolyline = null;
+// Quick DOM helpers
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
 
 // ============================================
-// CONSTANTS
+// CONSTANTS & DICTIONARIES
 // ============================================
 const CURRENCY_MAP = {
   SGD: { symbol: 'S$', rate: 1.0 },
@@ -45,8 +54,11 @@ const CURRENCY_MAP = {
   INR: { symbol: '₹', rate: 61.80 },
 };
 
-const LOCATION_COORDS = {
-  'Changi Airport': { lat: 1.3644, lng: 103.9915 },
+const DEFAULT_SINGAPORE_LOCATIONS = {
+  'Changi Airport Terminal 1': { lat: 1.3644, lng: 103.9915 },
+  'Changi Airport Terminal 2': { lat: 1.3575, lng: 103.9886 },
+  'Changi Airport Terminal 3': { lat: 1.3556, lng: 103.9864 },
+  'Changi Airport Terminal 4': { lat: 1.3397, lng: 103.9832 },
   'Jewel Changi Airport': { lat: 1.3602, lng: 103.9898 },
   'Marina Bay Sands Hotel': { lat: 1.2834, lng: 103.8607 },
   'Gardens by the Bay': { lat: 1.2815, lng: 103.8636 },
@@ -62,12 +74,8 @@ const LOCATION_COORDS = {
   'Sentosa Cove': { lat: 1.2449, lng: 103.8407 },
   'Woodlands Checkpoint': { lat: 1.4429, lng: 103.7690 },
   'Tuas Checkpoint': { lat: 1.3486, lng: 103.6366 },
-  'Johor Bahru City Square (Malaysia)': { lat: 1.4623, lng: 103.7638 },
-  'Legoland Malaysia (Johor)': { lat: 1.4273, lng: 103.6293 },
-  'Desaru Coast Resort (Malaysia)': { lat: 1.5395, lng: 104.2662 },
 };
 
-// Vehicles with ACCURATE Unsplash images
 const VEHICLES = [
   {
     id: 'alphard',
@@ -150,143 +158,189 @@ const VEHICLES = [
     perKmSGD: 2.3,
     minFareSGD: 60,
     hourlySGD: 60,
-    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=1200&q=80',
-    description: 'Futuristic spaceship-inspired MPV with panoramic windows and relaxation seating — optimal for touring visibility.',
-    features: ['Panoramic Windows', 'Relaxion Reclining Seats', 'Type-C USB Fast Ports', 'Quiet Engine Technology', 'Generous Legroom'],
+    description: 'Futuristic wide-cabin MPV with panoramic windows, generous legroom, and effortless electric sliding doors.',
+    features: ['Panoramic Windows', 'Electronic Sliding Doors', 'Fold-Flat Third Row', 'USB Fast Charging Ports', 'Dual Air Conditioning'],
   },
   {
-    id: 'bus',
-    name: 'Luxury Tour Coach',
-    fullName: 'VIP Luxury Tour Coach Bus (23-45 Seater)',
+    id: 'coach45',
+    name: '45-Seater Luxury Coach',
+    fullName: 'Scania / Mercedes 45-Seater Tour Coach',
     category: 'coach',
-    tag: 'MICE · Tour Delegations',
+    tag: 'Corporate & Tour',
     pax: 45,
     luggage: 40,
-    baseFareSGD: 150,
+    baseFareSGD: 120,
     perKmSGD: 5.0,
-    minFareSGD: 200,
-    hourlySGD: 150,
+    minFareSGD: 180,
+    hourlySGD: 140,
     image: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?auto=format&fit=crop&w=1200&q=80',
     fallback: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80',
-    description: 'Fully equipped air-conditioned tour bus with onboard PA, licensed tour driver, and under-floor luggage bay.',
-    features: ['23 to 45 Reclining Seats', 'Under-Floor Luggage Bay', 'PA Microphone for Guide', 'Safety Belt Equipped', 'Island-Wide Sightseeing'],
+    description: 'Full-size tour coach with air suspension, reclining plush seats, individual reading lamps, and huge undercarriage luggage bays.',
+    features: ['Air Suspension Ride', 'Overhead PA System & Mic', 'Reclining Tour Seats', 'Huge Luggage Bays', 'Tour Guide Seat'],
   },
 ];
 
 const SERVICES = [
-  { id: 'point_to_point', title: 'Point-to-Point Transport', icon: 'directions_car', tag: 'Direct Ride', priceSGD: 50, desc: 'Hotel to attraction, attraction to hotel, or any Singapore location to any destination with fixed rates.' },
-  { id: 'hourly_disposal', title: 'Hourly Chauffeur', icon: 'schedule', tag: 'Flexible Hours', priceSGD: 65, desc: 'Dedicated luxury vehicle and driver for several hours — ideal for city sightseeing, MICE, and business meetings.' },
-  { id: 'daily_booking', title: 'Daily Vehicle Booking', icon: 'calendar_today', tag: 'Full Day Charter', priceSGD: 450, desc: 'Private vehicle and driver for a full day or multiple days across Singapore & cross-border transfers.' },
-];
-
-const FAQS = [
-  { id: 'faq-1', category: 'pricing', question: 'Do I need to pay in advance?', answer: 'No prepayment is required! You can submit your transport inquiry and reserve your ride with zero upfront cost. Payment is made after your trip is completed via cash or PayNow SG.' },
-  { id: 'faq-2', category: 'airport', question: 'How do I book an airport transfer?', answer: 'Select Airport Transfer in the form, enter your pickup terminal or address, destination, date, time, and flight number. Tap Submit Transport Inquiry or WhatsApp Us — our team will confirm availability directly.' },
-  { id: 'faq-3', category: 'airport', question: 'Can you pick me up from Changi Airport?', answer: 'Yes! Our chauffeur meets you inside Changi Airport arrival hall with a personalized name board. We automatically track flight landings and include 60 minutes of complimentary waiting time.' },
-  { id: 'faq-4', category: 'airport', question: 'Can you take me from my hotel to Changi Airport?', answer: 'Yes, we provide punctual hotel-to-airport drop-off transfers directly to your terminal departure curb.' },
-  { id: 'faq-5', category: 'booking', question: 'Can I book transport after arriving in Singapore?', answer: 'Yes! We accept last-minute and same-day transport inquiries. Contact our 24/7 WhatsApp dispatch team for rapid vehicle assignment.' },
-  { id: 'faq-6', category: 'pricing', question: 'Do you provide hourly chauffeur service?', answer: 'Yes, our hourly disposal service provides a private vehicle and professional driver for 3 to 12+ hours with flexible stops.' },
-  { id: 'faq-7', category: 'booking', question: 'Can I book a vehicle for a full day?', answer: 'Yes, our daily booking option provides full-day dedicated transport for family trips, MICE delegations, and island-wide sightseeing.' },
-  { id: 'faq-8', category: 'contact', question: 'How do I contact STB?', answer: 'Reach our dispatch team 24/7 via WhatsApp at +65 9123 4567 or email admin@singaporetourbooking.com.' },
+  {
+    id: 'airport_arrival',
+    icon: 'flight_land',
+    tag: 'Meet & Greet',
+    title: 'Airport Arrival Pickup',
+    desc: 'Changi Airport arrival hall meet & greet with printed name board. 60-min complimentary flight delay buffer.',
+    priceSGD: 55,
+  },
+  {
+    id: 'airport_departure',
+    icon: 'flight_takeoff',
+    tag: 'Express Drop-off',
+    title: 'Airport Departure Transfer',
+    desc: 'Punctual door-to-terminal transport directly to Changi T1/T2/T3/T4 departure gates with luggage assistance.',
+    priceSGD: 55,
+  },
+  {
+    id: 'point_to_point',
+    icon: 'directions_car',
+    tag: 'Direct Transfer',
+    title: 'Point-to-Point Transport',
+    desc: 'Seamless private city transfers between hotels, Marina Bay Sands, Sentosa, restaurants, and attractions.',
+    priceSGD: 45,
+  },
+  {
+    id: 'hourly_disposal',
+    icon: 'schedule',
+    tag: 'Flexible Charter',
+    title: 'Hourly Chauffeur Disposal',
+    desc: 'Dedicated vehicle and licensed professional chauffeur on standby for business meetings, sightseeing, or shopping.',
+    priceSGD: 60,
+  },
+  {
+    id: 'daily_booking',
+    icon: 'calendar_today',
+    tag: 'Full Day',
+    title: 'Full-Day Tour Charter',
+    desc: 'Unlimited mileage full-day tour chauffeur across all Singapore attractions. Customizable itineraries.',
+    priceSGD: 350,
+  },
+  {
+    id: 'cross_border',
+    icon: 'commute',
+    tag: 'Singapore - Malaysia',
+    title: 'Cross-Border (JB / Desaru)',
+    desc: 'Direct private transfer to Johor Bahru, Legoland Malaysia, and Desaru Coast. No alighting required at customs.',
+    priceSGD: 120,
+  },
 ];
 
 const REVIEWS = [
-  { id: 'rev-1', name: 'David & Family', role: 'Family Tourist', country: 'Australia', stars: 5, date: '2 days ago', comment: 'Booked the Toyota Alphard for our family arrival at Changi. Chauffeur Ken was waiting with a clear name board. Flawless service and spotless car!' },
-  { id: 'rev-2', name: 'Hiroshi Tanaka', role: 'Corporate Executive', country: 'Japan', stars: 5, date: '1 week ago', comment: 'Exceptional Mercedes S-Class service for our executive meetings across Marina Bay. Very punctual, discreet, and impossibly smooth driving.' },
-  { id: 'rev-3', name: 'Sarah Jenkins', role: 'Malaysia Tour Group', country: 'United Kingdom', stars: 5, date: '2 weeks ago', comment: 'The cross-border transfer to Legoland Malaysia was a breeze. We did not even need to unload luggage at immigration. Highly recommended STB!' },
-  { id: 'rev-4', name: 'Priya Sharma', role: 'Honeymoon Trip', country: 'India', stars: 5, date: '3 weeks ago', comment: 'From Changi to our Marina Bay Sands suite — the chauffeur even helped us with photos at the SkyPark drop-off. Truly majestic hospitality.' },
+  {
+    name: 'Marcus & Sarah Vance',
+    country: 'Melbourne, Australia',
+    role: 'Family Vacation',
+    date: 'August 2026',
+    stars: 5,
+    comment: 'Our Alphard was pristine and waiting at Terminal 3 even though our Singapore Airlines flight was delayed by 45 minutes. Driver greeted us with a smile and cold water. Booking inquiry was confirmed via WhatsApp in minutes.',
+  },
+  {
+    name: 'David Chen',
+    country: 'Hong Kong SAR',
+    role: 'Managing Director, Horizon VC',
+    date: 'July 2026',
+    stars: 5,
+    comment: 'Booked the Mercedes S-Class for full-day corporate meetings at Marina Bay Financial Centre. Extremely punctual chauffeur, zero prepayment hassle, paid smoothly after service.',
+  },
+  {
+    name: 'Elena Rostova',
+    country: 'London, UK',
+    role: 'Couple Holiday',
+    date: 'August 2026',
+    stars: 5,
+    comment: 'Outstanding transfer service from Changi Airport to Sentosa. The WhatsApp communication was fast and responsive. No hidden surcharges whatsoever.',
+  },
+  {
+    name: 'Rajesh & Priya Patel',
+    country: 'Mumbai, India',
+    role: 'Family Group (8 Pax)',
+    date: 'July 2026',
+    stars: 5,
+    comment: 'We booked the Toyota HiAce for 8 adults with lots of luggage. The vehicle was spotless and spacious. Will definitely book again on our next trip to Singapore.',
+  },
 ];
 
-// ============================================
-// HELPERS
-// ============================================
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
+const FAQS = [
+  {
+    cat: 'booking',
+    question: 'How do advance transport inquiries work?',
+    answer: 'Simply enter your pickup location, destination, travel date, time, passenger count, and your WhatsApp contact. Our Singapore dispatch team checks vehicle allocation and confirms availability directly with you via WhatsApp.',
+  },
+  {
+    cat: 'pricing',
+    question: 'Do I need to make any payment in advance?',
+    answer: 'No prepayment is required. You submit your booking inquiry first with zero advance charge. Payment takes place after your trip is completed directly in cash to the driver or via PayNow SG.',
+  },
+  {
+    cat: 'booking',
+    question: 'What is the minimum advance booking time?',
+    answer: 'All bookings must be made at least 1 hour in advance of the pickup time. Please note that we operate on a strict advance-booking-only basis and do not support urgent or immediate/on-demand bookings.',
+  },
+  {
+    cat: 'airport',
+    question: 'What if my flight into Changi Airport is delayed?',
+    answer: 'We monitor live flight arrival times in real time. Your assigned chauffeur automatically tracks the flight and provides 60 minutes of complimentary waiting time from actual touchdown.',
+  },
+  {
+    cat: 'pricing',
+    question: 'Are ERP tolls, parking, and peak-hour surcharges included?',
+    answer: 'Yes! All STB transport quotes are 100% fixed and all-inclusive. ERP road tolls, peak hour surcharges, airport surcharges, and fuel are strictly included.',
+  },
+  {
+    cat: 'vehicles',
+    question: 'Are child safety seats available upon request?',
+    answer: 'Yes! We provide certified baby/child safety seats upon request. Simply mention your child seat requirement in the optional notes or over WhatsApp.',
+  },
+  {
+    cat: 'airport',
+    question: 'Where will the chauffeur meet me at Changi Airport?',
+    answer: 'For arrival pickups, your chauffeur will wait inside the arrival hall just after the baggage claim exit holding a professional STB name board with your name.',
+  },
+];
 
+// Currency formatting
 function formatCurrency(amountSGD) {
-  const v = amountSGD * state.exchangeRate;
-  if (state.currency === 'INR' || state.currency === 'MYR') {
-    return `${state.currencySymbol}${Math.round(v).toLocaleString()}`;
+  const converted = (amountSGD || 0) * state.exchangeRate;
+  if (state.currency === 'JPY' || state.currency === 'INR') {
+    return `${state.currencySymbol}${Math.round(converted).toLocaleString()}`;
   }
-  return `${state.currencySymbol}${Math.round(v)}`;
-}
-
-function haversineKm(a, b) {
-  if (!a || !b) return null;
-  const R = 6371;
-  const toRad = (v) => (v * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
-}
-
-// Adds 25% road-factor to straight-line distance (roads are never straight)
-function estimatedRoadKm(pickupName, destName) {
-  const p = LOCATION_COORDS[pickupName];
-  const d = LOCATION_COORDS[destName];
-  const straight = haversineKm(p, d);
-  return straight == null ? null : straight * 1.25;
-}
-
-function computeFareSGD() {
-  const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
-  if (state.tripMode === 'hourly') return v.hourlySGD * state.hourlyDuration;
-
-  const pickup = document.getElementById('pickup-input')?.value || '';
-  const dest = document.getElementById('dest-input')?.value || '';
-  const km = estimatedRoadKm(pickup, dest);
-
-  let fare;
-  if (km == null || km < 0.5) {
-    fare = v.minFareSGD || v.baseFareSGD;
-  } else {
-    fare = v.baseFareSGD + km * v.perKmSGD;
-    fare = Math.max(fare, v.minFareSGD || 0);
-  }
-
-  if (state.tripMode === 'return') fare = fare * 1.85;
-  return Math.round(fare);
-}
-
-function currentDistanceKm() {
-  if (state.tripMode === 'hourly') return null;
-  const pickup = document.getElementById('pickup-input')?.value || '';
-  const dest = document.getElementById('dest-input')?.value || '';
-  return estimatedRoadKm(pickup, dest);
+  return `${state.currencySymbol}${Math.round(converted)}`;
 }
 
 // ============================================
-// INIT
+// INITIALIZATION
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
   initNavScroll();
   initMobileMenu();
-  initCurrency();
-  initMap();
-  initTripMode();
+  initLanguageAndCurrency();
+  initGoogleMapsAndPlaces();
+  initFormControls();
+  initDateAndTimePickers();
+  initFleetSection();
   initServiceGrid();
-  initVehicleChips();
-  initFleet('all');
-  initFAQ();
-  initReviews();
-
+  initDestinations();
+  initFAQSection();
+  initReviewsSection();
   initModals();
-  initPresets();
-  initFormWiring();
-  initReveal();
   initStickyWhatsAppScroll();
-  updateAll();
-  renderRouteSummary();
-  autoDetectLocationOnLoad();
+  initReveal();
 });
 
 // ============================================
-// NAV SCROLL
+// NAVIGATION & HEADER
 // ============================================
 function initNavScroll() {
   const nav = $('#stb-nav');
+  if (!nav) return;
   const onScroll = () => {
     if (window.scrollY > 20) nav.classList.add('scrolled');
     else nav.classList.remove('scrolled');
@@ -295,544 +349,237 @@ function initNavScroll() {
   onScroll();
 }
 
-// ============================================
-// MOBILE MENU
-// ============================================
 function initMobileMenu() {
   const toggle = $('#mobile-menu-toggle');
   const menu = $('#mobile-menu');
   const icon = $('#menu-icon');
 
   toggle?.addEventListener('click', () => {
-    const open = !menu.classList.contains('hidden');
-    if (open) {
-      menu.classList.add('hidden');
-      icon.textContent = 'menu';
-    } else {
+    const isHidden = menu.classList.contains('hidden');
+    if (isHidden) {
       menu.classList.remove('hidden');
-      icon.textContent = 'close';
+      if (icon) icon.textContent = 'close';
+    } else {
+      menu.classList.add('hidden');
+      if (icon) icon.textContent = 'menu';
     }
   });
 
-  $$('.mobile-nav-link').forEach(link => {
+  $$('.mobile-nav-link').forEach((link) => {
     link.addEventListener('click', () => {
-      menu.classList.add('hidden');
-      icon.textContent = 'menu';
+      menu?.classList.add('hidden');
+      if (icon) icon.textContent = 'menu';
     });
   });
 }
 
-// ============================================
-// CURRENCY
-// ============================================
-function initCurrency() {
-  const desk = $('#currency-select');
-  const mob = $('#mobile-currency-select');
+function initLanguageAndCurrency() {
+  const langDesk = $('#lang-select');
+  const langMob = $('#mobile-lang-select');
+  const currDesk = $('#currency-select');
+  const currMob = $('#mobile-currency-select');
 
-  const apply = (c) => {
+  const applyLang = (l) => {
+    state.language = l;
+    if (langDesk) langDesk.value = l;
+    if (langMob) langMob.value = l;
+  };
+
+  langDesk?.addEventListener('change', (e) => applyLang(e.target.value));
+  langMob?.addEventListener('change', (e) => applyLang(e.target.value));
+
+  const applyCurrency = (c) => {
     if (!CURRENCY_MAP[c]) return;
     state.currency = c;
     state.currencySymbol = CURRENCY_MAP[c].symbol;
     state.exchangeRate = CURRENCY_MAP[c].rate;
-    if (desk) desk.value = c;
-    if (mob) mob.value = c;
+    if (currDesk) currDesk.value = c;
+    if (currMob) currMob.value = c;
     if (window.STBAnalytics) STBAnalytics.currencyChange(c);
-    updateAll();
+    renderServiceGrid();
+    renderFleetCards(state.fleetCategory);
   };
 
-  desk?.addEventListener('change', e => apply(e.target.value));
-  mob?.addEventListener('change', e => apply(e.target.value));
-}
-
-function updateAll() {
-  initFleet(state.fleetCategory);
-  renderServiceGrid();
-  renderVehicleChips();
+  currDesk?.addEventListener('change', (e) => applyCurrency(e.target.value));
+  currMob?.addEventListener('change', (e) => applyCurrency(e.target.value));
 }
 
 // ============================================
-// MAP
+// GOOGLE MAPS & PLACES AUTOCOMPLETE
 // ============================================
-function initMap() {
-  const el = document.getElementById('route-map');
-  if (!el || typeof L === 'undefined') return;
-
-  mapInstance = L.map('route-map', { zoomControl: false, scrollWheelZoom: false }).setView([1.3521, 103.8198], 11);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OSM',
-  }).addTo(mapInstance);
-  L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
-}
-
-function updateMapMarkers(pickupName, destName) {
-  if (!mapInstance || typeof L === 'undefined') return;
-
-  if (pickupMarker) { mapInstance.removeLayer(pickupMarker); pickupMarker = null; }
-  if (destMarker) { mapInstance.removeLayer(destMarker); destMarker = null; }
-  if (routePolyline) { mapInstance.removeLayer(routePolyline); routePolyline = null; }
-
-  const p = pickupName ? LOCATION_COORDS[pickupName] : null;
-  const d = destName ? LOCATION_COORDS[destName] : null;
-
-  const iconA = L.divIcon({
-    className: '',
-    html: `<div style="background:#E31E24;width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 16px rgba(227,30,36,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;">A</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
-  const iconB = L.divIcon({
-    className: '',
-    html: `<div style="background:#D4A24A;width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 6px 16px rgba(212,162,74,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;">B</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
-
-  const bounds = [];
-
-  if (p) {
-    pickupMarker = L.marker([p.lat, p.lng], { icon: iconA }).addTo(mapInstance).bindPopup(`<b>Pickup:</b> ${pickupName}`);
-    bounds.push([p.lat, p.lng]);
-  }
-  if (d) {
-    destMarker = L.marker([d.lat, d.lng], { icon: iconB }).addTo(mapInstance).bindPopup(`<b>Destination:</b> ${destName}`);
-    bounds.push([d.lat, d.lng]);
-  }
-
-  if (p && d) {
-    routePolyline = L.polyline([[p.lat, p.lng], [d.lat, d.lng]], {
-      color: '#E31E24', weight: 4, opacity: 0.8, dashArray: '10, 10',
-    }).addTo(mapInstance);
-  }
-
-  if (bounds.length > 0) {
-    if (bounds.length === 1) {
-      mapInstance.setView(bounds[0], 14);
-    } else {
-      mapInstance.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
+async function initGoogleMapsAndPlaces() {
+  let apiKey = '';
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const data = await res.json();
+      apiKey = data.googleMapsApiKey || '';
     }
+  } catch (e) {
+    console.warn('[CONFIG] Failed to load config:', e);
   }
-}
 
-// ============================================
-// TRIP MODE & PRESETS FILTERING
-// ============================================
-function applyTripModeUI() {
-  const destC = $('#dest-address-container');
-  const hourlyC = $('#hourly-duration-container');
+  // Always initialize local presets fallback to show presets when inputs are focused/empty
+  setupLocalPresetsFallback();
 
-  if (state.tripMode === 'hourly') {
-    destC?.classList.add('hidden');
-    hourlyC?.classList.remove('hidden');
+  if (apiKey) {
+    loadGoogleMapsScript(apiKey, () => {
+      setupGooglePlacesAutocomplete();
+    });
   } else {
-    destC?.classList.remove('hidden');
-    hourlyC?.classList.add('hidden');
+    console.log('[PLACES] Google Maps API key not yet configured. Local landmark search enabled.');
   }
 }
 
-function initTripMode() {
-  const tabs = $$('.trip-tab');
-
-  tabs.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabs.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.tripMode = btn.dataset.mode;
-      if (window.STBAnalytics) STBAnalytics.tripModeSelect(state.tripMode);
-      applyTripModeUI();
-    });
-  });
-
-  $$('.hourly-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.hourly-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.hourlyDuration = parseInt(btn.dataset.hours || '4', 10);
-      renderVehicleChips();
-      renderRouteSummary();
-    });
-  });
-
-  // Ensure initial UI state matches default tab
-  applyTripModeUI();
-}
-
-// ============================================
-// SERVICE GRID
-// ============================================
-function initServiceGrid() {
-  renderServiceGrid();
-}
-function renderServiceGrid() {
-  const grid = $('#service-grid');
-  if (!grid) return;
-
-  grid.innerHTML = SERVICES.map((s, i) => `
-    <article class="service-card reveal" data-delay="${i}" data-testid="service-card-${s.id}">
-      <div class="flex items-start justify-between mb-1">
-        <div class="service-card-icon">
-          <span class="material-symbols-outlined fill-1">${s.icon}</span>
-        </div>
-        ${s.tag ? `<span class="service-card-tag">${s.tag}</span>` : ''}
-      </div>
-      <h3 class="service-card-title">${s.title}</h3>
-      <p class="service-card-desc">${s.desc}</p>
-      <div class="service-card-foot">
-        <div>
-          <div class="text-[0.6rem] font-bold text-stb-muted uppercase tracking-widest">From</div>
-          <div class="service-card-price">${formatCurrency(s.priceSGD)}${s.id === 'hourly_disposal' ? '<span class="text-xs text-stb-muted">/hr</span>' : ''}</div>
-        </div>
-        <button class="service-card-cta srv-book-btn" data-service="${s.id}" data-testid="srv-book-${s.id}">
-          Book <span class="material-symbols-outlined text-base">arrow_forward</span>
-        </button>
-      </div>
-    </article>
-  `).join('');
-
-  grid.querySelectorAll('.srv-book-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const s = btn.dataset.service || 'point_to_point';
-      let mode = 'point_to_point';
-      if (s === 'hourly_disposal') mode = 'hourly';
-      else if (s === 'daily_booking') mode = 'daily';
-
-      state.tripMode = mode;
-      $$('.trip-tab').forEach(b => {
-        if (b.dataset.mode === mode) b.classList.add('active');
-        else b.classList.remove('active');
-      });
-
-      if (window.STBAnalytics) STBAnalytics.ctaClick(`book_service_${s}`, 'services_grid');
-      applyTripModeUI();
-      scrollToWidget();
-    });
-  });
-
-  initReveal();
-}
-
-// ============================================
-// VEHICLE CHIPS (inside booking widget)
-// ============================================
-function initVehicleChips() { renderVehicleChips(); }
-function renderVehicleChips() {
-  const grid = $('#vehicle-grid');
-  if (!grid) return;
-
-  const pickup = document.getElementById('pickup-input')?.value || '';
-  const dest = document.getElementById('dest-input')?.value || '';
-  const km = state.tripMode === 'hourly' ? null : estimatedRoadKm(pickup, dest);
-
-  grid.innerHTML = VEHICLES.map(v => {
-    let priceSGD;
-    if (state.tripMode === 'hourly') {
-      priceSGD = v.hourlySGD * state.hourlyDuration;
-    } else if (km != null) {
-      priceSGD = Math.max(Math.round(v.baseFareSGD + km * v.perKmSGD), v.minFareSGD || 0);
-      if (state.tripMode === 'return') priceSGD = Math.round(priceSGD * 1.85);
-    } else {
-      priceSGD = v.minFareSGD || v.baseFareSGD;
-      if (state.tripMode === 'return') priceSGD = Math.round(priceSGD * 1.85);
-    }
-    return `
-      <div class="vehicle-chip ${v.id === state.selectedVehicleId ? 'active' : ''}" data-id="${v.id}" data-testid="vchip-${v.id}">
-        <div class="vname">${v.name}</div>
-        <div class="vmeta">${v.pax} pax · ${v.luggage} bags</div>
-        <div class="vprice">${formatCurrency(priceSGD)}</div>
-      </div>
-    `;
-  }).join('');
-
-  grid.querySelectorAll('.vehicle-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      state.selectedVehicleId = chip.dataset.id;
-      renderVehicleChips();
-      renderRouteSummary();
-    });
-  });
-}
-
-function renderRouteSummary() {
-  const el = document.getElementById('route-summary');
-  if (!el) return;
-  if (state.tripMode === 'hourly') {
-    el.innerHTML = `
-      <span class="material-symbols-outlined" style="color:var(--stb-gold-dark);font-size:1rem;">schedule</span>
-      <span><strong>${state.hourlyDuration}h disposal</strong> · chauffeur at your service</span>
-      <span style="margin-left:auto;font-weight:800;color:var(--stb-red);">${formatCurrency(computeFareSGD())}</span>
-    `;
-    el.style.display = 'flex';
+function loadGoogleMapsScript(apiKey, callback) {
+  if (window.google && window.google.maps) {
+    state.googleMapsLoaded = true;
+    callback();
     return;
   }
-  const km = currentDistanceKm();
-  if (km == null) {
-    el.innerHTML = `
-      <span class="material-symbols-outlined" style="color:var(--stb-muted);font-size:1rem;">info</span>
-      <span style="color:var(--stb-muted);">Pick preset locations for live route pricing</span>
-      <span style="margin-left:auto;font-weight:800;color:var(--stb-red);">from ${formatCurrency(computeFareSGD())}</span>
-    `;
-    el.style.display = 'flex';
-    return;
-  }
-  const min = Math.round((km / 40) * 60);
-  el.innerHTML = `
-    <span class="material-symbols-outlined" style="color:var(--stb-red);font-size:1rem;">route</span>
-    <span><strong>${km.toFixed(1)} km</strong> · ~${min} min drive${state.tripMode === 'return' ? ' · round trip' : ''}</span>
-    <span style="margin-left:auto;font-weight:800;color:var(--stb-red);">${formatCurrency(computeFareSGD())}</span>
-  `;
-  el.style.display = 'flex';
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&loading=async`;
+  script.async = true;
+  script.defer = true;
+  script.onload = () => {
+    state.googleMapsLoaded = true;
+    callback();
+  };
+  script.onerror = () => {
+    console.warn('[GOOGLE MAPS] Script failed to load. Falling back to local landmarks.');
+    setupLocalPresetsFallback();
+  };
+  document.head.appendChild(script);
 }
 
-// ============================================
-// FLEET
-// ============================================
-function initFleet(cat) {
-  state.fleetCategory = cat;
-  const container = $('#fleet-card-container');
-  const filters = $$('.fleet-filter-btn');
+function setupGooglePlacesAutocomplete() {
+  const pickupInput = $('#pickup-input');
+  const destInput = $('#dest-input');
 
-  filters.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.category === cat);
-    if (!btn._wired) {
-      btn.addEventListener('click', () => initFleet(btn.dataset.category));
-      btn._wired = true;
-    }
-  });
-
-  if (!container) return;
-  let list = cat === 'all' ? VEHICLES : VEHICLES.filter(v => v.category === cat);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const toggleBtn = $('#btn-toggle-fleet');
-
-  if (isMobile && cat === 'all' && !state.showAllFleetMobile) {
-    list = list.slice(0, 3);
-    if (toggleBtn) toggleBtn.classList.remove('hidden');
-  } else {
-    if (toggleBtn) toggleBtn.classList.add('hidden');
-  }
-
-  container.innerHTML = list.map((v, i) => `
-    <article class="fleet-card reveal" data-delay="${i % 3}" data-testid="fleet-card-${v.id}">
-      <div class="fleet-img-wrap">
-        <img src="${v.image}" alt="${v.fullName}" onerror="this.onerror=null;this.src='${v.fallback}';" loading="lazy" />
-        <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}">${v.tag}</span>
-      </div>
-      <div class="fleet-body">
-        <h3 class="fleet-title">${v.fullName}</h3>
-        <p class="fleet-desc">${v.description}</p>
-        <div class="fleet-stats">
-          <span class="fleet-stat"><span class="material-symbols-outlined">group</span>${v.pax} pax</span>
-          <span class="fleet-stat"><span class="material-symbols-outlined">luggage</span>${v.luggage} bags</span>
-        </div>
-        <ul class="mb-4">
-          ${v.features.slice(0, 3).map(f => `<li class="fleet-feature"><span class="material-symbols-outlined">check_circle</span>${f}</li>`).join('')}
-        </ul>
-        <div class="fleet-foot">
-          <div class="fleet-price-block">
-            <div class="fleet-price-label">Fixed rate</div>
-            <div class="fleet-price">${formatCurrency(v.baseFareSGD)}</div>
-          </div>
-          <div class="flex gap-2">
-            <button class="btn-ghost btn-fleet-detail" data-id="${v.id}" style="padding: 0.5rem 0.85rem; font-size: 0.72rem;" data-testid="fleet-specs-${v.id}">Specs</button>
-            <button class="btn-primary btn-fleet-select" data-id="${v.id}" style="padding: 0.5rem 1rem; font-size: 0.72rem; box-shadow: none;" data-testid="fleet-book-${v.id}">Book</button>
-          </div>
-        </div>
-      </div>
-    </article>
-  `).join('');
-
-  container.querySelectorAll('.btn-fleet-detail').forEach(b => b.addEventListener('click', () => {
-    const v = VEHICLES.find(x => x.id === b.dataset.id);
-    if (window.STBAnalytics) STBAnalytics.fleetCardClick(b.dataset.id, v?.name || b.dataset.id);
-    openVehicleModal(b.dataset.id);
-  }));
-  container.querySelectorAll('.btn-fleet-select').forEach(b => b.addEventListener('click', () => {
-    const v = VEHICLES.find(x => x.id === b.dataset.id);
-    if (window.STBAnalytics) STBAnalytics.fleetCardClick(b.dataset.id, v?.name || b.dataset.id);
-    state.selectedVehicleId = b.dataset.id;
-    renderVehicleChips();
-    scrollToWidget();
-  }));
-
-  $('#btn-toggle-fleet')?.addEventListener('click', () => {
-    state.showAllFleetMobile = true;
-    initFleet(state.fleetCategory);
-  });
-
-  initReveal();
-}
-
-// ============================================
-// FAQ
-// ============================================
-function initFAQ() {
-  const search = $('#faq-search-input');
-  const catBtns = $$('.faq-cat-btn');
-
-  catBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      catBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.faqCategory = btn.dataset.cat;
-      renderFAQ();
-    });
-  });
-
-  search?.addEventListener('input', renderFAQ);
-  renderFAQ();
-}
-function renderFAQ() {
-  const container = $('#faq-accordion-list');
-  const q = ($('#faq-search-input')?.value || '').toLowerCase().trim();
-  const filtered = FAQS.filter(f => {
-    const cat = state.faqCategory === 'all' || f.category === state.faqCategory;
-    const match = !q || f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q);
-    return cat && match;
-  });
-
-  if (!filtered.length) {
-    container.innerHTML = `<div class="p-8 text-center text-stb-muted font-semibold">No matches. Ping our WhatsApp concierge for instant help!</div>`;
+  if (!window.google || !window.google.maps || !window.google.maps.places) {
+    setupLocalPresetsFallback();
     return;
   }
 
-  container.innerHTML = filtered.map(f => `
-    <div class="faq-item" data-testid="faq-${f.id}">
-      <button class="faq-trigger">
-        <span>${f.question}</span>
-        <span class="faq-icon material-symbols-outlined">expand_more</span>
-      </button>
-      <div class="faq-answer">${f.answer}</div>
-    </div>
-  `).join('');
+  const options = {
+    componentRestrictions: { country: 'sg' },
+    fields: ['place_id', 'formatted_address', 'name', 'geometry'],
+  };
 
-  container.querySelectorAll('.faq-trigger').forEach(t => {
-    t.addEventListener('click', () => {
-      const item = t.closest('.faq-item');
-      const open = item.classList.contains('open');
-      container.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-      if (!open) {
-        item.classList.add('open');
-        const question = t.querySelector('span')?.textContent || '';
-        if (window.STBAnalytics) STBAnalytics.faqOpen(question);
+  if (pickupInput) {
+    const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
+    pickupAutocomplete.addListener('place_changed', () => {
+      const place = pickupAutocomplete.getPlace();
+      if (!place || !place.geometry) {
+        updatePickupState(pickupInput.value, null, null, null);
+        return;
       }
+      const name = place.name || place.formatted_address;
+      const coords = {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      };
+      updatePickupState(name, place.place_id, coords, place.formatted_address);
     });
-  });
+  }
+
+  if (destInput) {
+    const destAutocomplete = new google.maps.places.Autocomplete(destInput, options);
+    destAutocomplete.addListener('place_changed', () => {
+      const place = destAutocomplete.getPlace();
+      if (!place || !place.geometry) {
+        updateDestState(destInput.value, null, null, null);
+        return;
+      }
+      const name = place.name || place.formatted_address;
+      const coords = {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      };
+      updateDestState(name, place.place_id, coords, place.formatted_address);
+    });
+  }
 }
 
-// ============================================
-// REVIEWS
-// ============================================
-function initReviews() {
-  renderReviews();
-}
-function renderReviews() {
-  const c = $('#reviews-container');
-  if (!c) return;
-  c.innerHTML = REVIEWS.map(r => `
-    <article class="review-card">
-      <div class="flex items-center justify-between">
-        <div class="stars text-sm">${'★'.repeat(r.stars)}</div>
-        <span class="text-[0.65rem] text-stb-muted font-bold">${r.date}</span>
-      </div>
-      <p class="comment">"${r.comment}"</p>
-      <div class="flex items-center gap-3 pt-4 border-t border-stone-100 mt-auto">
-        <div class="avatar">${r.name.charAt(0)}</div>
-        <div>
-          <div class="font-bold text-sm text-stb-charcoal">${r.name}</div>
-          <div class="text-[0.7rem] text-stb-muted">${r.role} · ${r.country}</div>
-        </div>
-      </div>
-    </article>
-  `).join('');
-}
-
-// ============================================
-// PRESETS (autocomplete & mode-based filtering)
-// ============================================
-async function requestCurrentLocation(isAutoLoad = false) {
+function setupLocalPresetsFallback() {
   const pickup = $('#pickup-input');
-  if (!pickup) return;
+  const dest = $('#dest-input');
+  const pPresets = $('#pickup-presets');
+  const dPresets = $('#dest-presets');
 
-  if (window.STBAnalytics) STBAnalytics.useLocationClicked();
-  console.log(`[GEO] Geolocation requested (${isAutoLoad ? 'auto-load' : 'user click'})...`);
-  pickup.value = 'Detecting your location...';
+  const renderDropdown = (container, input, isPickup) => {
+    if (!container || !input) return;
+    const query = (input.value || '').trim().toLowerCase();
+    const list = Object.keys(DEFAULT_SINGAPORE_LOCATIONS);
+    const filtered = query
+      ? list.filter((loc) => loc.toLowerCase().includes(query))
+      : list.slice(0, 7);
 
-  if (!navigator.geolocation) {
-    console.warn('[GEO] Geolocation unsupported in this browser.');
-    pickup.value = '';
-    if (!isAutoLoad) {
-      alert("Location detection isn't available in this browser.\nPlease enter your pickup location manually.");
+    if (!filtered.length) {
+      container.classList.add('hidden');
+      return;
     }
-    if (window.STBAnalytics) STBAnalytics.geolocationFailed('unsupported');
-    return;
-  }
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      console.log(`[GEO] High-accuracy geolocation success (${isAutoLoad ? 'auto' : 'manual'}): lat=${lat}, lng=${lng}`);
-      if (window.STBAnalytics) STBAnalytics.geolocationSuccess();
+    container.innerHTML = filtered.map((loc) => `
+      <div class="preset-item cursor-pointer hover:bg-stone-100 p-2.5 rounded-lg flex items-center justify-between text-xs font-semibold" data-loc="${loc}">
+        <span class="text-stb-charcoal">${loc}</span>
+        <span class="material-symbols-outlined text-sm text-stone-400">north_east</span>
+      </div>
+    `).join('');
 
-      let displayLoc = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.display_name) {
-            displayLoc = data.display_name;
-          }
-          console.log('[GEO] High-precision reverse geocoded address:', displayLoc);
-        }
-      } catch (e) {
-        console.warn('[GEO] Reverse geocode failed, using lat/lng string:', e);
-      }
+    container.classList.remove('hidden');
 
-      pickup.value = displayLoc;
-      updatePickupState(displayLoc);
-    },
-    (err) => {
-      console.warn(`[GEO] Geolocation error code ${err.code}: ${err.message}`);
-      if (window.STBAnalytics) STBAnalytics.geolocationFailed(err.message);
-      if (pickup.value === 'Detecting your location...') {
-        pickup.value = '';
-        updatePickupState('');
-      }
-
-      if (!isAutoLoad) {
-        if (err.code === 1) {
-          alert("Location access was denied.\nYou can enter your pickup location manually.");
-        } else if (err.code === 2) {
-          alert("We couldn't detect your location.\nPlease enter your pickup location manually.");
-        } else if (err.code === 3) {
-          alert("Location detection took too long.\nPlease try again or enter your pickup manually.");
+    container.querySelectorAll('.preset-item[data-loc]').forEach((item) => {
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const loc = item.dataset.loc;
+        input.value = loc;
+        container.classList.add('hidden');
+        if (isPickup) {
+          updatePickupState(loc, null, DEFAULT_SINGAPORE_LOCATIONS[loc]);
         } else {
-          alert("We couldn't detect your location.\nPlease enter your pickup location manually.");
+          updateDestState(loc, null, DEFAULT_SINGAPORE_LOCATIONS[loc]);
         }
-      }
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
-}
-
-function autoDetectLocationOnLoad() {
-  if (navigator.geolocation) {
-    if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions.query({ name: 'geolocation' }).then(res => {
-        if (res.state === 'granted' || res.state === 'prompt') {
-          requestCurrentLocation(true);
-        }
-      }).catch(() => {
-        requestCurrentLocation(true);
       });
+    });
+  };
+
+  pickup?.addEventListener('input', () => {
+    if (state.googleMapsLoaded) {
+      pPresets?.classList.add('hidden');
     } else {
-      requestCurrentLocation(true);
+      renderDropdown(pPresets, pickup, true);
     }
-  }
+    updatePickupState(pickup.value, null, null);
+  });
+  pickup?.addEventListener('focus', () => {
+    if (!pickup.value) renderDropdown(pPresets, pickup, true);
+  });
+  pickup?.addEventListener('blur', () => {
+    setTimeout(() => pPresets?.classList.add('hidden'), 200);
+  });
+
+  dest?.addEventListener('input', () => {
+    if (state.googleMapsLoaded) {
+      dPresets?.classList.add('hidden');
+    } else {
+      renderDropdown(dPresets, dest, false);
+    }
+    updateDestState(dest.value, null, null);
+  });
+  dest?.addEventListener('focus', () => {
+    if (!dest.value) renderDropdown(dPresets, dest, false);
+  });
+  dest?.addEventListener('blur', () => {
+    setTimeout(() => dPresets?.classList.add('hidden'), 200);
+  });
 }
 
-function updatePickupState(val) {
-  state.pickupText = (val || '').trim();
-  state.pickupCoords = LOCATION_COORDS[state.pickupText] || null;
+function updatePickupState(text, placeId, coords, formattedAddress) {
+  state.pickupText = (text || '').trim();
+  state.pickupPlaceId = placeId || null;
+  state.pickupCoords = coords || (DEFAULT_SINGAPORE_LOCATIONS[state.pickupText] || null);
+  state.pickupFormattedAddress = formattedAddress || null;
 
   const clearBtn = $('#btn-clear-pickup');
   if (clearBtn) {
@@ -840,13 +587,15 @@ function updatePickupState(val) {
     else clearBtn.classList.add('hidden');
   }
 
-  checkAirportDetection();
-  updateMapMarkers($('#pickup-input')?.value, $('#dest-input')?.value);
+  checkAirportConditionalSelector();
+  updateGoogleMapPreview();
 }
 
-function updateDestState(val) {
-  state.destText = (val || '').trim();
-  state.destCoords = LOCATION_COORDS[state.destText] || null;
+function updateDestState(text, placeId, coords, formattedAddress) {
+  state.destText = (text || '').trim();
+  state.destPlaceId = placeId || null;
+  state.destCoords = coords || (DEFAULT_SINGAPORE_LOCATIONS[state.destText] || null);
+  state.destFormattedAddress = formattedAddress || null;
 
   const clearBtn = $('#btn-clear-dest');
   if (clearBtn) {
@@ -854,93 +603,446 @@ function updateDestState(val) {
     else clearBtn.classList.add('hidden');
   }
 
-  checkAirportDetection();
-  updateMapMarkers($('#pickup-input')?.value, $('#dest-input')?.value);
+  checkAirportConditionalSelector();
+  updateGoogleMapPreview();
 }
 
-function clearPickup() {
+function clearPickupField() {
   const pickup = $('#pickup-input');
   if (pickup) pickup.value = '';
   state.pickupText = '';
+  state.pickupPlaceId = null;
   state.pickupCoords = null;
   state.pickupTerminal = null;
-
-  const termSelect = $('#pickup-terminal-select');
-  if (termSelect) termSelect.value = '';
-
-  const termC = $('#pickup-terminal-container');
-  if (termC) termC.classList.add('hidden');
+  state.pickupFormattedAddress = null;
 
   const clearBtn = $('#btn-clear-pickup');
   if (clearBtn) clearBtn.classList.add('hidden');
 
-  checkAirportDetection();
-  updateMapMarkers('', $('#dest-input')?.value);
+  const termC = $('#pickup-terminal-container');
+  if (termC) termC.classList.add('hidden');
+
+  const termSelect = $('#pickup-terminal-select');
+  if (termSelect) termSelect.selectedIndex = 0;
+
+  const btnLabel = $('#pickup-terminal-btn-label');
+  if (btnLabel) btnLabel.textContent = 'Select Terminal...';
+
+  checkAirportConditionalSelector();
+  updateGoogleMapPreview();
 }
 
-function clearDest() {
+function clearDestField() {
   const dest = $('#dest-input');
   if (dest) dest.value = '';
   state.destText = '';
+  state.destPlaceId = null;
   state.destCoords = null;
   state.dropTerminal = null;
-
-  const termSelect = $('#drop-terminal-select');
-  if (termSelect) termSelect.value = '';
-
-  const termC = $('#drop-terminal-container');
-  if (termC) termC.classList.add('hidden');
+  state.destFormattedAddress = null;
 
   const clearBtn = $('#btn-clear-dest');
   if (clearBtn) clearBtn.classList.add('hidden');
 
-  checkAirportDetection();
-  updateMapMarkers($('#pickup-input')?.value, '');
+  const termC = $('#drop-terminal-container');
+  if (termC) termC.classList.add('hidden');
+
+  const termSelect = $('#drop-terminal-select');
+  if (termSelect) termSelect.selectedIndex = 0;
+
+  const btnLabel = $('#drop-terminal-btn-label');
+  if (btnLabel) btnLabel.textContent = 'Select Terminal...';
+
+  checkAirportConditionalSelector();
+  updateGoogleMapPreview();
 }
 
-// ─── MODERN DATE & TIME PICKERS (Section 12, 13, 14, 15, 16) ───
+function checkAirportConditionalSelector() {
+  const p = (state.pickupText || '').toLowerCase();
+  const d = (state.destText || '').toLowerCase();
+
+  const pIsGenericAirport = p.includes('changi') && !p.includes('terminal') && !p.includes('jewel');
+  const dIsGenericAirport = d.includes('changi') && !d.includes('terminal') && !d.includes('jewel');
+
+  const pTermC = $('#pickup-terminal-container');
+  const dTermC = $('#drop-terminal-container');
+
+  if (pTermC) {
+    if (pIsGenericAirport) pTermC.classList.remove('hidden');
+    else pTermC.classList.add('hidden');
+  }
+  if (dTermC) {
+    if (dIsGenericAirport && state.tripMode !== 'hourly' && state.tripMode !== 'daily') dTermC.classList.remove('hidden');
+    else dTermC.classList.add('hidden');
+  }
+}
+
+function updateGoogleMapPreview() {
+  const mapWrap = $('#google-map-preview-wrap');
+  const mapEl = $('#google-map-preview');
+  if (!mapWrap || !mapEl) return;
+
+  const hasPickup = Boolean(state.pickupCoords);
+  const hasDest = Boolean(state.destCoords);
+
+  if (!hasPickup && !hasDest) {
+    mapWrap.classList.add('hidden');
+    return;
+  }
+
+  mapWrap.classList.remove('hidden');
+
+  if (window.google && window.google.maps) {
+    if (!state.googleMap) {
+      state.googleMap = new google.maps.Map(mapEl, {
+        zoom: 12,
+        center: { lat: 1.3521, lng: 103.8198 },
+        disableDefaultUI: true,
+        zoomControl: true,
+        styles: [
+          { featureType: 'poi', stylers: [{ visibility: 'simplified' }] },
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+        ],
+      });
+    }
+
+    if (state.googlePickupMarker) state.googlePickupMarker.setMap(null);
+    if (state.googleDestMarker) state.googleDestMarker.setMap(null);
+    if (state.googleRoutePolyline) state.googleRoutePolyline.setMap(null);
+
+    const bounds = new google.maps.LatLngBounds();
+
+    if (state.pickupCoords) {
+      state.googlePickupMarker = new google.maps.Marker({
+        position: state.pickupCoords,
+        map: state.googleMap,
+        title: state.pickupText || 'Pickup',
+        label: { text: 'A', color: '#FFFFFF', fontWeight: 'bold' },
+      });
+      bounds.extend(state.pickupCoords);
+    }
+
+    if (state.destCoords && state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
+      state.googleDestMarker = new google.maps.Marker({
+        position: state.destCoords,
+        map: state.googleMap,
+        title: state.destText || 'Destination',
+        label: { text: 'B', color: '#FFFFFF', fontWeight: 'bold' },
+      });
+      bounds.extend(state.destCoords);
+    }
+
+    if (state.pickupCoords && state.destCoords && state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
+      state.googleRoutePolyline = new google.maps.Polyline({
+        path: [state.pickupCoords, state.destCoords],
+        geodesic: true,
+        strokeColor: '#E31E24',
+        strokeOpacity: 0.85,
+        strokeWeight: 4,
+        map: state.googleMap,
+      });
+    }
+
+    if (state.pickupCoords && state.destCoords && state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
+      state.googleMap.fitBounds(bounds, { top: 25, right: 25, bottom: 25, left: 25 });
+    } else if (state.pickupCoords) {
+      state.googleMap.setCenter(state.pickupCoords);
+      state.googleMap.setZoom(14);
+    } else if (state.destCoords) {
+      state.googleMap.setCenter(state.destCoords);
+      state.googleMap.setZoom(14);
+    }
+  }
+}
+
+// ============================================
+// FORM CONTROLS & SUBMISSION
+// ============================================
+function initFormControls() {
+  $('#btn-clear-pickup')?.addEventListener('click', clearPickupField);
+  $('#btn-clear-dest')?.addEventListener('click', clearDestField);
+
+  // Booking Type Selector (One Way, Hourly, Daily)
+  const typeBtns = $$('.type-btn');
+  const destC = $('#dest-address-container');
+  const hourlyC = $('#hourly-duration-container');
+  const dailyC = $('#daily-duration-container');
+
+  typeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      typeBtns.forEach((b) => {
+        b.classList.remove('active', 'bg-white', 'text-stb-red', 'shadow-sm');
+        b.classList.add('text-stone-600');
+      });
+      btn.classList.add('active', 'bg-white', 'text-stb-red', 'shadow-sm');
+      btn.classList.remove('text-stone-600');
+
+      const type = btn.dataset.type || 'one_way';
+      state.tripMode = type;
+      const hiddenType = $('#booking-type-hidden');
+      if (hiddenType) hiddenType.value = type;
+
+      if (type === 'hourly') {
+        destC?.classList.add('hidden');
+        dailyC?.classList.add('hidden');
+        hourlyC?.classList.remove('hidden');
+      } else if (type === 'daily') {
+        destC?.classList.add('hidden');
+        hourlyC?.classList.add('hidden');
+        dailyC?.classList.remove('hidden');
+      } else {
+        destC?.classList.remove('hidden');
+        hourlyC?.classList.add('hidden');
+        dailyC?.classList.add('hidden');
+      }
+      checkAirportConditionalSelector();
+      updateGoogleMapPreview();
+    });
+  });
+
+  $$('.hourly-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('.hourly-btn').forEach((b) => b.classList.remove('active', 'bg-stb-red', 'text-white'));
+      btn.classList.add('active');
+      state.hourlyDuration = Number(btn.dataset.hours || 4);
+    });
+  });
+
+  $$('.daily-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('.daily-btn').forEach((b) => b.classList.remove('active', 'bg-stb-red', 'text-white'));
+      btn.classList.add('active');
+      state.dailyDuration = Number(btn.dataset.days || 2);
+    });
+  });
+
+  // Flight & Notes Collapsible
+  $('#btn-toggle-flight')?.addEventListener('click', () => {
+    const flightC = $('#flight-no-container');
+    if (!flightC) return;
+    const isHidden = flightC.classList.contains('hidden');
+    if (isHidden) {
+      flightC.classList.remove('hidden');
+      $('#btn-toggle-flight span:first-child').textContent = '- Remove flight number / notes';
+    } else {
+      flightC.classList.add('hidden');
+      $('#btn-toggle-flight span:first-child').textContent = '+ Add flight number / notes';
+    }
+  });
+
+  // Terminal selector change listeners
+  $('#pickup-terminal-select')?.addEventListener('change', (e) => {
+    state.pickupTerminal = e.target.value;
+  });
+  $('#drop-terminal-select')?.addEventListener('change', (e) => {
+    state.dropTerminal = e.target.value;
+  });
+
+  // Flow navigation & submit CTA
+  $('#btn-continue-booking')?.addEventListener('click', handleContinueToReview);
+  $('#btn-back-to-edit')?.addEventListener('click', hideReviewView);
+  $('#btn-calc-confirm')?.addEventListener('click', handleBookingSubmit);
+
+  $('#nav-btn-book')?.addEventListener('click', scrollToHeroBooking);
+  $('#cta-book')?.addEventListener('click', scrollToHeroBooking);
+
+  // Book Another Transport button on confirmation view
+  $('#btn-book-another')?.addEventListener('click', () => {
+    $('#confirmation-view')?.classList.add('hidden');
+    
+    const reviewView = $('#review-booking-view');
+    if (reviewView) {
+      reviewView.classList.remove('flex');
+      reviewView.classList.add('hidden');
+    }
+    
+    $('#hero-booking-section')?.classList.remove('hidden');
+    
+    const nameInput = $('#cust-name');
+    if (nameInput) nameInput.value = '';
+    const phoneInput = $('#cust-phone');
+    if (phoneInput) phoneInput.value = '';
+    const emailInput = $('#cust-email');
+    if (emailInput) emailInput.value = '';
+    const flightInput = $('#flight-input');
+    if (flightInput) flightInput.value = '';
+    const notesInput = $('#notes-input');
+    if (notesInput) notesInput.value = '';
+
+    clearPickupField();
+    clearDestField();
+    window.location.hash = '';
+    scrollToHeroBooking();
+  });
+
+  // Custom Styled Terminal Dropdowns
+  const pBtn = $('#pickup-terminal-btn');
+  const pDropdown = $('#pickup-terminal-dropdown');
+  const pArrow = $('#pickup-terminal-arrow');
+  pBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isHidden = pDropdown.classList.contains('hidden');
+    $('#drop-terminal-dropdown')?.classList.add('hidden');
+    $('#drop-terminal-arrow')?.classList.remove('rotate-180');
+    
+    if (isHidden) {
+      pDropdown.classList.remove('hidden');
+      pArrow?.classList.add('rotate-180');
+    } else {
+      pDropdown.classList.add('hidden');
+      pArrow?.classList.remove('rotate-180');
+    }
+  });
+
+  $$('.terminal-opt-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const val = item.dataset.val;
+      const text = item.textContent.trim();
+      const backingSelect = $('#pickup-terminal-select');
+      if (backingSelect) {
+        backingSelect.value = val;
+        backingSelect.dispatchEvent(new Event('change'));
+      }
+      const label = $('#pickup-terminal-btn-label');
+      if (label) label.textContent = text;
+      
+      pDropdown?.classList.add('hidden');
+      pArrow?.classList.remove('rotate-180');
+    });
+  });
+
+  const dBtn = $('#drop-terminal-btn');
+  const dDropdown = $('#drop-terminal-dropdown');
+  const dArrow = $('#drop-terminal-arrow');
+  dBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isHidden = dDropdown.classList.contains('hidden');
+    $('#pickup-terminal-dropdown')?.classList.add('hidden');
+    $('#pickup-terminal-arrow')?.classList.remove('rotate-180');
+    
+    if (isHidden) {
+      dDropdown.classList.remove('hidden');
+      dArrow?.classList.add('rotate-180');
+    } else {
+      dDropdown.classList.add('hidden');
+      dArrow?.classList.remove('rotate-180');
+    }
+  });
+
+  $$('.drop-terminal-opt-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const val = item.dataset.val;
+      const text = item.textContent.trim();
+      const backingSelect = $('#drop-terminal-select');
+      if (backingSelect) {
+        backingSelect.value = val;
+        backingSelect.dispatchEvent(new Event('change'));
+      }
+      const label = $('#drop-terminal-btn-label');
+      if (label) label.textContent = text;
+      
+      dDropdown?.classList.add('hidden');
+      dArrow?.classList.remove('rotate-180');
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#pickup-terminal-container')) {
+      pDropdown?.classList.add('hidden');
+      pArrow?.classList.remove('rotate-180');
+    }
+    if (!e.target.closest('#drop-terminal-container')) {
+      dDropdown?.classList.add('hidden');
+      dArrow?.classList.remove('rotate-180');
+    }
+  });
+}
+
+function scrollToHeroBooking() {
+  $('#booking-widget-container')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ============================================
+// DATE & TIME PICKERS (WITH 1-HR ADVANCE VALIDATION)
+// ============================================
 let calMonth = new Date().getMonth();
 let calYear = new Date().getFullYear();
 
-function initCalendarModal() {
-  const trigger = $('#trigger-date-modal');
+function initDateAndTimePickers() {
+  const dateTrigger = $('#trigger-date-modal');
   const dateInput = $('#date-display-input');
-  const prevBtn = $('#btn-cal-prev');
-  const nextBtn = $('#btn-cal-next');
-  const todayBtn = $('#btn-cal-today');
+  const timeTrigger = $('#trigger-time-modal');
+  const timeInput = $('#time-display-input');
 
-  trigger?.addEventListener('click', () => {
+  dateTrigger?.addEventListener('click', () => {
     renderCalendarGrid();
     openModal('modal-calendar');
   });
-
   dateInput?.addEventListener('click', () => {
     renderCalendarGrid();
     openModal('modal-calendar');
   });
 
-  prevBtn?.addEventListener('click', () => {
+  $('#btn-cal-prev')?.addEventListener('click', () => {
     calMonth--;
-    if (calMonth < 0) {
-      calMonth = 11;
-      calYear--;
-    }
+    if (calMonth < 0) { calMonth = 11; calYear--; }
     renderCalendarGrid();
   });
-
-  nextBtn?.addEventListener('click', () => {
+  $('#btn-cal-next')?.addEventListener('click', () => {
     calMonth++;
-    if (calMonth > 11) {
-      calMonth = 0;
-      calYear++;
-    }
+    if (calMonth > 11) { calMonth = 0; calYear++; }
     renderCalendarGrid();
   });
-
-  todayBtn?.addEventListener('click', () => {
-    const today = new Date();
-    selectCalendarDate(today.getFullYear(), today.getMonth(), today.getDate());
+  $('#btn-cal-today')?.addEventListener('click', () => {
+    const today = getSingaporeNow();
+    window.selectCalendarDate(today.getFullYear(), today.getMonth(), today.getDate());
   });
+
+  timeTrigger?.addEventListener('click', () => {
+    renderTimeSlots();
+    openModal('modal-time-picker');
+  });
+  timeInput?.addEventListener('click', () => {
+    renderTimeSlots();
+    openModal('modal-time-picker');
+  });
+}
+
+// Singapore Time Zone Helpers
+function getSingaporeNow() {
+  const d = new Date();
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 8));
+}
+
+function isSingaporeToday(date) {
+  if (!date) return false;
+  const sgNow = getSingaporeNow();
+  const d = new Date(date);
+  return d.getFullYear() === sgNow.getFullYear() &&
+         d.getMonth() === sgNow.getMonth() &&
+         d.getDate() === sgNow.getDate();
+}
+
+function isTimeSlotValid(timeStr) {
+  if (!state.travelDate) return true;
+  if (!isSingaporeToday(state.travelDate)) return true;
+
+  const sgNow = getSingaporeNow();
+  const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+  if (!match) return true;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const isPM = match[3].toUpperCase() === 'PM';
+  if (isPM && hours < 12) hours += 12;
+  if (!isPM && hours === 12) hours = 0;
+
+  const slotTime = new Date(sgNow);
+  slotTime.setHours(hours, minutes, 0, 0);
+
+  const minAdvanceMs = 60 * 60 * 1000; // 1 hour
+  return (slotTime.getTime() - sgNow.getTime()) >= minAdvanceMs;
 }
 
 function renderCalendarGrid() {
@@ -954,7 +1056,7 @@ function renderCalendarGrid() {
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
-  const today = new Date();
+  const today = getSingaporeNow();
   today.setHours(0, 0, 0, 0);
 
   let html = '';
@@ -988,31 +1090,18 @@ function renderCalendarGrid() {
   grid.innerHTML = html;
 }
 
-window.selectCalendarDate = function(y, m, d) {
+window.selectCalendarDate = function (y, m, d) {
   const selected = new Date(y, m, d);
   state.travelDate = selected;
-
   const display = $('#date-display-input');
   if (display) {
-    display.value = selected.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    display.value = selected.toLocaleDateString('en-SG', {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+    });
   }
   closeModal('modal-calendar');
+  validateAdvanceNotice();
 };
-
-function initTimePickerModal() {
-  const trigger = $('#trigger-time-modal');
-  const timeInput = $('#time-display-input');
-
-  trigger?.addEventListener('click', () => {
-    renderTimeSlots();
-    openModal('modal-time-picker');
-  });
-
-  timeInput?.addEventListener('click', () => {
-    renderTimeSlots();
-    openModal('modal-time-picker');
-  });
-}
 
 function renderTimeSlots() {
   const grid = $('#time-slots-grid');
@@ -1024,904 +1113,735 @@ function renderTimeSlots() {
     '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
     '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
     '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM',
-    '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM'
+    '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM',
+    '12:00 AM', '12:30 AM', '01:00 AM', '01:30 AM', '02:00 AM', '02:30 AM',
+    '03:00 AM', '03:30 AM', '04:00 AM', '04:30 AM', '05:00 AM', '05:30 AM',
   ];
 
-  grid.innerHTML = slots.map(s => {
+  grid.innerHTML = slots.map((s) => {
     const isSelected = state.travelTime === s;
-    const activeClass = isSelected ? 'bg-stb-red text-white font-bold shadow-md' : 'bg-stone-50 border border-stone-200 text-stone-700 hover:bg-red-50 hover:border-stb-red cursor-pointer';
-    return `<button type="button" class="py-2 px-1 rounded-xl text-center transition-all ${activeClass}" onclick="window.selectTimeSlot('${s}')">${s}</button>`;
+    const isValid = isTimeSlotValid(s);
+    let activeClass = '';
+    let disabledAttr = '';
+
+    if (!isValid) {
+      activeClass = 'bg-stone-100 text-stone-300 pointer-events-none opacity-40 border border-stone-200/50';
+      disabledAttr = 'disabled';
+    } else if (isSelected) {
+      activeClass = 'bg-stb-red text-white font-bold shadow-md';
+    } else {
+      activeClass = 'bg-stone-50 border border-stone-200 text-stone-700 hover:bg-red-50 hover:border-stb-red cursor-pointer';
+    }
+
+    return `<button type="button" ${disabledAttr} class="py-2.5 px-1 rounded-xl text-center transition-all ${activeClass}" onclick="window.selectTimeSlot('${s}')">${s}</button>`;
   }).join('');
 }
 
-window.selectTimeSlot = function(s) {
+window.selectTimeSlot = function (s) {
   state.travelTime = s;
   const display = $('#time-display-input');
   if (display) {
     display.value = s;
   }
   closeModal('modal-time-picker');
+  validateAdvanceNotice();
 };
 
-let pickupDebounceTimer = null;
-let destDebounceTimer = null;
+function getSelectedTravelDateTimeSGT() {
+  if (!state.travelDate || !state.travelTime) return null;
+  const y = state.travelDate.getFullYear();
+  const m = state.travelDate.getMonth();
+  const d = state.travelDate.getDate();
 
-async function fetchNominatimSuggestions(query) {
-  const q = (query || '').trim();
-  if (q.length < 3) return [];
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=sg&limit=5&addressdetails=1`);
-    if (res.ok) {
-      const data = await res.json();
-      return data.map(item => {
-        const a = item.address || {};
-        const title = a.building || a.hotel || a.amenity || a.tourism || a.road || item.display_name.split(',')[0];
-        const sub = [a.road, a.suburb || a.city_district || 'Singapore'].filter(Boolean).join(', ');
-        const fullName = title.toLowerCase().includes('singapore') ? title : `${title}, ${sub}`;
-        return {
-          title: title || 'Singapore Location',
-          fullName: fullName,
-          lat: parseFloat(item.lat),
-          lng: parseFloat(item.lon),
-        };
-      });
-    }
-  } catch (e) {
-    console.warn('[GEOCODE] Nominatim search error:', e);
-  }
-  return [];
+  const timeStr = state.travelTime;
+  const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+  if (!match) return null;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const isPM = match[3].toUpperCase() === 'PM';
+  if (isPM && hours < 12) hours += 12;
+  if (!isPM && hours === 12) hours = 0;
+
+  const utcTime = Date.UTC(y, m, d, hours, minutes, 0, 0);
+  return new Date(utcTime - (8 * 3600000));
 }
 
-function renderPickupPresets(query = '') {
-  const pPresets = $('#pickup-presets');
-  const pickup = $('#pickup-input');
-  if (!pPresets) return;
+function validateAdvanceNotice() {
+  const selectedDT = getSelectedTravelDateTimeSGT();
+  const noticeEl = $('#advance-notice-msg');
+  if (!selectedDT) {
+    noticeEl?.classList.add('hidden');
+    return true;
+  }
 
-  const allLocations = Object.keys(LOCATION_COORDS);
-  const q = (query || '').trim().toLowerCase();
-  const filtered = q
-    ? allLocations.filter(loc => loc.toLowerCase().includes(q))
-    : allLocations;
+  const now = new Date();
+  const diffMs = selectedDT.getTime() - now.getTime();
+  const minAdvanceMs = 60 * 60 * 1000; // 1 hour
 
-  const geoItemHtml = !q ? `
-    <div id="preset-item-geo" class="preset-item text-stb-red font-bold flex items-center gap-1.5 border-b border-stone-100 pb-2 mb-1 cursor-pointer hover:bg-stone-100 p-2 rounded-lg">
-      <span class="material-symbols-outlined text-sm">my_location</span>
-      <span>Use My Current Location</span>
-    </div>
-  ` : '';
-
-  let html = geoItemHtml;
-  html += filtered.map(loc => `
-    <div class="preset-item cursor-pointer hover:bg-stone-100 p-2 rounded-lg flex items-center justify-between" data-loc="${loc}">
-      <span class="font-medium text-stb-charcoal">${loc}</span>
-      <span class="material-symbols-outlined text-sm text-stone-400">north_east</span>
-    </div>
-  `).join('');
-
-  pPresets.innerHTML = html;
-  pPresets.classList.remove('hidden');
-
-  $('#preset-item-geo')?.addEventListener('click', () => {
-    pPresets.classList.add('hidden');
-    requestCurrentLocation();
-  });
-
-  pPresets.querySelectorAll('.preset-item[data-loc]').forEach(item => {
-    item.addEventListener('click', () => {
-      const locText = item.dataset.loc;
-      if (pickup) pickup.value = locText;
-      pPresets.classList.add('hidden');
-      updatePickupState(locText);
-    });
-  });
-
-  // Debounced Forward Geocoding for queries >= 3 chars
-  if (q.length >= 3) {
-    clearTimeout(pickupDebounceTimer);
-    pickupDebounceTimer = setTimeout(async () => {
-      const remoteResults = await fetchNominatimSuggestions(q);
-      if (remoteResults.length > 0 && $('#pickup-input')?.value.trim().toLowerCase() === q) {
-        let remoteHtml = `<div class="text-[0.65rem] font-bold uppercase tracking-wider text-stone-400 px-2 pt-2 pb-1 border-t border-stone-100 mt-1">Live Location Search Results</div>`;
-        remoteHtml += remoteResults.map((r, i) => `
-          <div class="preset-item remote-geo-item cursor-pointer hover:bg-red-50 p-2 rounded-lg flex items-center justify-between" data-remote-idx="${i}">
-            <div class="truncate pr-2">
-              <div class="font-bold text-stb-charcoal text-xs">${r.title}</div>
-              <div class="text-[0.68rem] text-stone-400 truncate">${r.fullName}</div>
-            </div>
-            <span class="material-symbols-outlined text-sm text-stb-red">location_on</span>
-          </div>
-        `).join('');
-
-        const existingGeo = pPresets.querySelector('.remote-geo-container');
-        if (existingGeo) existingGeo.remove();
-
-        const container = document.createElement('div');
-        container.className = 'remote-geo-container';
-        container.innerHTML = remoteHtml;
-        pPresets.appendChild(container);
-
-        container.querySelectorAll('.remote-geo-item').forEach(item => {
-          item.addEventListener('click', () => {
-            const idx = parseInt(item.dataset.remoteIdx, 10);
-            const res = remoteResults[idx];
-            if (res) {
-              LOCATION_COORDS[res.fullName] = { lat: res.lat, lng: res.lng };
-              if (pickup) pickup.value = res.fullName;
-              pPresets.classList.add('hidden');
-              updatePickupState(res.fullName);
-            }
-          });
-        });
+  if (diffMs < minAdvanceMs) {
+    if (noticeEl) {
+      noticeEl.classList.remove('hidden');
+      const textEl = $('#advance-notice-text');
+      if (textEl) {
+        textEl.textContent = 'Please select a pickup time at least 1 hour from now.';
       }
-    }, 300);
-  }
-}
-
-function renderDestPresets(query = '') {
-  const dPresets = $('#dest-presets');
-  const dest = $('#dest-input');
-  if (!dPresets) return;
-
-  const allLocations = Object.keys(LOCATION_COORDS);
-  const q = (query || '').trim().toLowerCase();
-  const filtered = q
-    ? allLocations.filter(loc => loc.toLowerCase().includes(q))
-    : allLocations;
-
-  let html = filtered.map(loc => `
-    <div class="preset-item cursor-pointer hover:bg-stone-100 p-2 rounded-lg flex items-center justify-between" data-loc="${loc}">
-      <span class="font-medium text-stb-charcoal">${loc}</span>
-      <span class="material-symbols-outlined text-sm text-stone-400">north_east</span>
-    </div>
-  `).join('');
-
-  dPresets.innerHTML = html;
-  dPresets.classList.remove('hidden');
-
-  dPresets.querySelectorAll('.preset-item[data-loc]').forEach(item => {
-    item.addEventListener('click', () => {
-      const locText = item.dataset.loc;
-      if (dest) dest.value = locText;
-      dPresets.classList.add('hidden');
-      updateDestState(locText);
-    });
-  });
-
-  // Debounced Forward Geocoding for queries >= 3 chars
-  if (q.length >= 3) {
-    clearTimeout(destDebounceTimer);
-    destDebounceTimer = setTimeout(async () => {
-      const remoteResults = await fetchNominatimSuggestions(q);
-      if (remoteResults.length > 0 && $('#dest-input')?.value.trim().toLowerCase() === q) {
-        let remoteHtml = `<div class="text-[0.65rem] font-bold uppercase tracking-wider text-stone-400 px-2 pt-2 pb-1 border-t border-stone-100 mt-1">Live Location Search Results</div>`;
-        remoteHtml += remoteResults.map((r, i) => `
-          <div class="preset-item remote-geo-item cursor-pointer hover:bg-red-50 p-2 rounded-lg flex items-center justify-between" data-remote-idx="${i}">
-            <div class="truncate pr-2">
-              <div class="font-bold text-stb-charcoal text-xs">${r.title}</div>
-              <div class="text-[0.68rem] text-stone-400 truncate">${r.fullName}</div>
-            </div>
-            <span class="material-symbols-outlined text-sm text-stb-red">location_on</span>
-          </div>
-        `).join('');
-
-        const existingGeo = dPresets.querySelector('.remote-geo-container');
-        if (existingGeo) existingGeo.remove();
-
-        const container = document.createElement('div');
-        container.className = 'remote-geo-container';
-        container.innerHTML = remoteHtml;
-        dPresets.appendChild(container);
-
-        container.querySelectorAll('.remote-geo-item').forEach(item => {
-          item.addEventListener('click', () => {
-            const idx = parseInt(item.dataset.remoteIdx, 10);
-            const res = remoteResults[idx];
-            if (res) {
-              LOCATION_COORDS[res.fullName] = { lat: res.lat, lng: res.lng };
-              if (dest) dest.value = res.fullName;
-              dPresets.classList.add('hidden');
-              updateDestState(res.fullName);
-            }
-          });
-        });
-      }
-    }, 300);
-  }
-}
-
-function initPresets() {
-  const pickup = $('#pickup-input');
-  const dest = $('#dest-input');
-  const pPresets = $('#pickup-presets');
-  const dPresets = $('#dest-presets');
-  const pHelp = $('#pickup-help-msg');
-  const dHelp = $('#dest-help-msg');
-
-  renderPickupPresets();
-  renderDestPresets();
-
-  pickup?.addEventListener('focus', () => {
-    pHelp?.classList.remove('hidden');
-    renderPickupPresets(pickup.value);
-    pPresets?.classList.remove('hidden');
-  });
-
-  pickup?.addEventListener('blur', () => {
-    setTimeout(() => { pHelp?.classList.add('hidden'); }, 250);
-  });
-
-  dest?.addEventListener('focus', () => {
-    dHelp?.classList.remove('hidden');
-    renderDestPresets(dest.value);
-    dPresets?.classList.remove('hidden');
-  });
-
-  dest?.addEventListener('blur', () => {
-    setTimeout(() => { dHelp?.classList.add('hidden'); }, 250);
-  });
-
-  pickup?.addEventListener('input', () => {
-    updatePickupState(pickup.value);
-    renderPickupPresets(pickup.value);
-    pPresets?.classList.remove('hidden');
-  });
-
-  dest?.addEventListener('input', () => {
-    updateDestState(dest.value);
-    renderDestPresets(dest.value);
-    dPresets?.classList.remove('hidden');
-  });
-
-  document.addEventListener('click', e => {
-    if (!pickup?.contains(e.target) && !pPresets?.contains(e.target)) pPresets?.classList.add('hidden');
-    if (!dest?.contains(e.target) && !dPresets?.contains(e.target)) dPresets?.classList.add('hidden');
-  });
-
-  $$('.dest-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const loc = card.dataset.location;
-      if (window.STBAnalytics) STBAnalytics.destinationCardClick(loc);
-      if (dest && loc) {
-        dest.value = loc;
-        updateDestState(loc);
-        scrollToWidget();
-      }
-    });
-  });
-}
-
-function checkAirportDetection() {
-  const pickup = ($('#pickup-input')?.value || '').toLowerCase();
-  const dest = ($('#dest-input')?.value || '').toLowerCase();
-
-  const isPickupAirport = pickup.includes('changi') || pickup.includes('airport');
-  const isDestAirport = dest.includes('changi') || dest.includes('airport');
-
-  const pTermC = $('#pickup-terminal-container');
-  const dTermC = $('#drop-terminal-container');
-  const flightWrap = $('#flight-toggle-wrap');
-
-  if (pTermC) {
-    if (isPickupAirport) {
-      pTermC.classList.remove('hidden');
-      if (window.STBAnalytics) STBAnalytics.airportDetected('pickup');
-    } else {
-      pTermC.classList.add('hidden');
-      state.pickupTerminal = null;
-      const select = $('#pickup-terminal-select');
-      if (select) select.value = '';
     }
+    return false;
   }
 
-  if (dTermC) {
-    if (isDestAirport && state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
-      dTermC.classList.remove('hidden');
-      if (window.STBAnalytics) STBAnalytics.airportDetected('destination');
-    } else {
-      dTermC.classList.add('hidden');
-      state.dropTerminal = null;
-      const select = $('#drop-terminal-select');
-      if (select) select.value = '';
-    }
-  }
-
-  if (flightWrap) {
-    if (isPickupAirport || isDestAirport) {
-      flightWrap.classList.remove('hidden');
-    } else {
-      flightWrap.classList.add('hidden');
-    }
-  }
+  noticeEl?.classList.add('hidden');
+  return true;
 }
 
-function initBookingTypeSelector() {
-  const typeBtns = $$('.type-btn');
-  const destC = $('#dest-address-container');
-  const hourlyC = $('#hourly-duration-container');
-  const dailyC = $('#daily-duration-container');
+// ============================================
+// FLOW NAVIGATION & VIEW TRANSITIONS
+// ============================================
+function showReviewView() {
+  $('#hero-booking-section')?.classList.add('hidden');
+  
+  const reviewView = $('#review-booking-view');
+  if (reviewView) {
+    reviewView.classList.remove('hidden');
+    reviewView.classList.add('flex'); // matches index.html flex centering
+  }
 
-  typeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      typeBtns.forEach(b => {
-        b.classList.remove('active', 'bg-white', 'text-stb-red', 'shadow-sm');
-        b.classList.add('text-stone-600');
-      });
-      btn.classList.add('active', 'bg-white', 'text-stb-red', 'shadow-sm');
-      btn.classList.remove('text-stone-600');
-
-      const type = btn.dataset.type || 'one_way';
-      state.tripMode = type;
-      const hiddenType = $('#booking-type-hidden');
-      if (hiddenType) hiddenType.value = type;
-
-      if (window.STBAnalytics) STBAnalytics.bookingTypeSelected(type);
-
-      if (type === 'hourly') {
-        destC?.classList.add('hidden');
-        dailyC?.classList.add('hidden');
-        hourlyC?.classList.remove('hidden');
-        if (window.STBAnalytics) STBAnalytics.hourlySelected();
-      } else if (type === 'daily') {
-        destC?.classList.add('hidden');
-        hourlyC?.classList.add('hidden');
-        dailyC?.classList.remove('hidden');
-        if (window.STBAnalytics) STBAnalytics.dailySelected();
-      } else {
-        destC?.classList.remove('hidden');
-        hourlyC?.classList.add('hidden');
-        dailyC?.classList.add('hidden');
-      }
-      checkAirportDetection();
-    });
-  });
-
-  $$('.hourly-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.hourly-btn').forEach(b => b.classList.remove('active', 'bg-stb-red', 'text-white'));
-      btn.classList.add('active');
-      state.hourlyDuration = Number(btn.dataset.hours || 4);
-    });
-  });
-
-  $$('.daily-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.daily-btn').forEach(b => b.classList.remove('active', 'bg-stb-red', 'text-white'));
-      btn.classList.add('active');
-      state.dailyDuration = Number(btn.dataset.days || 2);
-    });
-  });
-}
-
-async function submitBookingInquiry() {
-  if (window.STBAnalytics) STBAnalytics.bookingSubmitAttempt();
-
-  let pickup = ($('#pickup-input')?.value || '').trim();
-  let dest = ($('#dest-input')?.value || '').trim();
-  const dateVal = $('#date-display-input')?.value || '';
-  const timeVal = $('#time-display-input')?.value || '';
-  const flight = $('#flight-input')?.value || '';
-  const pax = $('#pax-select')?.value || '1-3 Passengers';
+  // Populate Review Details
+  const pickup = ($('#pickup-input')?.value || '').trim();
+  const dest = ($('#dest-input')?.value || '').trim();
   const pickupTerm = $('#pickup-terminal-select')?.value || '';
   const dropTerm = $('#drop-terminal-select')?.value || '';
+  const dateVal = $('#date-display-input')?.value || '';
+  const timeVal = $('#time-display-input')?.value || '';
+  const pax = $('#pax-select')?.value || '1-3 Passengers';
 
-  // Section 23 Contextual Validation
+  let finalPickup = pickup;
+  if (pickupTerm) finalPickup += ` (${pickupTerm})`;
+
+  let finalDest = dest;
+  const destC = $('#review-dest-container');
+  if (state.tripMode === 'hourly') {
+    destC?.classList.add('hidden');
+    finalDest = `${state.hourlyDuration || 4}h disposal`;
+  } else if (state.tripMode === 'daily') {
+    destC?.classList.add('hidden');
+    finalDest = `${state.dailyDuration || 2} days charter`;
+  } else {
+    destC?.classList.remove('hidden');
+    if (dropTerm) finalDest += ` (${dropTerm})`;
+  }
+
+  const reviewPickup = $('#review-pickup-val');
+  if (reviewPickup) reviewPickup.textContent = finalPickup;
+  
+  const reviewDest = $('#review-dest-val');
+  if (reviewDest) reviewDest.textContent = finalDest;
+
+  const reviewDateTime = $('#review-datetime-val');
+  if (reviewDateTime) reviewDateTime.textContent = `${dateVal} at ${timeVal}`;
+
+  const reviewPax = $('#review-pax-val');
+  if (reviewPax) reviewPax.textContent = pax;
+
+  let modeTitle = 'One Way Transport';
+  if (pickup.toLowerCase().includes('changi') || dest.toLowerCase().includes('changi')) modeTitle = 'Airport Transfer';
+  if (state.tripMode === 'hourly') modeTitle = 'Hourly Chauffeur';
+  if (state.tripMode === 'daily') modeTitle = 'Daily Tour Charter';
+
+  const reviewType = $('#review-type-val');
+  if (reviewType) reviewType.textContent = modeTitle;
+
+  // Scroll to review section top
+  reviewView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Update Google maps preview route display
+  updateGoogleMapPreview();
+}
+
+function hideReviewView() {
+  const reviewView = $('#review-booking-view');
+  if (reviewView) {
+    reviewView.classList.remove('flex');
+    reviewView.classList.add('hidden');
+  }
+  $('#hero-booking-section')?.classList.remove('hidden');
+  scrollToHeroBooking();
+}
+
+function handleContinueToReview() {
+  const pickup = ($('#pickup-input')?.value || '').trim();
+  const dest = ($('#dest-input')?.value || '').trim();
+  const dateVal = $('#date-display-input')?.value || '';
+  const timeVal = $('#time-display-input')?.value || '';
+
+  // 1. Validate Pickup
   if (!pickup) {
     alert('Please enter your pickup location.');
     $('#pickup-input')?.focus();
     return;
   }
 
-  const isPickupAirport = pickup.toLowerCase().includes('changi') || pickup.toLowerCase().includes('airport');
-  if (isPickupAirport && !pickupTerm) {
-    alert('Please select your pickup terminal.');
-    $('#pickup-terminal-select')?.focus();
+  // 2. Validate Destination (if One Way)
+  if (state.tripMode === 'one_way' && !dest) {
+    alert('Please enter your destination.');
+    $('#dest-input')?.focus();
     return;
   }
 
-  if (state.tripMode === 'one_way') {
-    if (!dest) {
-      alert('Please enter your destination.');
-      $('#dest-input')?.focus();
-      return;
-    }
-    const isDestAirport = dest.toLowerCase().includes('changi') || dest.toLowerCase().includes('airport');
-    if (isDestAirport && !dropTerm) {
-      alert('Please select your drop-off terminal.');
-      $('#drop-terminal-select')?.focus();
-      return;
-    }
-  }
-
+  // 3. Validate Date & Time
   if (!dateVal) {
     alert('Please select your travel date.');
+    renderCalendarGrid();
     openModal('modal-calendar');
     return;
   }
-
   if (!timeVal) {
     alert('Please select your travel time.');
+    renderTimeSlots();
     openModal('modal-time-picker');
     return;
   }
 
-  if (isPickupAirport && pickupTerm) pickup += ` (${pickupTerm})`;
-  if (dest && dropTerm) dest += ` (${dropTerm})`;
+  // 4. Validate 1-Hour Advance Booking Requirement
+  if (!validateAdvanceNotice()) {
+    alert('Please select a pickup time at least 1 hour from now.');
+    return;
+  }
 
-  const formattedDate = `${dateVal} at ${timeVal}`;
+  showReviewView();
+}
+
+// ============================================
+// FINAL BOOKING SUBMISSION & CONFIRMATION
+// ============================================
+async function handleBookingSubmit() {
+  const pickup = ($('#pickup-input')?.value || '').trim();
+  const dest = ($('#dest-input')?.value || '').trim();
+  const dateVal = $('#date-display-input')?.value || '';
+  const timeVal = $('#time-display-input')?.value || '';
+  const pax = $('#pax-select')?.value || '1-3 Passengers';
+  const flight = ($('#flight-input')?.value || '').trim();
+  const notes = ($('#notes-input')?.value || '').trim();
+  const name = ($('#cust-name')?.value || '').trim();
+  const email = ($('#cust-email')?.value || '').trim();
+  const phone = ($('#cust-phone')?.value || '').trim();
+  const pickupTerm = $('#pickup-terminal-select')?.value || '';
+  const dropTerm = $('#drop-terminal-select')?.value || '';
+
+  // 1. Validate Pickup
+  if (!pickup) {
+    alert('Please enter your pickup location.');
+    $('#pickup-input')?.focus();
+    return;
+  }
+
+  // 2. Validate Destination (if One Way)
+  if (state.tripMode === 'one_way' && !dest) {
+    alert('Please enter your destination.');
+    $('#dest-input')?.focus();
+    return;
+  }
+
+  // 3. Validate Date & Time
+  if (!dateVal) {
+    alert('Please select your travel date.');
+    renderCalendarGrid();
+    openModal('modal-calendar');
+    return;
+  }
+  if (!timeVal) {
+    alert('Please select your travel time.');
+    renderTimeSlots();
+    openModal('modal-time-picker');
+    return;
+  }
+
+  // 4. Validate 1-Hour Advance Booking Requirement
+  if (!validateAdvanceNotice()) {
+    alert('Please select a pickup time at least 1 hour from now.');
+    return;
+  }
+
+  // 5. Validate Customer Details (Name, Email, WhatsApp)
+  if (!name) {
+    alert('Please enter your name.');
+    $('#cust-name')?.focus();
+    return;
+  }
+  if (!phone || phone.length < 7) {
+    alert('Please enter a valid WhatsApp / contact phone number.');
+    $('#cust-phone')?.focus();
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    alert('Please enter a valid email address.');
+    $('#cust-email')?.focus();
+    return;
+  }
+
+  let finalPickup = pickup;
+  if (pickupTerm) finalPickup += ` (${pickupTerm})`;
+  let finalDest = dest;
+  if (state.tripMode === 'hourly') finalDest = `${state.hourlyDuration || 4}h disposal`;
+  else if (state.tripMode === 'daily') finalDest = `${state.dailyDuration || 2} days charter`;
+  else if (dropTerm) finalDest += ` (${dropTerm})`;
+
   const voucherCode = `STB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+  let modeTitle = 'One Way Transport';
+  if (finalPickup.toLowerCase().includes('changi') || finalDest.toLowerCase().includes('changi')) modeTitle = 'Airport Transfer';
+  if (state.tripMode === 'hourly') modeTitle = 'Hourly Chauffeur';
+  if (state.tripMode === 'daily') modeTitle = 'Daily Tour Charter';
 
-  let modeName = 'One Way Transport';
-  if (isPickupAirport || (dest && dest.toLowerCase().includes('changi'))) modeName = 'Airport Transfer';
-  if (state.tripMode === 'hourly') modeName = 'Hourly Chauffeur';
-  if (state.tripMode === 'daily') modeName = 'Daily Booking';
+  const btn = $('#btn-calc-confirm');
+  const btnLabel = $('#btn-submit-label');
+  if (btn) btn.disabled = true;
+  if (btnLabel) btnLabel.textContent = 'SUBMITTING INQUIRY...';
 
-  // Construct WhatsApp inquiry message (Section 21)
-  let waMsg = `Hello STB,\n\n`;
-  waMsg += `I have submitted a transport booking request.\n\n`;
-  waMsg += `Booking Reference: ${voucherCode}\n`;
-  waMsg += `Booking Type: ${modeName}\n\n`;
-  waMsg += `Pickup:\n${pickup}\n\n`;
+  // Construct WhatsApp inquiry link
+  let waMsg = `Hello STB Singapore,\n\n`;
+  waMsg += `I have submitted a transport booking inquiry.\n\n`;
+  waMsg += `🎟 *Ref:* ${voucherCode}\n`;
+  waMsg += `👤 *Passenger:* ${name}\n`;
+  waMsg += `📱 *WhatsApp:* ${phone}\n`;
+  waMsg += `✉️ *Email:* ${email}\n`;
+  waMsg += `🚘 *Booking Type:* ${modeTitle}\n`;
+  waMsg += `📍 *Pickup:* ${finalPickup}\n`;
   if (state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
-    waMsg += `Destination:\n${dest}\n\n`;
+    waMsg += `🏁 *Destination:* ${finalDest}\n`;
   }
-  waMsg += `Date:\n${dateVal}\n\n`;
-  waMsg += `Time:\n${timeVal}\n\n`;
-  waMsg += `Passengers:\n${pax}\n\n`;
-  if (state.tripMode === 'hourly') waMsg += `Hours Required: ${state.hourlyDuration || 4} hours\n\n`;
-  if (state.tripMode === 'daily') waMsg += `Days Required: ${state.dailyDuration || 2} days\n\n`;
-  if (flight) waMsg += `Flight:\n${flight}\n\n`;
-  waMsg += `Please confirm availability and booking details.\n\nThank you.`;
+  waMsg += `📅 *Date & Time:* ${dateVal} at ${timeVal}\n`;
+  waMsg += `👥 *Passengers:* ${pax}\n`;
+  if (state.tripMode === 'hourly') waMsg += `⏱ *Duration:* ${state.hourlyDuration || 4} hours\n`;
+  if (state.tripMode === 'daily') waMsg += `🗓 *Duration:* ${state.dailyDuration || 2} days\n`;
+  if (flight) waMsg += `✈️ *Flight:* ${flight}\n`;
+  if (notes) waMsg += `📝 *Notes:* ${notes}\n`;
+  waMsg += `\nPlease confirm vehicle availability for this inquiry. Thank you!`;
 
-  const whatsappUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waMsg)}`;
+  const waUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waMsg)}`;
 
-  if (window.STBAnalytics) {
-    STBAnalytics.bookingSubmitted();
-    STBAnalytics.whatsappOpenAttempt();
-  }
-
-  // Submit inquiry to backend API (dispatches Admin & Customer emails)
+  // Submit to Backend API
   try {
     const res = await fetch('/api/bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         voucherCode,
-        passengerName: 'Singapore Visitor',
-        passengerEmail: 'bala@tensketch.com',
-        passengerPhone: '+65 9062 9107',
-        vehicle: 'Recommended Chauffeur',
-        pickup,
-        destination: (state.tripMode === 'hourly' ? `${state.hourlyDuration || 4}h disposal` : (state.tripMode === 'daily' ? `${state.dailyDuration || 2} days charter` : dest)),
-        dateTime: formattedDate,
+        passengerName: name,
+        passengerEmail: email,
+        passengerPhone: phone,
+        vehicle: modeTitle,
+        bookingType: modeTitle,
+        pickup: finalPickup,
+        destination: finalDest,
+        dateTime: `${dateVal} at ${timeVal}`,
         flightNo: flight,
-        fare: 'Quotation Pending',
-        currency: 'SGD',
+        notes: notes,
+        pax: pax,
+        fare: 'Pending Quote',
+        currency: state.currency,
         paymentMethod: 'Pay After Service',
-        pax,
+        pickupPlaceId: state.pickupPlaceId,
+        pickupCoords: state.pickupCoords,
+        destPlaceId: state.destPlaceId,
+        destCoords: state.destCoords,
       }),
     });
     if (res.ok && window.STBAnalytics) {
-      STBAnalytics.adminEmailSent();
-      STBAnalytics.customerEmailSent();
+      STBAnalytics.bookingSubmitted();
+      STBAnalytics.bookingSuccess();
     }
   } catch (e) {
-    console.warn('API submission background error:', e);
+    console.warn('[API] Submission error:', e);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (btnLabel) btnLabel.textContent = 'SUBMIT BOOKING REQUEST';
   }
 
-  // Attempt to open WhatsApp directly
-  try {
-    const w = window.open(whatsappUrl, '_blank');
-    if (w && window.STBAnalytics) STBAnalytics.whatsappOpened();
-  } catch (e) {}
-
-  if (window.STBAnalytics) STBAnalytics.bookingSuccess();
-
-  // Display Minimal Success Overlay (Section 20)
-  $('#modal-booking-content').innerHTML = `
-    <div class="text-center space-y-4 py-2">
-      <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl font-bold">✓</div>
-      <div>
-        <h3 class="font-display font-medium text-2xl text-stb-charcoal">BOOKING REQUEST RECEIVED</h3>
-        <p class="text-xs text-stb-gold-dark font-bold font-mono mt-1">Ref: ${voucherCode}</p>
-      </div>
-
-      <p class="text-xs text-stb-muted max-w-xs mx-auto leading-relaxed">
-        We've received your transport request. Your booking details have been sent to your email.
-      </p>
-
-      <div class="bg-emerald-50 border border-emerald-200/90 rounded-2xl p-3 text-xs text-emerald-800 font-semibold max-w-xs mx-auto text-left">
-        <div>✓ No prepayment required</div>
-        <div class="text-[0.7rem] text-emerald-700 font-normal mt-0.5">Pay after your trip / service is completed.</div>
-      </div>
-
-      <div class="pt-2">
-        <a href="${whatsappUrl}" target="_blank" class="w-full py-3.5 px-4 rounded-2xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98" style="background: #25D366; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);" data-testid="success-whatsapp-btn">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
-          <span>CONTINUE ON WHATSAPP</span>
-        </a>
-      </div>
-    </div>
-  `;
-  openModal('modal-booking');
+  // Display Dedicated Confirmation Screen
+  showDedicatedConfirmation({
+    voucherCode,
+    name,
+    phone,
+    email,
+    modeTitle,
+    pickup: finalPickup,
+    destination: finalDest,
+    dateTime: `${dateVal} at ${timeVal}`,
+    pax,
+    flight,
+    notes,
+    waUrl,
+  });
 }
 
-// ============================================
-// FORM WIRING
-// ============================================
-function initFormWiring() {
-  const paxSel = $('#pax-select');
-  const flightC = $('#flight-no-container');
-  const pickupInput = $('#pickup-input');
-  const destInput = $('#dest-input');
+function showDedicatedConfirmation(data) {
+  $('#confirm-ref-code').textContent = data.voucherCode;
+  $('#confirm-name').textContent = data.name;
+  $('#confirm-phone').textContent = data.phone;
+  $('#confirm-email').textContent = data.email;
+  $('#confirm-type').textContent = data.modeTitle;
+  $('#confirm-pickup').textContent = data.pickup;
+  $('#confirm-dest').textContent = data.destination;
+  $('#confirm-datetime').textContent = data.dateTime;
+  $('#confirm-pax').textContent = data.pax;
 
-  initBookingTypeSelector();
-  initCalendarModal();
-  initTimePickerModal();
+  const destWrap = $('#confirm-dest-wrap');
+  if (destWrap) {
+    if (state.tripMode === 'hourly' || state.tripMode === 'daily') destWrap.classList.add('hidden');
+    else destWrap.classList.remove('hidden');
+  }
 
-  $('#btn-clear-pickup')?.addEventListener('click', clearPickup);
-  $('#btn-clear-dest')?.addEventListener('click', clearDest);
-
-  $('#btn-geo-pickup')?.addEventListener('click', () => {
-    requestCurrentLocation();
-  });
-
-  $('#btn-geo-icon')?.addEventListener('click', () => {
-    requestCurrentLocation();
-  });
-
-  pickupInput?.addEventListener('input', () => {
-    updatePickupState(pickupInput.value);
-    if (window.STBAnalytics) STBAnalytics.pickupSelected(pickupInput.value);
-  });
-
-  destInput?.addEventListener('input', () => {
-    updateDestState(destInput.value);
-    if (window.STBAnalytics) STBAnalytics.destinationSelected(destInput.value);
-  });
-
-  $('#pickup-terminal-select')?.addEventListener('change', (e) => {
-    state.pickupTerminal = e.target.value;
-    if (window.STBAnalytics) STBAnalytics.airportTerminalSelected(e.target.value);
-  });
-
-  $('#drop-terminal-select')?.addEventListener('change', (e) => {
-    state.dropTerminal = e.target.value;
-    if (window.STBAnalytics) STBAnalytics.airportTerminalSelected(e.target.value);
-  });
-
-  $('#btn-toggle-flight')?.addEventListener('click', () => {
-    if (flightC) {
-      const isHidden = flightC.classList.contains('hidden');
-      if (isHidden) {
-        flightC.classList.remove('hidden');
-        $('#btn-toggle-flight span:first-child').textContent = '- Remove flight number';
-      } else {
-        flightC.classList.add('hidden');
-        $('#btn-toggle-flight span:first-child').textContent = '+ Add flight number';
-      }
+  const flightWrap = $('#confirm-flight-wrap');
+  if (flightWrap) {
+    if (data.flight) {
+      flightWrap.classList.remove('hidden');
+      $('#confirm-flight').textContent = data.flight;
+    } else {
+      flightWrap.classList.add('hidden');
     }
-  });
+  }
 
-  paxSel?.addEventListener('change', () => {
-    const v = paxSel.value;
-    if (window.STBAnalytics) STBAnalytics.pickupSelect(`passengers_${v}`);
-  });
+  const waBtn = $('#confirm-whatsapp-btn');
+  if (waBtn) waBtn.href = data.waUrl;
 
-  $('#btn-calc-confirm')?.addEventListener('click', () => {
-    submitBookingInquiry();
-  });
-  $('#nav-btn-book')?.addEventListener('click', () => {
-    if (window.STBAnalytics) STBAnalytics.ctaClick('book_now', 'nav');
-    scrollToWidget();
-  });
-  $('#cta-book')?.addEventListener('click', () => {
-    if (window.STBAnalytics) STBAnalytics.ctaClick('book_now', 'final_cta');
-    scrollToWidget();
-  });
-  $('#cta-whatsapp')?.addEventListener('click', () => {
-    if (window.STBAnalytics) STBAnalytics.whatsAppClick('cta');
-    submitBookingInquiry();
-  });
-  $('#mbb-whatsapp-btn')?.addEventListener('click', () => {
-    if (window.STBAnalytics) STBAnalytics.whatsAppClick('mobile_bottom_bar');
-    submitBookingInquiry();
-  });
+  $('#hero-booking-section')?.classList.add('hidden');
+  const reviewView = $('#review-booking-view');
+  if (reviewView) {
+    reviewView.classList.remove('flex');
+    reviewView.classList.add('hidden');
+  }
+  
+  const confirmSection = $('#confirmation-view');
+  if (confirmSection) {
+    confirmSection.classList.remove('hidden');
+    confirmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.location.hash = 'confirmation';
 }
 
-function initDateTime() {
-  const dt = $('#datetime-input');
-  if (dt) {
-    const now = new Date();
-    now.setHours(now.getHours() + 3);
-    dt.value = now.toISOString().slice(0, 16);
+// ============================================
+// FLEET, SERVICES, DESTINATIONS & FAQS
+// ============================================
+function initFleetSection() {
+  const filterBtns = $$('.fleet-filter-btn');
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.fleetCategory = btn.dataset.category || 'all';
+      renderFleetCards(state.fleetCategory);
+    });
+  });
+  renderFleetCards('all');
+}
+
+function showVehicleSpecs(vid) {
+  const v = VEHICLES.find((x) => x.id === vid);
+  if (!v) return;
+
+  const content = $('#modal-vehicle-content');
+  if (content) {
+    content.innerHTML = `
+      <div class="p-6 sm:p-8 space-y-6">
+        <div class="h-48 sm:h-64 rounded-2xl overflow-hidden bg-cover bg-center" style="background-image: url('${v.image}')"></div>
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="bg-stb-red text-white text-[0.62rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">${v.tag || 'Luxury'}</span>
+            <span class="text-xs text-stone-500 font-bold uppercase tracking-wider">${v.category}</span>
+          </div>
+          <h3 class="font-display font-bold text-2xl text-stb-charcoal">${v.fullName}</h3>
+          <p class="text-sm text-stone-500 mt-2 leading-relaxed">${v.description}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 border-t border-b border-stone-200/80 py-4 text-xs font-semibold">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-stb-red text-lg">group</span>
+            <span>Capacity: ${v.pax} Passengers</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-stb-red text-lg">luggage</span>
+            <span>Luggage: ${v.luggage} Bags</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-stb-red text-lg">payments</span>
+            <span>Min. Transfer: S$${v.minFareSGD}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-stb-red text-lg">schedule</span>
+            <span>Hourly Rate: S$${v.hourlySGD}/hr</span>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2.5">Premium Features Onboard</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-bold text-stone-700">
+            ${v.features.map(f => `
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-stb-gold-dark text-base">check_circle</span>
+                <span>${f}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button type="button" class="w-full btn-primary py-3 font-bold text-sm text-white bg-stb-red rounded-xl shadow-md" onclick="closeModal('modal-vehicle'); state.selectedVehicleId='${v.id}'; scrollToHeroBooking();">
+            Book ${v.name}
+          </button>
+        </div>
+      </div>
+    `;
+    openModal('modal-vehicle');
   }
 }
 
-function scrollToWidget() {
-  $('#booking-widget-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function renderFleetCards(category = 'all') {
+  const container = $('#fleet-card-container');
+  if (!container) return;
+
+  const filtered = category === 'all'
+    ? VEHICLES
+    : VEHICLES.filter((v) => v.category === category);
+
+  container.innerHTML = filtered.map((v) => `
+    <article class="fleet-card reveal" data-testid="fleet-card-${v.id}">
+      <div class="fleet-img-wrap">
+        <img src="${v.image}" alt="${v.name}" onerror="this.src='${v.fallback}'" />
+        <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}">${v.tag || ''}</span>
+      </div>
+      <div class="fleet-body">
+        <h3 class="fleet-title">${v.fullName}</h3>
+        <p class="fleet-desc">${v.description}</p>
+        
+        <div class="fleet-stats">
+          <div class="fleet-stat">
+            <span class="material-symbols-outlined">group</span>
+            <span>${v.pax} pax</span>
+          </div>
+          <div class="fleet-stat">
+            <span class="material-symbols-outlined">luggage</span>
+            <span>${v.luggage} bags</span>
+          </div>
+        </div>
+
+        <div class="fleet-features space-y-1 my-3">
+          ${v.features.slice(0, 3).map((f) => `
+            <div class="fleet-feature">
+              <span class="material-symbols-outlined">check_circle</span>
+              <span>${f}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="fleet-foot">
+          <div class="fleet-price-block">
+            <div class="fleet-price-label">Fixed Rate</div>
+            <div class="fleet-price">${formatCurrency(v.baseFareSGD)}</div>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" class="btn-ghost show-specs-btn px-3 py-1.5 text-xs font-bold rounded-lg border border-stone-200" data-vid="${v.id}">
+              Specs
+            </button>
+            <button type="button" class="btn-primary select-fleet-btn px-4 py-1.5 text-xs font-bold rounded-lg text-white bg-stb-red" data-vid="${v.id}">
+              Book
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  `).join('');
+
+  container.querySelectorAll('.select-fleet-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const vid = btn.dataset.vid;
+      state.selectedVehicleId = vid;
+      scrollToHeroBooking();
+    });
+  });
+
+  container.querySelectorAll('.show-specs-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const vid = btn.dataset.vid;
+      showVehicleSpecs(vid);
+    });
+  });
+}
+
+function initServiceGrid() {
+  renderServiceGrid();
+}
+
+function renderServiceGrid() {
+  const grid = $('#service-grid');
+  if (!grid) return;
+
+  grid.innerHTML = SERVICES.map((s, i) => `
+    <article class="service-card reveal" data-delay="${i}" data-testid="service-card-${s.id}">
+      <div class="flex items-start justify-between mb-1">
+        <div class="service-card-icon">
+          <span class="material-symbols-outlined fill-1">${s.icon}</span>
+        </div>
+        ${s.tag ? `<span class="service-card-tag">${s.tag}</span>` : ''}
+      </div>
+      <h3 class="service-card-title">${s.title}</h3>
+      <p class="service-card-desc">${s.desc}</p>
+      <div class="service-card-foot">
+        <div>
+          <div class="text-[0.6rem] font-bold text-stb-muted uppercase tracking-widest">From</div>
+          <div class="service-card-price">${formatCurrency(s.priceSGD)}${s.id === 'hourly_disposal' ? '<span class="text-xs text-stb-muted">/hr</span>' : ''}</div>
+        </div>
+        <button class="service-card-cta srv-book-btn" data-service="${s.id}" data-testid="srv-book-${s.id}">
+          Book <span class="material-symbols-outlined text-base">arrow_forward</span>
+        </button>
+      </div>
+    </article>
+  `).join('');
+
+  grid.querySelectorAll('.srv-book-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sid = btn.dataset.service;
+      if (sid === 'hourly_disposal') {
+        const hourlyBtn = $('.type-btn[data-type="hourly"]');
+        if (hourlyBtn) hourlyBtn.click();
+      } else if (sid === 'daily_booking') {
+        const dailyBtn = $('.type-btn[data-type="daily"]');
+        if (dailyBtn) dailyBtn.click();
+      } else {
+        const oneWayBtn = $('.type-btn[data-type="one_way"]');
+        if (oneWayBtn) oneWayBtn.click();
+      }
+      scrollToHeroBooking();
+    });
+  });
+}
+
+function initDestinations() {
+  $$('.dest-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      const loc = card.dataset.location;
+      const destInput = $('#dest-input');
+      if (destInput && loc) {
+        destInput.value = loc;
+        updateDestState(loc, null, DEFAULT_SINGAPORE_LOCATIONS[loc]);
+        scrollToHeroBooking();
+      }
+    });
+  });
+}
+
+function initFAQSection() {
+  const container = $('#faq-accordion-list');
+  const searchInput = $('#faq-search-input');
+  const catBtns = $$('.faq-cat-btn');
+  if (!container) return;
+
+  const render = (cat = 'all', query = '') => {
+    let filtered = cat === 'all' ? FAQS : FAQS.filter((f) => f.cat === cat);
+    if (query) {
+      const q = query.toLowerCase();
+      filtered = filtered.filter((f) => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q));
+    }
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="p-6 text-center text-xs text-stb-muted font-bold">No questions found matching your search.</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered.map((f, i) => `
+      <div class="faq-item ${i === 0 ? 'open' : ''}">
+        <button type="button" class="faq-trigger">
+          <span>${f.question}</span>
+          <span class="faq-icon material-symbols-outlined">expand_more</span>
+        </button>
+        <div class="faq-answer">${f.answer}</div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.faq-trigger').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        container.querySelectorAll('.faq-item').forEach((i) => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+  };
+
+  render('all', '');
+
+  catBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      catBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.faqCategory = btn.dataset.cat || 'all';
+      render(state.faqCategory, searchInput?.value || '');
+    });
+  });
+
+  searchInput?.addEventListener('input', () => {
+    render(state.faqCategory, searchInput.value);
+  });
+}
+
+function initReviewsSection() {
+  const container = $('#reviews-container');
+  if (!container) return;
+
+  container.innerHTML = REVIEWS.map((r) => `
+    <article class="review-card">
+      <div class="flex items-center justify-between">
+        <div class="stars text-sm">${'★'.repeat(r.stars)}</div>
+        <span class="text-[0.65rem] text-stb-muted font-bold">${r.date}</span>
+      </div>
+      <p class="comment">"${r.comment}"</p>
+      <div class="flex items-center gap-3 pt-4 border-t border-stone-100 mt-auto">
+        <div class="avatar">${r.name.charAt(0)}</div>
+        <div>
+          <div class="font-bold text-sm text-stb-charcoal">${r.name}</div>
+          <div class="text-[0.7rem] text-stb-muted">${r.role} · ${r.country}</div>
+        </div>
+      </div>
+    </article>
+  `).join('');
 }
 
 // ============================================
-// MODALS
+// MODAL CONTROLS & UTILITIES
 // ============================================
-function openModal(id) { document.getElementById(id)?.classList.add('open'); }
-function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove('hidden');
+    el.classList.add('open');
+  }
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.remove('open');
+    el.classList.add('hidden');
+  }
+}
+
 window.openModal = openModal;
 window.closeModal = closeModal;
 
 function initModals() {
-  ['modal-vehicle', 'modal-booking', 'modal-whatsapp'].forEach(id => {
+  ['modal-vehicle', 'modal-calendar', 'modal-time-picker'].forEach((id) => {
     const modal = document.getElementById(id);
-    modal?.addEventListener('click', e => {
+    modal?.addEventListener('click', (e) => {
       if (e.target === modal) closeModal(id);
     });
   });
-  document.addEventListener('keydown', e => {
+  document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      ['modal-vehicle', 'modal-booking', 'modal-whatsapp'].forEach(id => closeModal(id));
+      ['modal-vehicle', 'modal-calendar', 'modal-time-picker'].forEach((id) => closeModal(id));
     }
   });
 }
 
-function openVehicleModal(vid) {
-  const v = VEHICLES.find(x => x.id === vid);
-  if (!v) return;
-  $('#modal-vehicle-content').innerHTML = `
-    <div class="relative h-64 sm:h-72 overflow-hidden">
-      <img src="${v.image}" alt="${v.fullName}" onerror="this.onerror=null;this.src='${v.fallback}';" class="w-full h-full object-cover" />
-      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-      <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}" style="position: absolute; bottom: 1rem; left: 1rem;">${v.tag}</span>
-    </div>
-    <div class="p-7">
-      <h3 class="font-display font-medium text-3xl text-stb-charcoal mb-2" style="letter-spacing: -0.02em;">${v.fullName}</h3>
-      <p class="text-sm text-stb-muted leading-relaxed mb-5">${v.description}</p>
-      <div class="grid grid-cols-2 gap-3 mb-5">
-        <div class="bg-stb-cream rounded-2xl p-4">
-          <div class="text-[0.65rem] font-bold text-stb-muted uppercase tracking-wider mb-1">Max capacity</div>
-          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-stb-red">group</span><span class="font-display text-xl font-medium">${v.pax} pax</span></div>
-        </div>
-        <div class="bg-stb-cream rounded-2xl p-4">
-          <div class="text-[0.65rem] font-bold text-stb-muted uppercase tracking-wider mb-1">Luggage</div>
-          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-stb-red">luggage</span><span class="font-display text-xl font-medium">${v.luggage} bags</span></div>
-        </div>
-      </div>
-      <h4 class="font-bold text-sm text-stb-charcoal mb-3">Onboard amenities</h4>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-        ${v.features.map(f => `<div class="flex items-center gap-2 bg-stb-cream rounded-xl p-2.5 text-xs"><span class="material-symbols-outlined text-emerald-600 text-sm">verified</span>${f}</div>`).join('')}
-      </div>
-      <div class="flex items-center justify-between pt-4 border-t border-stone-200">
-        <div>
-          <div class="text-[0.65rem] font-bold text-stb-muted uppercase tracking-wider">Fixed rate</div>
-          <div class="font-display text-3xl text-stb-red font-medium">${formatCurrency(v.baseFareSGD)}</div>
-        </div>
-        <button id="modal-select-car-btn" class="btn-primary" style="padding: 0.95rem 1.5rem;" data-testid="modal-select-car">Select &amp; Book</button>
-      </div>
-    </div>
-  `;
-  $('#modal-select-car-btn')?.addEventListener('click', () => {
-    state.selectedVehicleId = v.id;
-    renderVehicleChips();
-    closeModal('modal-vehicle');
-    scrollToWidget();
-  });
-  openModal('modal-vehicle');
-}
-
-// ============================================
-// BOOKING CHECKOUT MODAL
-// ============================================
-// ============================================
-// BOOKING CHECKOUT MODAL
-// ============================================
-function openBookingModal() {
-  const pickup = $('#pickup-input').value;
-  const dest = $('#dest-input').value;
-  const dt = $('#datetime-input').value;
-  const flight = $('#flight-input').value;
-  const pax = $('#pax-select').value;
-  const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
-  const fareSGD = computeFareSGD();
-
-  $('#modal-booking-content').innerHTML = `
-    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-stone-200">
-      <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-        <span class="material-symbols-outlined text-2xl">send</span>
-      </div>
-      <div>
-        <h3 class="font-display font-medium text-2xl text-stb-charcoal">Submit Transport Inquiry</h3>
-        <p class="text-xs text-emerald-700 font-bold">No prepayment required · Pay after trip is completed</p>
-      </div>
-    </div>
-
-    <div class="bg-stb-cream rounded-2xl p-5 mb-5 space-y-3 text-xs">
-      <div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Vehicle</span><span class="font-bold">${v.fullName}</span></div>
-      <div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Pickup</span><span class="font-bold text-right max-w-[220px] truncate">${pickup}</span></div>
-      ${state.tripMode !== 'hourly'
-        ? `<div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Destination</span><span class="font-bold text-right max-w-[220px] truncate">${dest}</span></div>`
-        : `<div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Duration</span><span class="font-bold">${state.hourlyDuration}h disposal</span></div>`
-      }
-      <div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Date &amp; time</span><span class="font-bold">${dt || 'Flexible'}</span></div>
-      ${flight ? `<div class="flex justify-between border-b border-stone-200/60 pb-2"><span class="text-stb-muted font-medium">Flight</span><span class="font-bold text-stb-red">${flight}</span></div>` : ''}
-      <div class="flex justify-between items-center pt-1">
-        <span class="font-bold">Estimated fare</span>
-        <span class="font-display text-2xl font-medium text-stb-red">${formatCurrency(fareSGD)} <span class="text-xs text-stb-muted">${state.currency}</span></span>
-      </div>
-    </div>
-
-    <form id="checkout-form" onsubmit="return false;" class="space-y-3">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="field-label">Passenger name</label>
-          <input type="text" id="cust-name" required placeholder="Full name" class="field-input" style="padding-left: 1rem;" data-testid="cust-name" />
-        </div>
-        <div>
-          <label class="field-label">WhatsApp / phone</label>
-          <input type="tel" id="cust-phone" required placeholder="+65 9123 4567" class="field-input" style="padding-left: 1rem;" data-testid="cust-phone" />
-        </div>
-      </div>
-      <div>
-        <label class="field-label">Email</label>
-        <input type="email" id="cust-email" required placeholder="name@domain.com" class="field-input" style="padding-left: 1rem;" data-testid="cust-email" />
-      </div>
-      <div>
-        <label class="field-label">Payment option (Pay after service)</label>
-        <select id="cust-payment" class="field-select" data-testid="cust-payment">
-          <option value="Pay After Service - Cash">Pay after trip · Cash to Chauffeur</option>
-          <option value="Pay After Service - PayNow">Pay after trip · PayNow SG</option>
-        </select>
-      </div>
-      <button type="submit" id="btn-submit-booking" class="confirm-btn" data-testid="btn-submit-booking">
-        <span class="material-symbols-outlined">send</span>
-        Submit Inquiry &amp; Confirm via WhatsApp
-      </button>
-    </form>
-  `;
-
-  $('#checkout-form')?.addEventListener('submit', async e => {
-    e.preventDefault();
-    if (window.STBAnalytics) STBAnalytics.formSubmit('booking_inquiry', true);
-    const name = $('#cust-name').value;
-    const phone = $('#cust-phone').value;
-    const email = $('#cust-email').value;
-    const payment = $('#cust-payment').value;
-    const voucherCode = `STB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const btn = $('#btn-submit-booking');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Sending Inquiry...`;
-
-    let waMsg = `*STB Singapore — Transport Inquiry*\n\n`;
-    waMsg += `🎟 *Inquiry Ref:* ${voucherCode}\n`;
-    waMsg += `👤 *Passenger:* ${name}\n`;
-    waMsg += `📱 *Phone:* ${phone}\n`;
-    waMsg += `🚘 *Vehicle:* ${v.fullName}\n`;
-    waMsg += `📍 *Pickup:* ${pickup}\n`;
-    if (state.tripMode !== 'hourly') waMsg += `🏁 *Destination:* ${dest}\n`;
-    else waMsg += `⏱ *Duration:* ${state.hourlyDuration}h disposal\n`;
-    waMsg += `📅 *Date & Time:* ${dt || 'Flexible'}\n`;
-    if (flight) waMsg += `✈️ *Flight:* ${flight}\n`;
-    waMsg += `💰 *Est. Fare:* ${formatCurrency(fareSGD)} (${state.currency})\n`;
-    waMsg += `💳 *Payment:* ${payment}\n\n`;
-    waMsg += `Please confirm vehicle availability for my inquiry. Thank you!`;
-
-    let whatsappUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waMsg)}`;
-
-    try {
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          voucherCode, passengerName: name, passengerEmail: email, passengerPhone: phone,
-          vehicle: v.fullName, pickup, destination: state.tripMode !== 'hourly' ? dest : `${state.hourlyDuration}h disposal`,
-          dateTime: dt, flightNo: flight, fare: formatCurrency(fareSGD), currency: state.currency, paymentMethod: payment, pax
-        }),
-      });
-      const data = await res.json();
-      if (data.whatsappUrl) whatsappUrl = data.whatsappUrl;
-    } catch (err) {
-      console.warn('Booking POST failed, proceeding to WhatsApp:', err);
-    }
-
-    window.open(whatsappUrl, '_blank');
-
-    $('#modal-booking-content').innerHTML = `
-      <div class="text-center space-y-4">
-        <div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-4xl font-bold" style="animation: pulse 1.5s ease-in-out infinite;">✓</div>
-        <h3 class="font-display font-medium text-3xl text-stb-charcoal">Inquiry Submitted!</h3>
-        <p class="text-sm text-stb-muted max-w-sm mx-auto">Our dispatch team will verify chauffeur availability and confirm your booking shortly.</p>
-
-        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs font-bold max-w-sm mx-auto flex items-center gap-2 text-left" style="color: #047857;">
-          <span class="material-symbols-outlined text-lg">mark_email_read</span>
-          <div>
-            <div>Inquiry copy sent to <strong>${email}</strong></div>
-            <div class="text-[0.65rem] mt-0.5">Admin notification · bala@tensketch.com</div>
-          </div>
-        </div>
-
-        <div class="bg-gradient-to-br from-stb-red-soft to-stb-gold-soft p-5 rounded-3xl border-2 border-dashed border-stb-red max-w-sm mx-auto text-left">
-          <div class="flex justify-between items-center mb-3 pb-3 border-b border-stb-red/20">
-            <span class="font-black text-xs text-stb-red tracking-widest">INQUIRY REF</span>
-            <span class="font-mono text-xs bg-stb-red text-white px-2 py-1 rounded-md font-bold">${voucherCode}</span>
-          </div>
-          <div class="space-y-1.5 text-xs">
-            <div><span class="text-stb-muted">Passenger:</span> <strong>${name}</strong></div>
-            <div><span class="text-stb-muted">Vehicle:</span> <strong>${v.fullName}</strong></div>
-            <div><span class="text-stb-muted">Est. Fare:</span> <strong class="text-stb-red">${formatCurrency(fareSGD)}</strong></div>
-            <div><span class="text-stb-muted">Payment:</span> <strong>No prepayment required</strong></div>
-          </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-2 pt-2">
-          <button id="btn-copy-pass" class="btn-ghost flex-1" data-testid="copy-voucher-btn">
-            <span class="material-symbols-outlined text-base">content_copy</span>
-            Copy Ref Code
-          </button>
-          <a href="${whatsappUrl}" target="_blank" class="btn-primary flex-1 flex items-center justify-center gap-2" style="background: #25D366; box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);" data-testid="voucher-whatsapp-btn">
-            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
-            WhatsApp Confirmation
-          </a>
-        </div>
-      </div>
-    `;
-
-    $('#btn-copy-pass')?.addEventListener('click', () => {
-      navigator.clipboard.writeText(voucherCode);
-      const b = $('#btn-copy-pass');
-      const orig = b.innerHTML;
-      b.innerHTML = `<span class="material-symbols-outlined text-base">check</span> Copied!`;
-      setTimeout(() => { b.innerHTML = orig; }, 1500);
-    });
-  });
-
-  openModal('modal-booking');
-}
-
-// ============================================
-// WHATSAPP MODAL
-// ============================================
-function openWhatsAppModal() {
-  const pickup = $('#pickup-input').value;
-  const dest = $('#dest-input').value;
-  const dt = $('#datetime-input').value;
-  const flight = $('#flight-input').value;
-  const pax = $('#pax-select').value;
-  const v = VEHICLES.find(x => x.id === state.selectedVehicleId) || VEHICLES[0];
-  const fareSGD = computeFareSGD();
-
-  const box = $('#wa-preview-box');
-  const notesInput = $('#wa-custom-notes');
-  const link = $('#wa-final-link');
-
-  const build = (notes) => {
-    let m = `*STB Singapore — Transport Inquiry*\n\n`;
-    m += `🚘 *Vehicle:* ${v.fullName}\n`;
-    m += `📍 *Pickup:* ${pickup}\n`;
-    if (state.tripMode !== 'hourly') m += `🏁 *Destination:* ${dest}\n`;
-    else m += `⏱ *Duration:* ${state.hourlyDuration}h disposal\n`;
-    m += `📅 *Date:* ${dt || 'Flexible'}\n`;
-    m += `👥 *Pax:* ${pax}\n`;
-    if (flight) m += `✈️ *Flight:* ${flight}\n`;
-    m += `💰 *Est. Fare:* ${formatCurrency(fareSGD)} (${state.currency})\n`;
-    m += `💳 *Payment:* No prepayment required (Pay after trip)\n`;
-    if (notes) m += `📝 *Notes:* ${notes}\n`;
-    m += `\nPlease confirm availability for my transport inquiry. Thank you!`;
-    return m;
-  };
-
-  const update = () => {
-    const raw = build(notesInput?.value || '');
-    if (box) box.textContent = raw;
-    if (link) link.href = `https://wa.me/6590629107?text=${encodeURIComponent(raw)}`;
-  };
-
-  notesInput?.addEventListener('input', update);
-  update();
-  openModal('modal-whatsapp');
-}
-
-// ============================================
-// STICKY MOBILE WHATSAPP SCROLL OBSERVER
-// ============================================
 function initStickyWhatsAppScroll() {
   const stickyBar = $('#mobile-sticky-whatsapp');
   const heroWidget = $('#booking-widget-container');
@@ -1939,24 +1859,39 @@ function initStickyWhatsAppScroll() {
     }, { threshold: 0.1 });
     observer.observe(heroWidget);
   }
+
+  // Shift floating WhatsApp button up when footer is visible to prevent overlap
+  const footer = $('.stb-footer');
+  const floatBtn = $('.floating-whatsapp-btn');
+  if (footer && floatBtn && typeof IntersectionObserver !== 'undefined') {
+    const footerObserver = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        floatBtn.classList.add('above-footer');
+      } else {
+        floatBtn.classList.remove('above-footer');
+      }
+    }, { threshold: 0.05 });
+    footerObserver.observe(footer);
+  }
+
+  $('#mbb-whatsapp-btn')?.addEventListener('click', () => {
+    scrollToHeroBooking();
+  });
 }
 
-// ============================================
-// REVEAL ANIMATION
-// ============================================
 function initReveal() {
   const els = document.querySelectorAll('.reveal:not(.in)');
   if (!('IntersectionObserver' in window)) {
-    els.forEach(e => e.classList.add('in'));
+    els.forEach((e) => e.classList.add('in'));
     return;
   }
   const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('in');
         io.unobserve(entry.target);
       }
     });
   }, { threshold: 0.05, rootMargin: '0px 0px 100px 0px' });
-  els.forEach(el => io.observe(el));
+  els.forEach((el) => io.observe(el));
 }
