@@ -333,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initModals();
   initStickyWhatsAppScroll();
   initReveal();
+  initErrorHandling();
 });
 
 // ============================================
@@ -1387,7 +1388,6 @@ async function handleBookingSubmit() {
   else if (state.tripMode === 'daily') finalDest = `${state.dailyDuration || 2} days charter`;
   else if (dropTerm) finalDest += ` (${dropTerm})`;
 
-  const voucherCode = `STB-2026-${Math.floor(1000 + Math.random() * 9000)}`;
   let modeTitle = 'One Way Transport';
   if (finalPickup.toLowerCase().includes('changi') || finalDest.toLowerCase().includes('changi')) modeTitle = 'Airport Transfer';
   if (state.tripMode === 'hourly') modeTitle = 'Hourly Chauffeur';
@@ -1398,27 +1398,8 @@ async function handleBookingSubmit() {
   if (btn) btn.disabled = true;
   if (btnLabel) btnLabel.textContent = 'SUBMITTING INQUIRY...';
 
-  // Construct WhatsApp inquiry link
-  let waMsg = `Hello STB Singapore,\n\n`;
-  waMsg += `I have submitted a transport booking inquiry.\n\n`;
-  waMsg += `🎟 *Ref:* ${voucherCode}\n`;
-  waMsg += `👤 *Passenger:* ${name}\n`;
-  waMsg += `📱 *WhatsApp:* ${phone}\n`;
-  waMsg += `✉️ *Email:* ${email}\n`;
-  waMsg += `🚘 *Booking Type:* ${modeTitle}\n`;
-  waMsg += `📍 *Pickup:* ${finalPickup}\n`;
-  if (state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
-    waMsg += `🏁 *Destination:* ${finalDest}\n`;
-  }
-  waMsg += `📅 *Date & Time:* ${dateVal} at ${timeVal}\n`;
-  waMsg += `👥 *Passengers:* ${pax}\n`;
-  if (state.tripMode === 'hourly') waMsg += `⏱ *Duration:* ${state.hourlyDuration || 4} hours\n`;
-  if (state.tripMode === 'daily') waMsg += `🗓 *Duration:* ${state.dailyDuration || 2} days\n`;
-  if (flight) waMsg += `✈️ *Flight:* ${flight}\n`;
-  if (notes) waMsg += `📝 *Notes:* ${notes}\n`;
-  waMsg += `\nPlease confirm vehicle availability for this inquiry. Thank you!`;
-
-  const waUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waMsg)}`;
+  let bookingSuccessful = false;
+  let serverVoucherCode = '';
 
   // Submit to Backend API
   try {
@@ -1426,7 +1407,6 @@ async function handleBookingSubmit() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        voucherCode,
         passengerName: name,
         passengerEmail: email,
         passengerPhone: phone,
@@ -1447,32 +1427,96 @@ async function handleBookingSubmit() {
         destCoords: state.destCoords,
       }),
     });
-    if (res.ok && window.STBAnalytics) {
-      STBAnalytics.bookingSubmitted();
-      STBAnalytics.bookingSuccess();
+    if (res.ok) {
+      const data = await res.json();
+      serverVoucherCode = data.booking?.voucherCode;
+      if (serverVoucherCode) {
+        bookingSuccessful = true;
+        if (window.STBAnalytics) {
+          STBAnalytics.bookingSubmitted();
+          STBAnalytics.bookingSuccess();
+        }
+      } else {
+        console.error('[API] Server response did not return a valid voucherCode.');
+      }
+    } else {
+      console.error('[API] Booking submission failed on backend status:', res.status);
     }
   } catch (e) {
-    console.warn('[API] Submission error:', e);
+    console.error('[API] Submission error:', e);
   } finally {
     if (btn) btn.disabled = false;
     if (btnLabel) btnLabel.textContent = 'SUBMIT BOOKING REQUEST';
   }
 
-  // Display Dedicated Confirmation Screen
-  showDedicatedConfirmation({
-    voucherCode,
-    name,
-    phone,
-    email,
-    modeTitle,
-    pickup: finalPickup,
-    destination: finalDest,
-    dateTime: `${dateVal} at ${timeVal}`,
-    pax,
-    flight,
-    notes,
-    waUrl,
-  });
+  if (bookingSuccessful) {
+    // Construct WhatsApp success inquiry link
+    let waMsg = `Hello STB Singapore,\n\n`;
+    waMsg += `I have submitted a transport booking inquiry.\n\n`;
+    waMsg += `🎟 *Ref:* ${serverVoucherCode}\n`;
+    waMsg += `👤 *Passenger:* ${name}\n`;
+    waMsg += `📱 *WhatsApp:* ${phone}\n`;
+    waMsg += `✉️ *Email:* ${email}\n`;
+    waMsg += `🚘 *Booking Type:* ${modeTitle}\n`;
+    waMsg += `📍 *Pickup:* ${finalPickup}\n`;
+    if (state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
+      waMsg += `🏁 *Destination:* ${finalDest}\n`;
+    }
+    waMsg += `📅 *Date & Time:* ${dateVal} at ${timeVal}\n`;
+    waMsg += `👥 *Passengers:* ${pax}\n`;
+    if (state.tripMode === 'hourly') waMsg += `⏱ *Duration:* ${state.hourlyDuration || 4} hours\n`;
+    if (state.tripMode === 'daily') waMsg += `🗓 *Duration:* ${state.dailyDuration || 2} days\n`;
+    if (flight) waMsg += `✈️ *Flight:* ${flight}\n`;
+    if (notes) waMsg += `📝 *Notes:* ${notes}\n`;
+    waMsg += `\nPlease confirm vehicle availability for this inquiry. Thank you!`;
+
+    const waUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waMsg)}`;
+
+    // Display Dedicated Confirmation Screen
+    showDedicatedConfirmation({
+      voucherCode: serverVoucherCode,
+      name,
+      phone,
+      email,
+      modeTitle,
+      pickup: finalPickup,
+      destination: finalDest,
+      dateTime: `${dateVal} at ${timeVal}`,
+      pax,
+      flight,
+      notes,
+      waUrl,
+    });
+  } else {
+    // Construct WhatsApp error backup link
+    let waErrorMsg = `Hello STB Singapore,\n\n`;
+    waErrorMsg += `My online booking submission failed. Here are my booking details:\n\n`;
+    waErrorMsg += `👤 *Passenger:* ${name}\n`;
+    waErrorMsg += `📱 *WhatsApp:* ${phone}\n`;
+    waErrorMsg += `✉️ *Email:* ${email}\n`;
+    waErrorMsg += `🚘 *Booking Type:* ${modeTitle}\n`;
+    waErrorMsg += `📍 *Pickup:* ${finalPickup}\n`;
+    if (state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
+      waErrorMsg += `🏁 *Destination:* ${finalDest}\n`;
+    }
+    waErrorMsg += `📅 *Date & Time:* ${dateVal} at ${timeVal}\n`;
+    waErrorMsg += `👥 *Passengers:* ${pax}\n`;
+    if (state.tripMode === 'hourly') waErrorMsg += `⏱ *Duration:* ${state.hourlyDuration || 4} hours\n`;
+    if (state.tripMode === 'daily') waErrorMsg += `🗓 *Duration:* ${state.dailyDuration || 2} days\n`;
+    if (flight) waErrorMsg += `✈️ *Flight:* ${flight}\n`;
+    if (notes) waErrorMsg += `📝 *Notes:* ${notes}\n`;
+    waErrorMsg += `\nPlease manual book this inquiry. Thank you!`;
+
+    const waErrorUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waErrorMsg)}`;
+
+    // Display Dedicated Error Screen
+    showDedicatedError({
+      pickup: finalPickup,
+      destination: finalDest,
+      dateTime: `${dateVal} at ${timeVal}`,
+      waUrl: waErrorUrl,
+    });
+  }
 }
 
 function showDedicatedConfirmation(data) {
@@ -1518,6 +1562,52 @@ function showDedicatedConfirmation(data) {
     confirmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   window.location.hash = 'confirmation';
+}
+
+function showDedicatedError(data) {
+  $('#error-pickup').textContent = data.pickup;
+  $('#error-dest').textContent = data.destination;
+  $('#error-datetime').textContent = data.dateTime;
+
+  const destWrap = $('#error-dest-wrap');
+  if (destWrap) {
+    if (state.tripMode === 'hourly' || state.tripMode === 'daily') destWrap.classList.add('hidden');
+    else destWrap.classList.remove('hidden');
+  }
+
+  const waBtn = $('#error-whatsapp-btn');
+  if (waBtn) waBtn.href = data.waUrl;
+
+  $('#hero-booking-section')?.classList.add('hidden');
+  const reviewView = $('#review-booking-view');
+  if (reviewView) {
+    reviewView.classList.remove('flex');
+    reviewView.classList.add('hidden');
+  }
+  
+  const errorSection = $('#error-view');
+  if (errorSection) {
+    errorSection.classList.remove('hidden');
+    errorSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.location.hash = 'error';
+}
+
+function initErrorHandling() {
+  $('#btn-error-back')?.addEventListener('click', () => {
+    $('#error-view')?.classList.add('hidden');
+    $('#hero-booking-section')?.classList.remove('hidden');
+    const reviewView = $('#review-booking-view');
+    if (reviewView) {
+      reviewView.classList.add('flex');
+      reviewView.classList.remove('hidden');
+    }
+    window.location.hash = 'booking-summary';
+  });
+
+  $('#btn-book-another')?.addEventListener('click', () => {
+    window.location.reload();
+  });
 }
 
 // ============================================

@@ -722,6 +722,45 @@
         </div>
       </section>
 
+      <!-- ================= DEDICATED ERROR VIEW ================= -->
+      <section id="error-view" class="hidden min-h-[90vh] py-20 px-4 flex items-center justify-center" style="background: var(--stb-cream);">
+        <div class="max-w-xl w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-stone-200 text-center relative overflow-hidden" data-testid="error-view-card">
+          <div class="h-2 w-full absolute top-0 left-0 right-0" style="background: var(--stb-red);"></div>
+          
+          <div class="w-16 h-16 rounded-full bg-red-100 text-stb-red flex items-center justify-center mx-auto mb-4 text-3xl font-bold">✕</div>
+          <div class="inline-block bg-red-50 text-stb-red text-[0.7rem] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-red-200 mb-2">
+            Submission Failed
+          </div>
+          <h2 class="font-display font-medium text-2xl sm:text-3xl text-stb-charcoal mb-1">COULD NOT SUBMIT BOOKING</h2>
+          <p class="text-xs text-stb-muted mb-6">We encountered a connection or server issue. <strong>Your booking inquiry was NOT received.</strong></p>
+
+          <!-- WhatsApp Direct Contact Box -->
+          <div class="bg-stone-50 rounded-2xl p-5 mb-6 text-left border border-stone-200">
+            <div class="text-[0.68rem] font-bold uppercase tracking-wider text-stb-red mb-1">Direct Booking Alternative</div>
+            <p class="text-xs text-stone-600 leading-relaxed mb-3">
+              Please message our Singapore dispatch team directly on WhatsApp with your travel details to secure your ride immediately. No prepayment required.
+            </p>
+            <div class="text-[0.78rem] text-stone-600 space-y-1 bg-white p-3.5 rounded-xl border border-stone-150">
+              <div><span class="text-stone-500">Pickup:</span> <strong id="error-pickup">—</strong></div>
+              <div id="error-dest-wrap"><span class="text-stone-500">Destination:</span> <strong id="error-dest">—</strong></div>
+              <div><span class="text-stone-500">Date &amp; Time:</span> <strong id="error-datetime">—</strong></div>
+            </div>
+          </div>
+
+          <!-- Action Buttons: WhatsApp Us & Retry -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <a id="error-whatsapp-btn" href="#" target="_blank" rel="noopener noreferrer" class="py-3.5 px-4 rounded-2xl font-bold text-xs text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98" style="background: #25D366; box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);">
+              <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
+              <span>WhatsApp Direct Booking</span>
+            </a>
+            <button type="button" id="btn-error-back" class="py-3.5 px-4 rounded-2xl font-bold text-xs text-stb-charcoal bg-stone-100 hover:bg-stone-200 flex items-center justify-center gap-2 border border-stone-200 transition-all">
+              <span class="material-symbols-outlined text-base">arrow_back</span>
+              <span>Back to Form &amp; Retry</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= SECONDARY SERVICES ================= -->
       <section id="services" class="section" style="background: white;">
         <div class="container">

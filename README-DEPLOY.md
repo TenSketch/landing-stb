@@ -50,8 +50,15 @@ Use the "**Save to Github**" button in Emergent's chat toolbar.
 | `CONTACT_PHONE` | `+91 9840 167 444` |
 | `CONTACT_EMAIL` | `admin@singaporetourbooking.com` |
 | `SITE_URL` | your Vercel domain (or custom domain later) |
+| `GOOGLE_MAPS_API_KEY` | `AIzaSyDQJGrgguIXGWqQy3bpwGi6wXdOlGXqxSw` (or your preferred production key) |
 
 Apply to **Production**, **Preview**, and **Development**.
+
+> [!IMPORTANT]
+> **Google Cloud API Key Setup**:
+> For the Google Places API to search correctly after deployment:
+> 1. Ensure the **Places API** and **Maps JavaScript API** are enabled in your Google Cloud Project.
+> 2. Set **HTTP Referrer Restrictions** on the API Key in the Google Cloud Console to allow your deployed Vercel URL (e.g., `https://*.vercel.app/*` and your custom domain `https://*.singaporetourbooking.com/*`). Otherwise, Google will reject search queries from the live site with a `RefererNotAllowedMapError`.
 
 ### 5. Redeploy
 **Deployments → ⋮ → Redeploy**. Wait ~30 seconds — site live at `https://YOUR-PROJECT.vercel.app`.
