@@ -39,18 +39,18 @@ Use the "**Save to Github**" button in Emergent's chat toolbar.
 |---|---|
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_PORT` | `587` |
-| `SMTP_USER` | `tensketch285@gmail.com` |
-| `SMTP_PASSWORD` | `mnztrzpifmohrrxa` |
+| `SMTP_USER` | `your-email@gmail.com` |
+| `SMTP_PASSWORD` | `YOUR_GMAIL_APP_PASSWORD` |
 | `EMAIL_FROM` | `admin@singaporetourbooking.com` |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@singaporetourbooking.com` |
-| `NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER` | `+919840167444` |
+| `NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER` | `+65XXXXXXXX` |
 | `LOGO_URL` | `https://YOUR-PROJECT.vercel.app/stb-logo.png` (fill in after first deploy) |
 | `BRAND_NAME` | `STB Singapore` |
 | `BRAND_TAGLINE` | `Majestic Hospitality Since 2014` |
-| `CONTACT_PHONE` | `+91 9840 167 444` |
+| `CONTACT_PHONE` | `+65 XXXX XXXX` |
 | `CONTACT_EMAIL` | `admin@singaporetourbooking.com` |
 | `SITE_URL` | your Vercel domain (or custom domain later) |
-| `GOOGLE_MAPS_API_KEY` | `AIzaSyDQJGrgguIXGWqQy3bpwGi6wXdOlGXqxSw` (or your preferred production key) |
+| `GOOGLE_MAPS_API_KEY` | `YOUR_GOOGLE_CLOUD_API_KEY` (enable Places API + Maps JS API; restrict by HTTP referrer to your domain) |
 
 Apply to **Production**, **Preview**, and **Development**.
 

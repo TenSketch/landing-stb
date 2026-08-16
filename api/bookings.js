@@ -8,6 +8,11 @@ export default async function handler(req, res) {
   const proto = req.headers["x-forwarded-proto"] || "https";
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const baseUrl = `${proto}://${host}`;
-  const result = await handleCreateBooking(req.body || {}, baseUrl);
-  res.status(result.status).json(result.body);
+  try {
+    const result = await handleCreateBooking(req.body || {}, baseUrl);
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("[API /bookings] Unhandled error:", err);
+    res.status(500).json({ error: "Server error", message: err.message });
+  }
 }
