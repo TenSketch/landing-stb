@@ -972,65 +972,135 @@
       </section>
 
       <!-- ================= DEDICATED CONFIRMATION VIEW ================= -->
-      <section id="confirmation-view" class="hidden min-h-[90vh] py-20 px-4 flex items-center justify-center" style="background: var(--stb-cream);">
-        <div class="max-w-xl w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-stone-200 text-center relative overflow-hidden" data-testid="confirmation-view-card">
-          <div class="h-2 w-full absolute top-0 left-0 right-0" style="background: linear-gradient(90deg, #E31E24, #D4A24A, #E31E24);"></div>
+      <section id="confirmation-view" class="hidden min-h-[90vh] pt-24 pb-12 lg:pt-28 lg:pb-16 px-4 flex items-center justify-center animate-fade-in" style="background: var(--stb-cream);">
+        <div class="max-w-2xl w-full bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-stone-200/80 relative overflow-hidden" data-testid="confirmation-view-card">
+          <div class="h-1.5 w-full absolute top-0 left-0 right-0" style="background: linear-gradient(90deg, #E31E24, #D4A24A, #E31E24);"></div>
           
-          <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 text-3xl font-bold">✓</div>
-          <div class="inline-block bg-emerald-50 text-emerald-800 text-[0.7rem] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-200 mb-2">
-            Inquiry Received
-          </div>
-          <h2 class="font-display font-medium text-2xl sm:text-3xl text-stb-charcoal mb-1">BOOKING INQUIRY RECEIVED</h2>
-          <p class="text-xs text-stb-muted mb-6">Thank you. Your transport inquiry has been received by STB Dispatch.</p>
-
-          <!-- VIP Inquiry Voucher Pass -->
-          <div class="bg-gradient-to-br from-red-50/70 via-amber-50/50 to-red-50/70 rounded-2xl border-2 border-dashed border-stb-red/60 p-5 mb-6 text-left text-xs space-y-2">
-            <div class="flex justify-between items-center pb-2 border-b border-stb-red/20">
-              <span class="font-black text-stb-red tracking-widest text-[0.7rem] uppercase">STB Inquiry Reference</span>
-              <span id="confirm-ref-code" class="font-mono bg-stb-red text-white px-2.5 py-1 rounded-md font-bold text-xs">STB-2026-0000</span>
+          <!-- Top Success Header -->
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-full bg-red-50 text-stb-red border-2 border-red-100 flex items-center justify-center mx-auto mb-3 text-3xl font-bold shadow-sm">
+              <span class="material-symbols-outlined text-3xl">check_circle</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[0.78rem]">
-              <div><span class="text-stone-500">Passenger:</span> <strong id="confirm-name">—</strong></div>
-              <div><span class="text-stone-500">WhatsApp:</span> <strong id="confirm-phone">—</strong></div>
-              <div><span class="text-stone-500">Email:</span> <strong id="confirm-email">—</strong></div>
-              <div><span class="text-stone-500">Booking Type:</span> <strong id="confirm-type">—</strong></div>
-              <div id="confirm-vehicle-wrap" class="sm:col-span-2"><span class="text-stone-500">Vehicle Selected:</span> <strong id="confirm-vehicle">—</strong></div>
-              <div id="confirm-fare-wrap" class="sm:col-span-2"><span class="text-stone-500">Estimated Transport Fare:</span> <strong id="confirm-fare" class="text-stb-red">—</strong></div>
-              <div class="sm:col-span-2"><span class="text-stone-500">Pickup:</span> <strong id="confirm-pickup">—</strong></div>
-              <div class="sm:col-span-2" id="confirm-dest-wrap"><span class="text-stone-500">Destination:</span> <strong id="confirm-dest">—</strong></div>
-              <div class="sm:col-span-2"><span class="text-stone-500">Travel Date &amp; Time:</span> <strong id="confirm-datetime">—</strong></div>
-              <div><span class="text-stone-500">Passengers:</span> <strong id="confirm-pax">—</strong></div>
-              <div id="confirm-flight-wrap"><span class="text-stone-500">Flight:</span> <strong id="confirm-flight">—</strong></div>
+            <div class="inline-flex items-center gap-1.5 bg-red-50 text-stb-red text-[0.68rem] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-red-200/70 mb-2">
+              <span class="material-symbols-outlined text-xs">verified</span>
+              <span>Booking Request Received</span>
             </div>
-            <div class="pt-2 border-t border-stb-red/15 text-[0.7rem] text-emerald-800 font-semibold flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
-              <span>No prepayment required • Payment is completed after your trip</span>
-            </div>
+            <h1 class="font-display font-bold text-2xl sm:text-3xl text-stb-charcoal tracking-tight mb-1">BOOKING REQUEST RECEIVED</h1>
+            <p class="text-xs sm:text-sm text-stone-500 font-medium">Thank you. Your booking request has been received.</p>
           </div>
 
-          <!-- Dispatch Availability Note -->
-          <div class="bg-stone-50 rounded-2xl p-4 mb-6 text-left border border-stone-200">
-            <div class="text-[0.68rem] font-bold uppercase tracking-wider text-stb-gold-dark mb-1">What Happens Next?</div>
-            <p class="text-xs text-stone-600 leading-relaxed">
-              Our Singapore dispatch team is currently verifying chauffeur and vehicle availability for your schedule. You will receive a direct confirmation on WhatsApp with vehicle and driver details.
-            </p>
+          <!-- Booking Reference Badge -->
+          <div class="bg-gradient-to-r from-red-500/10 via-amber-500/10 to-red-500/10 rounded-2xl border border-red-200/80 p-4 mb-6 text-center">
+            <div class="text-[0.6rem] font-black uppercase tracking-widest text-stone-400 mb-1">Booking Reference</div>
+            <div id="confirm-ref-code" class="font-mono text-xl sm:text-2xl font-black text-stb-red tracking-wider">STB-2026-0000</div>
           </div>
 
-          <!-- Action Buttons: WhatsApp Us & Call Us -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <a id="confirm-whatsapp-btn" href="#" target="_blank" rel="noopener noreferrer" class="py-3.5 px-4 rounded-2xl font-bold text-xs text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98" style="background: #25D366; box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);" data-testid="confirm-whatsapp-btn">
+          <!-- Clean Booking Summary Card -->
+          <div class="bg-stone-50 rounded-2xl p-5 border border-stone-200/80 mb-6 space-y-3">
+            <div class="flex items-center gap-2 pb-2.5 border-b border-stone-200/70 text-[0.68rem] font-black uppercase tracking-wider text-stone-500">
+              <span class="material-symbols-outlined text-sm text-stb-red">receipt_long</span>
+              Trip Details &amp; Summary
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Passenger Name</span>
+                <strong id="confirm-name" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">WhatsApp / Phone</span>
+                <strong id="confirm-phone" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Email Address</span>
+                <strong id="confirm-email" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Booking Type</span>
+                <strong id="confirm-type" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Vehicle Category</span>
+                <strong id="confirm-vehicle" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Estimated Transport Fare</span>
+                <strong id="confirm-fare" class="text-stb-red font-black text-sm block">—</strong>
+              </div>
+              <div class="sm:col-span-2">
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Pickup Location</span>
+                <strong id="confirm-pickup" class="text-stb-charcoal font-bold block leading-normal">—</strong>
+              </div>
+              <div class="sm:col-span-2" id="confirm-dest-wrap">
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Destination / Disposal</span>
+                <strong id="confirm-dest" class="text-stb-charcoal font-bold block leading-normal">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Travel Date &amp; Time</span>
+                <strong id="confirm-datetime" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div>
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Passengers</span>
+                <strong id="confirm-pax" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+              <div id="confirm-flight-wrap" class="hidden sm:col-span-2">
+                <span class="text-[0.62rem] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Flight Number</span>
+                <strong id="confirm-flight" class="text-stb-charcoal font-bold block">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Message -->
+          <div class="bg-gradient-to-r from-emerald-50 to-emerald-100/40 border border-emerald-200/80 rounded-2xl p-4 mb-6 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <span class="material-symbols-outlined text-base">payments</span>
+            </div>
+            <div class="text-xs">
+              <strong class="text-emerald-950 font-bold block">No prepayment required.</strong>
+              <span class="text-emerald-800 font-medium text-[0.7rem] block mt-0.5">Pay directly to the chauffeur after your ride.</span>
+            </div>
+          </div>
+
+          <!-- Next Steps -->
+          <div class="bg-stone-50 rounded-2xl p-5 mb-6 border border-stone-200/80">
+            <div class="text-[0.65rem] font-bold uppercase tracking-wider text-stone-400 mb-3 flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm text-stb-red">linear_scale</span>
+              Next Steps
+            </div>
+            <ol class="space-y-2.5 text-xs text-stone-600 font-semibold">
+              <li class="flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-stb-red text-white text-[0.65rem] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                <span>STB receives your request.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-stb-red text-white text-[0.65rem] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                <span>Our team verifies chauffeur &amp; vehicle availability.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-stb-red text-white text-[0.65rem] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                <span>Booking details will be confirmed with you directly.</span>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Action Buttons: WhatsApp, Book Another Ride, Back to Home -->
+          <div class="space-y-3">
+            <a id="confirm-whatsapp-btn" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-4 px-5 rounded-2xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98" style="background: #25D366; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);" data-testid="confirm-whatsapp-btn">
               <svg class="w-4 h-4 fill-current text-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.012 0C5.388 0 0 5.388 0 12.012c0 2.115.547 4.177 1.587 5.992L.057 24l6.197-1.625A11.968 11.968 0 0 0 12.012 24c6.624 0 12.012-5.388 12.012-12.012C24.024 5.388 18.636 0 12.012 0zm0 21.996c-1.805 0-3.571-.479-5.118-1.385l-.367-.218-3.682.965.982-3.59-.239-.38A9.972 9.972 0 0 1 2.016 12.01c0-5.511 4.484-9.995 9.996-9.995 5.511 0 9.995 4.484 9.995 9.995 0 5.512-4.484 9.996-9.995 9.996zm5.485-7.5c-.301-.151-1.782-.88-2.059-.98-.277-.1-.478-.151-.68.151-.201.302-.78.98-.956 1.18-.176.202-.352.227-.654.076-.301-.151-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.088-.176-.302-.019-.465.132-.615.136-.135.301-.352.452-.528.151-.176.201-.302.302-.503.101-.201.05-.378-.025-.529-.075-.151-.68-1.636-.931-2.24-.245-.589-.494-.51-.68-.519l-.58-.007c-.201 0-.527.075-.804.377s-1.055 1.031-1.055 2.515 1.08 2.916 1.231 3.117c.151.201 2.126 3.247 5.15 4.552.719.31 1.281.496 1.719.635.722.23 1.38.197 1.9.12.58-.086 1.782-.729 2.033-1.433.251-.704.251-1.307.176-1.433-.075-.126-.277-.201-.578-.352z"/></svg>
-              <span>WhatsApp Us</span>
+              <span>Chat on WhatsApp / Contact STB</span>
             </a>
-            <a href="tel:+6590629107" class="py-3.5 px-4 rounded-2xl font-bold text-xs text-stb-charcoal bg-stone-100 hover:bg-stone-200 flex items-center justify-center gap-2 border border-stone-200 transition-all" data-testid="confirm-call-btn">
-              <span class="material-symbols-outlined text-base text-stb-red">call</span>
-              <span>Call Us (+65 9062 9107)</span>
-            </a>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button type="button" id="btn-book-another" class="py-3 px-4 rounded-xl font-bold text-xs text-stb-charcoal bg-stone-100 hover:bg-stone-200 border border-stone-200 flex items-center justify-center gap-1.5 transition-all">
+                <span class="material-symbols-outlined text-sm text-stb-red">add_circle</span>
+                <span>Book Another Ride</span>
+              </button>
+              <a href="/" class="py-3 px-4 rounded-xl font-bold text-xs text-stone-600 bg-stone-50 hover:bg-stone-100 border border-stone-200 flex items-center justify-center gap-1.5 transition-all">
+                <span class="material-symbols-outlined text-sm">home</span>
+                <span>Back to Home</span>
+              </a>
+            </div>
           </div>
 
-          <button type="button" id="btn-book-another" class="text-xs font-bold text-stb-muted hover:text-stb-red underline transition-colors pt-2">
-            ← Book another transport
-          </button>
         </div>
       </section>
 

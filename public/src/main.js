@@ -1903,44 +1903,42 @@ async function handleBookingSubmit() {
 }
 
 function showDedicatedConfirmation(data) {
-  $('#confirm-ref-code').textContent = data.voucherCode;
-  $('#confirm-name').textContent = data.name;
-  $('#confirm-phone').textContent = data.phone;
-  $('#confirm-email').textContent = data.email;
-  $('#confirm-type').textContent = data.modeTitle;
-  $('#confirm-pickup').textContent = data.pickup;
-  $('#confirm-dest').textContent = data.destination;
-  $('#confirm-datetime').textContent = data.dateTime;
-  $('#confirm-pax').textContent = data.pax;
+  if ($('#confirm-ref-code')) $('#confirm-ref-code').textContent = data.voucherCode;
+  if ($('#confirm-name')) $('#confirm-name').textContent = data.name;
+  if ($('#confirm-phone')) $('#confirm-phone').textContent = data.phone;
+  if ($('#confirm-email')) $('#confirm-email').textContent = data.email;
+  if ($('#confirm-type')) $('#confirm-type').textContent = data.modeTitle;
+  if ($('#confirm-pickup')) $('#confirm-pickup').textContent = data.pickup;
+  if ($('#confirm-dest')) $('#confirm-dest').textContent = data.destination;
+  if ($('#confirm-datetime')) $('#confirm-datetime').textContent = data.dateTime;
+  if ($('#confirm-pax')) $('#confirm-pax').textContent = data.pax;
 
-  const destWrap = $('#confirm-dest-wrap');
-  if (destWrap) {
-    if (state.tripMode === 'hourly' || state.tripMode === 'daily') destWrap.classList.add('hidden');
-    else destWrap.classList.remove('hidden');
-  }
-
-  const vehicleWrap = $('#confirm-vehicle-wrap');
-  const fareWrap = $('#confirm-fare-wrap');
-  if (state.tripMode === 'one_way') {
-    vehicleWrap?.classList.remove('hidden');
-    fareWrap?.classList.remove('hidden');
-    const confirmVehicle = $('#confirm-vehicle');
-    if (confirmVehicle) {
+  const confirmVehicle = $('#confirm-vehicle');
+  if (confirmVehicle) {
+    if (state.tripMode === 'one_way') {
       const formattedDistance = data.distanceKm ? ` (${data.distanceKm.toFixed(1)} km)` : '';
       confirmVehicle.textContent = `${data.vehicle}${formattedDistance}`;
+    } else if (state.tripMode === 'hourly') {
+      const hrs = Number(state.hourlyDuration) || 4;
+      confirmVehicle.textContent = `${data.vehicle} (${hrs} Hours Disposal)`;
+    } else if (state.tripMode === 'daily') {
+      const days = Number(state.dailyDuration) || 1;
+      confirmVehicle.textContent = `${data.vehicle} (${days} ${days === 1 ? 'Day' : 'Days'} Charter)`;
+    } else {
+      confirmVehicle.textContent = data.vehicle;
     }
-    const confirmFare = $('#confirm-fare');
-    if (confirmFare) confirmFare.textContent = data.fare;
-  } else {
-    vehicleWrap?.classList.add('hidden');
-    fareWrap?.classList.add('hidden');
+  }
+
+  const confirmFare = $('#confirm-fare');
+  if (confirmFare) {
+    confirmFare.textContent = data.fare;
   }
 
   const flightWrap = $('#confirm-flight-wrap');
   if (flightWrap) {
     if (data.flight) {
       flightWrap.classList.remove('hidden');
-      $('#confirm-flight').textContent = data.flight;
+      if ($('#confirm-flight')) $('#confirm-flight').textContent = data.flight;
     } else {
       flightWrap.classList.add('hidden');
     }
@@ -1956,7 +1954,7 @@ function showDedicatedConfirmation(data) {
     reviewView.classList.remove('block', 'flex');
     reviewView.classList.add('hidden');
   }
-  
+
   const confirmSection = $('#confirmation-view');
   if (confirmSection) {
     confirmSection.classList.remove('hidden');
