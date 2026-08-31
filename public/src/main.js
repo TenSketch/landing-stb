@@ -35,6 +35,11 @@ const state = {
   googlePickupMarker: null,
   googleDestMarker: null,
   googleRoutePolyline: null,
+  // Simple vehicle & pricing state
+  selectedSimpleVehicle: '4-Seater',
+  calculatedFares: null,
+  distanceKm: null,
+  isFareEstimating: false,
 };
 
 // Quick DOM helpers
@@ -590,6 +595,7 @@ function updatePickupState(text, placeId, coords, formattedAddress) {
 
   checkAirportConditionalSelector();
   updateGoogleMapPreview();
+  triggerFareEstimation();
 }
 
 function updateDestState(text, placeId, coords, formattedAddress) {
@@ -606,6 +612,7 @@ function updateDestState(text, placeId, coords, formattedAddress) {
 
   checkAirportConditionalSelector();
   updateGoogleMapPreview();
+  triggerFareEstimation();
 }
 
 function clearPickupField() {
@@ -631,6 +638,7 @@ function clearPickupField() {
 
   checkAirportConditionalSelector();
   updateGoogleMapPreview();
+  triggerFareEstimation();
 }
 
 function clearDestField() {
@@ -656,6 +664,7 @@ function clearDestField() {
 
   checkAirportConditionalSelector();
   updateGoogleMapPreview();
+  triggerFareEstimation();
 }
 
 function checkAirportConditionalSelector() {
@@ -803,6 +812,7 @@ function initFormControls() {
       }
       checkAirportConditionalSelector();
       updateGoogleMapPreview();
+      triggerFareEstimation();
     });
   });
 
@@ -962,6 +972,15 @@ function initFormControls() {
       dArrow?.classList.remove('rotate-180');
     }
   });
+
+  // Click listeners for simplified vehicle cards
+  $('#btn-vehicle-4-seater')?.addEventListener('click', () => {
+    selectSimpleVehicle('4-Seater');
+  });
+  $('#btn-vehicle-6-seater')?.addEventListener('click', () => {
+    selectSimpleVehicle('6-Seater');
+  });
+  selectSimpleVehicle('4-Seater'); // Set default
 }
 
 function scrollToHeroBooking() {
@@ -1257,6 +1276,24 @@ function showReviewView() {
   const reviewType = $('#review-type-val');
   if (reviewType) reviewType.textContent = modeTitle;
 
+  const reviewFareRow = $('#review-fare-row');
+  const reviewVehicleVal = $('#review-vehicle-val');
+  const reviewFareVal = $('#review-fare-val');
+
+  if (state.tripMode === 'one_way' && state.calculatedFares && state.calculatedFares[state.selectedSimpleVehicle]) {
+    reviewFareRow?.classList.remove('hidden');
+    if (reviewVehicleVal) {
+      const formattedDistance = state.distanceKm ? ` (${state.distanceKm.toFixed(1)} km)` : '';
+      reviewVehicleVal.textContent = `${state.selectedSimpleVehicle}${formattedDistance}`;
+    }
+    if (reviewFareVal) {
+      const amt = state.calculatedFares[state.selectedSimpleVehicle];
+      reviewFareVal.textContent = formatCurrency(amt);
+    }
+  } else {
+    reviewFareRow?.classList.add('hidden');
+  }
+
   // Scroll to review section top
   reviewView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -1421,6 +1458,16 @@ async function handleBookingSubmit() {
   let bookingSuccessful = false;
   let serverVoucherCode = '';
 
+  let submitVehicle = modeTitle;
+  let submitFare = 'Pending Quote';
+  if (state.tripMode === 'one_way') {
+    submitVehicle = state.selectedSimpleVehicle;
+    if (state.calculatedFares && state.calculatedFares[state.selectedSimpleVehicle]) {
+      const amt = state.calculatedFares[state.selectedSimpleVehicle];
+      submitFare = `Estimated SGD ${amt.toFixed(2)}`;
+    }
+  }
+
   // Submit to Backend API
   try {
     const res = await fetch('/api/bookings', {
@@ -1430,7 +1477,7 @@ async function handleBookingSubmit() {
         passengerName: name,
         passengerEmail: email,
         passengerPhone: phone,
-        vehicle: modeTitle,
+        vehicle: submitVehicle,
         bookingType: modeTitle,
         pickup: finalPickup,
         destination: finalDest,
@@ -1438,13 +1485,14 @@ async function handleBookingSubmit() {
         flightNo: flight,
         notes: notes,
         pax: pax,
-        fare: 'Pending Quote',
+        fare: submitFare,
         currency: state.currency,
         paymentMethod: 'Pay After Service',
         pickupPlaceId: state.pickupPlaceId,
         pickupCoords: state.pickupCoords,
         destPlaceId: state.destPlaceId,
         destCoords: state.destCoords,
+        distanceKm: state.tripMode === 'one_way' ? state.distanceKm : null,
       }),
     });
     if (res.ok) {
@@ -1478,6 +1526,12 @@ async function handleBookingSubmit() {
     waMsg += `👤 *Passenger:* ${name}\n`;
     waMsg += `📱 *WhatsApp:* ${phone}\n`;
     waMsg += `✉️ *Email:* ${email}\n`;
+    if (state.tripMode === 'one_way') {
+      waMsg += `🚘 *Vehicle Selection:* ${state.selectedSimpleVehicle} (Representative)\n`;
+      if (state.distanceKm) {
+        waMsg += `📏 *Distance:* ${state.distanceKm.toFixed(1)} km\n`;
+      }
+    }
     waMsg += `🚘 *Booking Type:* ${modeTitle}\n`;
     waMsg += `📍 *Pickup:* ${finalPickup}\n`;
     if (state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
@@ -1489,6 +1543,10 @@ async function handleBookingSubmit() {
     if (state.tripMode === 'daily') waMsg += `🗓 *Duration:* ${state.dailyDuration || 2} days\n`;
     if (flight) waMsg += `✈️ *Flight:* ${flight}\n`;
     if (notes) waMsg += `📝 *Notes:* ${notes}\n`;
+    if (state.tripMode === 'one_way' && state.calculatedFares && state.calculatedFares[state.selectedSimpleVehicle]) {
+      const amt = state.calculatedFares[state.selectedSimpleVehicle];
+      waMsg += `💰 *Estimated Fare:* ${formatCurrency(amt)} (subject to verification)\n`;
+    }
     waMsg += `\nPlease confirm vehicle availability for this inquiry. Thank you!`;
 
     const waUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waMsg)}`;
@@ -1507,6 +1565,9 @@ async function handleBookingSubmit() {
       flight,
       notes,
       waUrl,
+      vehicle: submitVehicle,
+      fare: submitFare,
+      distanceKm: state.distanceKm,
     });
   } else {
     // Construct WhatsApp error backup link
@@ -1515,6 +1576,12 @@ async function handleBookingSubmit() {
     waErrorMsg += `👤 *Passenger:* ${name}\n`;
     waErrorMsg += `📱 *WhatsApp:* ${phone}\n`;
     waErrorMsg += `✉️ *Email:* ${email}\n`;
+    if (state.tripMode === 'one_way') {
+      waErrorMsg += `🚘 *Vehicle Selection:* ${state.selectedSimpleVehicle} (Representative)\n`;
+      if (state.distanceKm) {
+        waErrorMsg += `📏 *Distance:* ${state.distanceKm.toFixed(1)} km\n`;
+      }
+    }
     waErrorMsg += `🚘 *Booking Type:* ${modeTitle}\n`;
     waErrorMsg += `📍 *Pickup:* ${finalPickup}\n`;
     if (state.tripMode !== 'hourly' && state.tripMode !== 'daily') {
@@ -1526,6 +1593,10 @@ async function handleBookingSubmit() {
     if (state.tripMode === 'daily') waErrorMsg += `🗓 *Duration:* ${state.dailyDuration || 2} days\n`;
     if (flight) waErrorMsg += `✈️ *Flight:* ${flight}\n`;
     if (notes) waErrorMsg += `📝 *Notes:* ${notes}\n`;
+    if (state.tripMode === 'one_way' && state.calculatedFares && state.calculatedFares[state.selectedSimpleVehicle]) {
+      const amt = state.calculatedFares[state.selectedSimpleVehicle];
+      waErrorMsg += `💰 *Estimated Fare:* ${formatCurrency(amt)} (subject to verification)\n`;
+    }
     waErrorMsg += `\nPlease manual book this inquiry. Thank you!`;
 
     const waErrorUrl = `https://wa.me/6590629107?text=${encodeURIComponent(waErrorMsg)}`;
@@ -1555,6 +1626,23 @@ function showDedicatedConfirmation(data) {
   if (destWrap) {
     if (state.tripMode === 'hourly' || state.tripMode === 'daily') destWrap.classList.add('hidden');
     else destWrap.classList.remove('hidden');
+  }
+
+  const vehicleWrap = $('#confirm-vehicle-wrap');
+  const fareWrap = $('#confirm-fare-wrap');
+  if (state.tripMode === 'one_way') {
+    vehicleWrap?.classList.remove('hidden');
+    fareWrap?.classList.remove('hidden');
+    const confirmVehicle = $('#confirm-vehicle');
+    if (confirmVehicle) {
+      const formattedDistance = data.distanceKm ? ` (${data.distanceKm.toFixed(1)} km)` : '';
+      confirmVehicle.textContent = `${data.vehicle}${formattedDistance}`;
+    }
+    const confirmFare = $('#confirm-fare');
+    if (confirmFare) confirmFare.textContent = data.fare;
+  } else {
+    vehicleWrap?.classList.add('hidden');
+    fareWrap?.classList.add('hidden');
   }
 
   const flightWrap = $('#confirm-flight-wrap');
@@ -1655,7 +1743,11 @@ function showVehicleSpecs(vid) {
   if (content) {
     content.innerHTML = `
       <div class="p-6 sm:p-8 space-y-6">
-        <div class="h-48 sm:h-64 rounded-2xl overflow-hidden bg-cover bg-center" style="background-image: url('${v.image}')"></div>
+        <div class="relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-cover bg-center" style="background-image: url('${v.image}')">
+          <div class="absolute bottom-2 right-2 bg-stone-900/75 backdrop-blur-[2px] text-[0.52rem] font-bold text-white px-2 py-0.5 rounded-md leading-tight text-center">
+            Representative vehicle · Subject to availability
+          </div>
+        </div>
         <div>
           <div class="flex items-center gap-2 mb-1.5">
             <span class="bg-stb-red text-white text-[0.62rem] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">${v.tag || 'Luxury'}</span>
@@ -1697,7 +1789,7 @@ function showVehicleSpecs(vid) {
         </div>
 
         <div class="pt-2">
-          <button type="button" class="w-full btn-primary py-3 font-bold text-sm text-white bg-stb-red rounded-xl shadow-md" onclick="closeModal('modal-vehicle'); state.selectedVehicleId='${v.id}'; scrollToHeroBooking();">
+          <button type="button" class="w-full btn-primary py-3 font-bold text-sm text-white bg-stb-red rounded-xl shadow-md" onclick="closeModal('modal-vehicle'); window.selectSimpleVehicle(Number('${v.pax}') <= 4 ? '4-Seater' : '6-Seater'); scrollToHeroBooking();">
             Book ${v.name}
           </button>
         </div>
@@ -1720,6 +1812,9 @@ function renderFleetCards(category = 'all') {
       <div class="fleet-img-wrap">
         <img src="${v.image}" alt="${v.name}" onerror="this.src='${v.fallback}'" />
         <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}">${v.tag || ''}</span>
+        <div class="absolute bottom-2 right-2 bg-stone-900/75 backdrop-blur-[2px] text-[0.52rem] font-bold text-white px-2 py-0.5 rounded-md leading-tight text-center z-10">
+          Representative vehicle · Subject to availability
+        </div>
       </div>
       <div class="fleet-body">
         <h3 class="fleet-title">${v.fullName}</h3>
@@ -1767,6 +1862,10 @@ function renderFleetCards(category = 'all') {
     btn.addEventListener('click', () => {
       const vid = btn.dataset.vid;
       state.selectedVehicleId = vid;
+      const v = VEHICLES.find((x) => x.id === vid);
+      if (v) {
+        window.selectSimpleVehicle(v.pax <= 4 ? '4-Seater' : '6-Seater');
+      }
       scrollToHeroBooking();
     });
   });
@@ -2005,4 +2104,143 @@ function initReveal() {
     });
   }, { threshold: 0.05, rootMargin: '0px 0px 100px 0px' });
   els.forEach((el) => io.observe(el));
+}
+
+// ============================================
+// SIMPLIFIED VEHICLE & PRICING FUNCTIONS
+// ============================================
+window.selectSimpleVehicle = selectSimpleVehicle;
+function selectSimpleVehicle(category) {
+  state.selectedSimpleVehicle = category;
+  const btn4 = $('#btn-vehicle-4-seater');
+  const btn6 = $('#btn-vehicle-6-seater');
+
+  if (!btn4 || !btn6) return;
+
+  if (category === '4-Seater') {
+    btn4.classList.add('border-stb-red', 'bg-stb-red-soft');
+    btn4.classList.remove('border-stone-200', 'bg-white');
+    btn6.classList.remove('border-stb-red', 'bg-stb-red-soft');
+    btn6.classList.add('border-stone-200', 'bg-white');
+  } else {
+    btn6.classList.add('border-stb-red', 'bg-stb-red-soft');
+    btn6.classList.remove('border-stone-200', 'bg-white');
+    btn4.classList.remove('border-stb-red', 'bg-stb-red-soft');
+    btn4.classList.add('border-stone-200', 'bg-white');
+  }
+}
+
+async function triggerFareEstimation() {
+  const pickupReady = state.pickupPlaceId || state.pickupCoords;
+  const destReady = state.destPlaceId || state.destCoords;
+
+  const estimateContainer = $('#estimate-container');
+  if (state.tripMode !== 'one_way') {
+    estimateContainer?.classList.add('hidden');
+    return;
+  }
+
+  if (!pickupReady || !destReady) {
+    estimateContainer?.classList.add('hidden');
+    return;
+  }
+
+  estimateContainer?.classList.remove('hidden');
+
+  const fare4 = $('#fare-4-seater-val');
+  const fare6 = $('#fare-6-seater-val');
+  const dist4 = $('#dist-4-seater-val');
+  const dist6 = $('#dist-6-seater-val');
+
+  if (fare4) fare4.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
+  if (fare6) fare6.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
+  if (dist4) dist4.innerHTML = `<span class="animate-pulse text-stone-400">...</span>`;
+  if (dist6) dist6.innerHTML = `<span class="animate-pulse text-stone-400">...</span>`;
+
+  state.isFareEstimating = true;
+
+  try {
+    const res = await fetch('/api/estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        origin: {
+          placeId: state.pickupPlaceId,
+          lat: state.pickupCoords?.lat,
+          lng: state.pickupCoords?.lng
+        },
+        destination: {
+          placeId: state.destPlaceId,
+          lat: state.destCoords?.lat,
+          lng: state.destCoords?.lng
+        }
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Estimate API error status: ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data.success && data.fares) {
+      state.calculatedFares = data.fares;
+      state.distanceKm = data.distanceKm;
+      state.pricingRates = data.rates;
+      renderEstimatedFares();
+    } else {
+      throw new Error(data.error || "Estimation unsuccessful");
+    }
+  } catch (err) {
+    console.warn("[ESTIMATE] Fare estimation failed:", err);
+    state.calculatedFares = null;
+    state.distanceKm = null;
+    state.pricingRates = null;
+    renderEstimatedFares();
+    if (fare4) fare4.textContent = "Pending Dispatch Quote";
+    if (fare6) fare6.textContent = "Pending Dispatch Quote";
+  } finally {
+    state.isFareEstimating = false;
+  }
+}
+
+function renderEstimatedFares() {
+  const fare4 = $('#fare-4-seater-val');
+  const fare6 = $('#fare-6-seater-val');
+  const dist4 = $('#dist-4-seater-val');
+  const dist6 = $('#dist-6-seater-val');
+  const breakdown4 = $('#breakdown-4-seater');
+  const breakdown6 = $('#breakdown-6-seater');
+
+  if (state.calculatedFares && state.distanceKm !== null && state.distanceKm !== undefined) {
+    const amt4 = state.calculatedFares['4-Seater'];
+    const amt6 = state.calculatedFares['6-Seater'];
+    const formattedDistance = state.distanceKm.toFixed(1);
+
+    if (fare4) fare4.textContent = formatCurrency(amt4);
+    if (fare6) fare6.textContent = formatCurrency(amt6);
+    if (dist4) dist4.textContent = `${formattedDistance} km`;
+    if (dist6) dist6.textContent = `${formattedDistance} km`;
+
+    // Dynamic breakdown strings using rates from server
+    if (state.pricingRates) {
+      const rate4 = state.pricingRates['4-Seater'];
+      const rate6 = state.pricingRates['6-Seater'];
+      if (breakdown4 && rate4) {
+        breakdown4.textContent = `S$${rate4.baseFare.toFixed(2)} base + ${formattedDistance} km × S$${rate4.perKmRate.toFixed(2)}/km`;
+      }
+      if (breakdown6 && rate6) {
+        breakdown6.textContent = `S$${rate6.baseFare.toFixed(2)} base + ${formattedDistance} km × S$${rate6.perKmRate.toFixed(2)}/km`;
+      }
+    } else {
+      if (breakdown4) breakdown4.textContent = `S$40.00 base + ${formattedDistance} km × S$2.20/km`;
+      if (breakdown6) breakdown6.textContent = `S$45.00 base + ${formattedDistance} km × S$2.50/km`;
+    }
+  } else {
+    if (fare4) fare4.textContent = "Pending Quote";
+    if (fare6) fare6.textContent = "Pending Quote";
+    if (dist4) dist4.textContent = "— km";
+    if (dist6) dist6.textContent = "— km";
+    if (breakdown4) breakdown4.textContent = "S$40.00 base + 0.0 km × S$2.20/km";
+    if (breakdown6) breakdown6.textContent = "S$45.00 base + 0.0 km × S$2.50/km";
+  }
 }

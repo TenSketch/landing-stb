@@ -247,6 +247,8 @@ function guestEmail(booking, brand) {
                 ${rowTd('Passenger Name', b.passengerName)}
                 ${rowTd('WhatsApp / Phone', b.passengerPhone)}
                 ${rowTd('Email', b.passengerEmail)}
+                ${rowTd('Vehicle Category', b.vehicle)}
+                ${booking.distanceKm ? rowTd('Route Distance', `${Number(booking.distanceKm).toFixed(1)} km`) : ''}
                 ${rowTd('Booking Type', b.bookingType)}
                 ${rowTd('Pickup Location', b.pickup)}
                 ${b.destination ? rowTd('Destination', b.destination) : ''}
@@ -254,6 +256,7 @@ function guestEmail(booking, brand) {
                 ${b.flightNo ? rowTd('Flight Number', b.flightNo, '#E31E24') : ''}
                 ${b.notes ? rowTd('Special Notes', b.notes) : ''}
                 ${rowTd('Passengers', b.pax)}
+                ${rowTd('Estimated Fare', b.fare, '#E31E24')}
                 ${rowTd('Payment Option', b.paymentMethod)}
               </table>
 
@@ -380,6 +383,9 @@ function adminEmail(booking, brand) {
   ];
 
   const tripRows = [
+    ['Vehicle Choice', b.vehicle],
+    ...(booking.distanceKm ? [['Route Distance', `${Number(booking.distanceKm).toFixed(1)} km`]] : []),
+    ['Estimated Fare', `<strong style="color:#E31E24;">${b.fare}</strong>`],
     ['Booking Type', b.bookingType],
     ['Pickup Location', b.pickup],
     ...(b.pickupPlaceId ? [['Pickup Place ID', `<span style="font-family:monospace;font-size:11px;">${b.pickupPlaceId}</span>`]] : []),
@@ -496,6 +502,8 @@ function guestText(booking) {
     `Thank you, ${booking.passengerName}. Your transport inquiry has been received.`,
     ``,
     `Inquiry Reference: ${booking.voucherCode}`,
+    `Vehicle Category: ${booking.vehicle}`,
+    booking.distanceKm ? `Route Distance: ${Number(booking.distanceKm).toFixed(1)} km` : ``,
     `Booking Type: ${booking.bookingType || 'One Way'}`,
     `Pickup: ${booking.pickup}`,
     booking.destination ? `Destination: ${booking.destination}` : ``,
@@ -503,6 +511,7 @@ function guestText(booking) {
     booking.flightNo ? `Flight: ${booking.flightNo}` : ``,
     booking.notes ? `Notes: ${booking.notes}` : ``,
     `Passengers: ${booking.pax}`,
+    `Estimated Fare: ${booking.fare}`,
     `Payment: No prepayment required (Pay after trip)`,
     ``,
     `Our Singapore dispatch team is verifying chauffeur availability and will confirm your booking via WhatsApp.`,
@@ -526,6 +535,9 @@ function adminText(booking) {
     `  Pax: ${booking.pax}`,
     ``,
     `TRIP`,
+    `  Vehicle Category: ${booking.vehicle}`,
+    booking.distanceKm ? `  Route Distance: ${Number(booking.distanceKm).toFixed(1)} km` : ``,
+    `  Estimated Fare: ${booking.fare}`,
     `  Booking Type: ${booking.bookingType || 'One Way'}`,
     `  Pickup: ${booking.pickup}`,
     booking.pickupPlaceId ? `  Pickup Place ID: ${booking.pickupPlaceId}` : ``,

@@ -31,6 +31,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Only handle same-origin GET requests to prevent CSP issues with external domains
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Bypass cache for POST/PUT requests and API endpoints
   if (event.request.method !== 'GET' || url.pathname.startsWith('/api') || url.pathname.startsWith('/booking')) {
     return;
@@ -50,8 +55,10 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Fallback to cache if network fails
-        return caches.match(event.request);
+        // Fallback to cache if network fails, or return error response
+        return caches.match(event.request).then((cached) => {
+          return cached || Response.error();
+        });
       })
   );
 });

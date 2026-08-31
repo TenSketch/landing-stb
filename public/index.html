@@ -215,7 +215,7 @@
     <!-- ================= NAV ================= -->
     <nav id="stb-nav" class="stb-nav" data-testid="main-nav">
       <div class="stb-nav-inner">
-        <a href="#top" class="flex items-center gap-3" data-testid="brand-logo">
+        <a href="/" class="flex items-center gap-3" data-testid="brand-logo">
           <img src="/stb-logo.png" alt="Singapore Tour Booking Logo" class="h-12 w-auto object-contain" />
           <div class="leading-tight">
             <div class="font-display font-bold text-base sm:text-lg text-stb-charcoal tracking-tight">Singapore Tour Booking</div>
@@ -224,6 +224,7 @@
         </a>
 
         <div class="hidden md:flex items-center gap-6">
+          <a href="/" class="stb-nav-link" data-testid="nav-home">Home</a>
           <a href="#services" class="stb-nav-link" data-testid="nav-services">Travel</a>
           <a href="#fleet" class="stb-nav-link" data-testid="nav-fleet">Fleet</a>
           <a href="#destinations" class="stb-nav-link" data-testid="nav-destinations">Destinations</a>
@@ -265,9 +266,28 @@
         </button>
       </div>
 
+      <!-- Mobile Header -->
+      <div class="flex md:hidden items-center justify-between px-4 py-3 border-b border-stone-200 bg-white" data-testid="mobile-header">
+        <a href="/" class="flex items-center gap-2">
+          <img src="/stb-logo.png" alt="STB Logo" class="h-9 w-auto object-contain" />
+          <div class="leading-none">
+            <div class="font-display font-black text-xs text-stb-charcoal tracking-tight">Singapore Tour Booking</div>
+            <div class="text-[0.45rem] font-bold tracking-[0.25em] text-stb-red uppercase">Official Transport</div>
+          </div>
+        </a>
+
+        <button id="menu-btn" class="text-stb-charcoal p-1 focus:outline-none" aria-label="Toggle Menu" data-testid="menu-btn">
+          <span id="menu-btn-icon" class="material-symbols-outlined text-2xl">menu</span>
+        </button>
+      </div>
+
       <!-- Mobile Drawer -->
       <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-stone-200 shadow-xl px-4 py-6" data-testid="mobile-menu">
         <div class="flex flex-col gap-1">
+          <a href="/" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal" data-testid="mobile-nav-home">
+            <span>Home</span>
+            <span class="material-symbols-outlined text-stone-400">chevron_right</span>
+          </a>
           <a href="#services" class="mobile-nav-link flex items-center justify-between py-3 border-b border-stone-100 font-bold text-stb-charcoal">
             <span>Travel</span>
             <span class="material-symbols-outlined text-stone-400">chevron_right</span>
@@ -519,6 +539,73 @@
                       <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="7">7 days</button>
                     </div>
                   </div>
+                  <!-- Progressive Vehicle Estimation Section (revealed when locations selected) -->
+                  <div id="estimate-container" class="hidden pt-2 border-t border-stone-200/80 space-y-3">
+                    <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Select Vehicle & Estimated Fare</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <!-- 4-Seater Category Card -->
+                      <button type="button" id="btn-vehicle-4-seater" class="vehicle-card-btn w-full text-left rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-stb-red transition-all focus:outline-none flex flex-col bg-white" data-vehicle="4-Seater">
+                        <div class="relative w-full h-24 bg-stone-100 overflow-hidden shrink-0">
+                          <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=600&q=80" alt="4-Seater Chauffeur Sedan" class="w-full h-full object-cover" />
+                          <div class="absolute bottom-1 right-1 bg-stone-900/75 backdrop-blur-[2px] text-[0.52rem] font-bold text-white px-2 py-0.5 rounded-md leading-tight text-center">
+                            Representative vehicle · Subject to availability
+                          </div>
+                        </div>
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                          <div>
+                            <div class="flex items-center justify-between">
+                              <span class="text-xs font-bold text-stb-charcoal">4-Seater</span>
+                              <span class="text-[0.62rem] font-bold text-stone-500 flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-xs">group</span> 4 Pax
+                              </span>
+                            </div>
+                            <div class="text-[0.62rem] text-stone-400 font-semibold mt-0.5">Toyota / Honda / similar</div>
+                            <div class="text-[0.65rem] text-stone-500 mt-1 leading-normal">Comfortable private transport.</div>
+                          </div>
+                          <div class="mt-2 pt-2 border-t border-stone-100 flex flex-col space-y-1">
+                            <span class="text-[0.55rem] font-black text-stone-400 uppercase tracking-widest leading-none">Estimated Transport Fare</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                              <span id="fare-4-seater-val" class="text-base font-extrabold text-stb-red leading-none">—</span>
+                              <span id="dist-4-seater-val" class="text-[0.68rem] font-bold text-stone-500 leading-none">— km</span>
+                            </div>
+                            <div id="breakdown-4-seater" class="text-[0.58rem] text-stone-400 font-semibold leading-normal mt-0.5">S$40.00 base + 0.0 km × S$2.20/km</div>
+                            <div class="text-[0.55rem] text-emerald-700 font-bold leading-normal">No peak-hour surcharge · No night surcharge · Tolls included</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <!-- 6-Seater Category Card -->
+                      <button type="button" id="btn-vehicle-6-seater" class="vehicle-card-btn w-full text-left rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-stb-red transition-all focus:outline-none flex flex-col bg-white" data-vehicle="6-Seater">
+                        <div class="relative w-full h-24 bg-stone-100 overflow-hidden shrink-0">
+                          <img src="https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=600&q=80" alt="6-Seater Luxury MPV" class="w-full h-full object-cover" />
+                          <div class="absolute bottom-1 right-1 bg-stone-900/75 backdrop-blur-[2px] text-[0.52rem] font-bold text-white px-2 py-0.5 rounded-md leading-tight text-center">
+                            Representative vehicle · Subject to availability
+                          </div>
+                        </div>
+                        <div class="p-3 flex-1 flex flex-col justify-between">
+                          <div>
+                            <div class="flex items-center justify-between">
+                              <span class="text-xs font-bold text-stb-charcoal">6-Seater</span>
+                              <span class="text-[0.62rem] font-bold text-stone-500 flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-xs">group</span> 6 Pax
+                              </span>
+                            </div>
+                            <div class="text-[0.62rem] text-stone-400 font-semibold mt-0.5">Toyota / Hyundai / similar</div>
+                            <div class="text-[0.65rem] text-stone-500 mt-1 leading-normal">Spacious private transport.</div>
+                          </div>
+                          <div class="mt-2 pt-2 border-t border-stone-100 flex flex-col space-y-1">
+                            <span class="text-[0.55rem] font-black text-stone-400 uppercase tracking-widest leading-none">Estimated Transport Fare</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                              <span id="fare-6-seater-val" class="text-base font-extrabold text-stb-red leading-none">—</span>
+                              <span id="dist-6-seater-val" class="text-[0.68rem] font-bold text-stone-500 leading-none">— km</span>
+                            </div>
+                            <div id="breakdown-6-seater" class="text-[0.58rem] text-stone-400 font-semibold leading-normal mt-0.5">S$45.00 base + 0.0 km × S$2.50/km</div>
+                            <div class="text-[0.55rem] text-emerald-700 font-bold leading-normal">No peak-hour surcharge · No night surcharge · Tolls included</div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
 
                   <!-- Advance Notice Info / Error Container -->
                   <div id="advance-notice-msg" class="hidden text-[0.68rem] text-stb-red font-bold p-2 bg-red-50 rounded-xl border border-red-200 flex items-start gap-1.5">
@@ -603,6 +690,18 @@
                 <strong id="review-type-val" class="text-stb-charcoal font-semibold block mt-0.5">—</strong>
               </div>
             </div>
+
+            <!-- Dynamic Fare Summary (revealed only for One Way route bookings) -->
+            <div id="review-fare-row" class="hidden border-t border-stone-200/80 pt-3 flex items-center justify-between">
+              <div>
+                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Vehicle Selection</span>
+                <strong id="review-vehicle-val" class="text-stb-charcoal font-semibold">—</strong>
+              </div>
+              <div class="text-right">
+                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500">Estimated Transport Fare</span>
+                <strong id="review-fare-val" class="text-stb-charcoal font-extrabold text-sm text-stb-red">—</strong>
+              </div>
+            </div>
           </div>
 
           <!-- Google Map Preview (on review screen) -->
@@ -684,6 +783,8 @@
               <div><span class="text-stone-500">WhatsApp:</span> <strong id="confirm-phone">—</strong></div>
               <div><span class="text-stone-500">Email:</span> <strong id="confirm-email">—</strong></div>
               <div><span class="text-stone-500">Booking Type:</span> <strong id="confirm-type">—</strong></div>
+              <div id="confirm-vehicle-wrap" class="sm:col-span-2"><span class="text-stone-500">Vehicle Selected:</span> <strong id="confirm-vehicle">—</strong></div>
+              <div id="confirm-fare-wrap" class="sm:col-span-2"><span class="text-stone-500">Estimated Transport Fare:</span> <strong id="confirm-fare" class="text-stb-red">—</strong></div>
               <div class="sm:col-span-2"><span class="text-stone-500">Pickup:</span> <strong id="confirm-pickup">—</strong></div>
               <div class="sm:col-span-2" id="confirm-dest-wrap"><span class="text-stone-500">Destination:</span> <strong id="confirm-dest">—</strong></div>
               <div class="sm:col-span-2"><span class="text-stone-500">Travel Date &amp; Time:</span> <strong id="confirm-datetime">—</strong></div>

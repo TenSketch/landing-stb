@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 import { randomUUID } from "crypto";
 import {
   handleCreateBooking, handleGetAssign, handlePostAssign,
-  getTransporter,
+  getTransporter, handleEstimateFare,
 } from "./lib/handlers.js";
 import { storageMode } from "./lib/store.js";
 
@@ -111,6 +111,12 @@ app.get("/api/health", (_req, res) => {
 app.post("/api/bookings", async (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   const r = await handleCreateBooking(req.body || {}, baseUrl);
+  res.status(r.status).json(r.body);
+});
+
+// ---------- Fare Estimation ----------
+app.post("/api/estimate", async (req, res) => {
+  const r = await handleEstimateFare(req.body || {});
   res.status(r.status).json(r.body);
 });
 
