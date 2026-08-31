@@ -1,0 +1,21 @@
+{
+  "origin": {
+    "location": {
+      "latLng": {
+        "latitude": 1.362,
+        "longitude": 103.991
+      }
+    }
+  },
+  "destination": {
+    "location": {
+      "latLng": {
+        "latitude": 1.371,
+        "longitude": 103.886
+      }
+    }
+  },
+  "travelMode": "DRIVE",
+  "routingPreference": "TRAFFIC_UNAWARE",
+  "units": "METRIC"
+}
