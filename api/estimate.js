@@ -6,7 +6,8 @@ export default async function handler(req, res) {
     return;
   }
   try {
-    const result = await handleEstimateFare(req.body || {});
+    const referer = req.headers.referer || "https://singaporetourbooking.com/";
+    const result = await handleEstimateFare(req.body || {}, referer);
     res.status(result.status).json(result.body);
   } catch (err) {
     console.error("[API /estimate] Unhandled error:", err);

@@ -116,7 +116,8 @@ app.post("/api/bookings", async (req, res) => {
 
 // ---------- Fare Estimation ----------
 app.post("/api/estimate", async (req, res) => {
-  const r = await handleEstimateFare(req.body || {});
+  const referer = req.headers.referer || "https://singaporetourbooking.com/";
+  const r = await handleEstimateFare(req.body || {}, referer);
   res.status(r.status).json(r.body);
 });
 

@@ -190,7 +190,7 @@
         { "@type": "Question", "name": "Do I need to pay in advance?", "acceptedAnswer": { "@type": "Answer", "text": "No prepayment is required. You can submit your transport inquiry and book your ride first. Payment takes place after your trip is completed." } },
         { "@type": "Question", "name": "How do I book an airport transfer?", "acceptedAnswer": { "@type": "Answer", "text": "Enter your pickup location, destination, date, time, passenger count, and your contact details, then submit your inquiry to receive confirmation from dispatch." } },
         { "@type": "Question", "name": "What happens if my flight to Changi Airport is delayed?", "acceptedAnswer": { "@type": "Answer", "text": "We monitor flight arrival times in real time. Your assigned chauffeur automatically adjusts pickup timing with 60 minutes of complimentary waiting time from touchdown." } },
-        { "@type": "Question", "name": "Are tolls (ERP) and airport fees included in the quote?", "acceptedAnswer": { "@type": "Answer", "text": "Yes! All STB transport quotes are 100% all-inclusive. ERP tolls, peak hour surcharges, airport fees, and fuel are strictly included." } }
+        { "@type": "Question", "name": "Are tolls (ERP) and parking fees included in the quote?", "acceptedAnswer": { "@type": "Answer", "text": "ERP road tolls and parking charges are excluded and will be billed separately based on actual usage." } }
       ]
     }
     </script>
@@ -476,21 +476,46 @@
 
                   <!-- Separate Modern Date & Time Pickers -->
                   <div class="grid grid-cols-2 gap-2.5">
-                    <!-- Travel Date Trigger -->
-                    <div class="min-w-0">
+                    <!-- Travel Date -->
+                    <div class="min-w-0 relative">
                       <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Travel Date</label>
-                      <div class="relative cursor-pointer" id="trigger-date-modal">
-                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">calendar_month</span>
-                        <input type="text" id="date-display-input" readonly placeholder="Select Date" class="w-full pl-8 pr-2 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl cursor-pointer focus:outline-none focus:border-stb-red transition-all" data-testid="date-display-input" />
+                      <div class="relative cursor-pointer" id="trigger-date-input-wrap">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none z-10">calendar_month</span>
+                        <input type="text" id="date-display-input" readonly placeholder="Select Date" class="w-full pl-8 pr-2 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl cursor-pointer focus:outline-none focus:border-stb-red transition-all" data-testid="date-display-input" required />
+                      </div>
+                      
+                      <!-- Inline Dropdown Calendar Selector -->
+                      <div id="dropdown-calendar" class="hidden absolute left-0 mt-1 w-[280px] bg-white rounded-2xl p-4 shadow-xl border border-stone-200 z-30 animate-fade-in">
+                        <div class="flex items-center justify-between mb-3">
+                          <h4 id="cal-month-title" class="font-display font-bold text-xs text-stb-charcoal">August 2026</h4>
+                          <div class="flex gap-0.5">
+                            <button type="button" id="btn-cal-prev" class="w-6 h-6 rounded-full border border-stone-200 flex items-center justify-center text-xs text-stone-600 hover:bg-stone-100 font-bold">‹</button>
+                            <button type="button" id="btn-cal-next" class="w-6 h-6 rounded-full border border-stone-200 flex items-center justify-center text-xs text-stone-600 hover:bg-stone-100 font-bold">›</button>
+                          </div>
+                        </div>
+
+                        <div class="grid grid-cols-7 gap-0.5 text-center text-[0.6rem] font-bold text-stone-400 uppercase mb-1.5">
+                          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                        </div>
+
+                        <div id="cal-days-grid" class="grid grid-cols-7 gap-0.5 text-center text-[0.68rem] font-semibold"></div>
+
+                        <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[0.68rem]">
+                          <button type="button" id="btn-cal-today" class="text-stb-red font-bold hover:underline">Select Today</button>
+                          <button type="button" id="btn-cal-close" class="text-stone-500 hover:text-stone-800 font-semibold">Close</button>
+                        </div>
                       </div>
                     </div>
 
-                    <!-- Travel Time Trigger -->
+                    <!-- Travel Time -->
                     <div class="min-w-0">
                       <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Travel Time</label>
-                      <div class="relative cursor-pointer" id="trigger-time-modal">
-                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">schedule</span>
-                        <input type="text" id="time-display-input" readonly placeholder="Select Time" class="w-full pl-8 pr-2 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl cursor-pointer focus:outline-none focus:border-stb-red transition-all" data-testid="time-display-input" />
+                      <div class="relative">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none z-10">schedule</span>
+                        <select id="time-display-input" class="w-full pl-8 pr-6 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all appearance-none" data-testid="time-display-input" required>
+                          <option value="" disabled selected>Select Time</option>
+                        </select>
+                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">arrow_drop_down</span>
                       </div>
                     </div>
                   </div>
@@ -520,11 +545,11 @@
                   <div id="hourly-duration-container" class="hidden pt-1">
                     <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stb-gold-dark mb-1">Hours Required</label>
                     <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 active" data-hours="3">3h</button>
-                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="4">4h</button>
-                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="6">6h</button>
-                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="8">8h</button>
-                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-hours="12">12h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-hours="2">2h</button>
+                      <button type="button" class="hourly-btn active bg-stb-red text-white border-stb-red shadow-sm py-1.5 px-3 rounded-lg text-xs font-bold transition-all" data-hours="4">4h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-hours="6">6h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-hours="8">8h</button>
+                      <button type="button" class="hourly-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-hours="12">12h</button>
                     </div>
                   </div>
 
@@ -532,11 +557,12 @@
                   <div id="daily-duration-container" class="hidden pt-1">
                     <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stb-gold-dark mb-1">Days Required</label>
                     <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 active" data-days="1">1 day</button>
-                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="2">2 days</button>
-                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="3">3 days</button>
-                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="5">5 days</button>
-                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700" data-days="7">7 days</button>
+                      <button type="button" class="daily-btn active bg-stb-red text-white border-stb-red shadow-sm py-1.5 px-3 rounded-lg text-xs font-bold transition-all" data-days="1">1 Day</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-days="2">2 Days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-days="3">3 Days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-days="4">4 Days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-days="5">5 Days</button>
+                      <button type="button" class="daily-btn border border-stone-200 py-1.5 px-3 rounded-lg text-xs font-bold text-stone-700 hover:border-stb-red transition-all" data-days="6">6 Days</button>
                     </div>
                   </div>
                   <!-- Progressive Vehicle Estimation Section (revealed when locations selected) -->
@@ -544,64 +570,56 @@
                     <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Select Vehicle & Estimated Fare</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <!-- 4-Seater Category Card -->
-                      <button type="button" id="btn-vehicle-4-seater" class="vehicle-card-btn w-full text-left rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-stb-red transition-all focus:outline-none flex flex-col bg-white" data-vehicle="4-Seater">
-                        <div class="relative w-full h-24 bg-stone-100 overflow-hidden shrink-0">
-                          <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=600&q=80" alt="4-Seater Chauffeur Sedan" class="w-full h-full object-cover" />
-                          <div class="absolute bottom-1 right-1 bg-stone-900/75 backdrop-blur-[2px] text-[0.52rem] font-bold text-white px-2 py-0.5 rounded-md leading-tight text-center">
-                            Representative vehicle · Subject to availability
+                      <button type="button" id="btn-vehicle-4-seater" class="vehicle-card-btn w-full text-left rounded-2xl border-2 border-stone-200 p-3.5 hover:border-stb-red transition-all focus:outline-none flex flex-col bg-white shadow-sm" data-vehicle="4-Seater">
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-100">
+                          <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-red-50 text-stb-red flex items-center justify-center shrink-0">
+                              <span class="material-symbols-outlined text-xl">directions_car</span>
+                            </div>
+                            <div>
+                              <div class="text-xs font-bold text-stb-charcoal leading-tight">4-Seater</div>
+                              <div class="text-[0.6rem] text-stone-400 font-semibold mt-0.5">Toyota / Honda / similar</div>
+                            </div>
                           </div>
+                          <span class="text-[0.62rem] font-bold text-stone-500 flex items-center gap-0.5 shrink-0 bg-stone-50 px-2 py-1 rounded-lg border border-stone-200/60">
+                            <span class="material-symbols-outlined text-xs text-stone-400">group</span> 4 Pax
+                          </span>
                         </div>
-                        <div class="p-3 flex-1 flex flex-col justify-between">
-                          <div>
-                            <div class="flex items-center justify-between">
-                              <span class="text-xs font-bold text-stb-charcoal">4-Seater</span>
-                              <span class="text-[0.62rem] font-bold text-stone-500 flex items-center gap-0.5">
-                                <span class="material-symbols-outlined text-xs">group</span> 4 Pax
-                              </span>
-                            </div>
-                            <div class="text-[0.62rem] text-stone-400 font-semibold mt-0.5">Toyota / Honda / similar</div>
-                            <div class="text-[0.65rem] text-stone-500 mt-1 leading-normal">Comfortable private transport.</div>
+                        <div class="pt-2.5 flex flex-col space-y-1">
+                          <span class="text-[0.55rem] font-black text-stone-400 uppercase tracking-widest leading-none">Estimated Transport Fare</span>
+                          <div class="flex items-baseline justify-between mt-1">
+                            <span id="fare-4-seater-val" class="text-base font-extrabold text-stb-red leading-none">—</span>
+                            <span id="dist-4-seater-val" class="text-[0.68rem] font-bold text-stone-500 leading-none">— km</span>
                           </div>
-                          <div class="mt-2 pt-2 border-t border-stone-100 flex flex-col space-y-1">
-                            <span class="text-[0.55rem] font-black text-stone-400 uppercase tracking-widest leading-none">Estimated Transport Fare</span>
-                            <div class="flex items-baseline justify-between mt-1">
-                              <span id="fare-4-seater-val" class="text-base font-extrabold text-stb-red leading-none">—</span>
-                              <span id="dist-4-seater-val" class="text-[0.68rem] font-bold text-stone-500 leading-none">— km</span>
-                            </div>
-                            <div id="breakdown-4-seater" class="text-[0.58rem] text-stone-400 font-semibold leading-normal mt-0.5">S$40.00 base + 0.0 km × S$2.20/km</div>
-                            <div class="text-[0.55rem] text-emerald-700 font-bold leading-normal">No peak-hour surcharge · No night surcharge · Tolls included</div>
-                          </div>
+                          <div id="breakdown-4-seater" class="text-[0.58rem] text-stone-400 font-semibold leading-normal mt-0.5">S$40.00 base + 0.0 km × S$2.20/km</div>
+                          <div class="text-[0.55rem] text-stone-500 font-bold leading-normal">Tolls excluded</div>
                         </div>
                       </button>
 
                       <!-- 6-Seater Category Card -->
-                      <button type="button" id="btn-vehicle-6-seater" class="vehicle-card-btn w-full text-left rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-stb-red transition-all focus:outline-none flex flex-col bg-white" data-vehicle="6-Seater">
-                        <div class="relative w-full h-24 bg-stone-100 overflow-hidden shrink-0">
-                          <img src="https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=600&q=80" alt="6-Seater Luxury MPV" class="w-full h-full object-cover" />
-                          <div class="absolute bottom-1 right-1 bg-stone-900/75 backdrop-blur-[2px] text-[0.52rem] font-bold text-white px-2 py-0.5 rounded-md leading-tight text-center">
-                            Representative vehicle · Subject to availability
+                      <button type="button" id="btn-vehicle-6-seater" class="vehicle-card-btn w-full text-left rounded-2xl border-2 border-stone-200 p-3.5 hover:border-stb-red transition-all focus:outline-none flex flex-col bg-white shadow-sm" data-vehicle="6-Seater">
+                        <div class="flex items-center justify-between gap-2 pb-2.5 border-b border-stone-100">
+                          <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-red-50 text-stb-red flex items-center justify-center shrink-0">
+                              <span class="material-symbols-outlined text-xl">airport_shuttle</span>
+                            </div>
+                            <div>
+                              <div class="text-xs font-bold text-stb-charcoal leading-tight">6-Seater</div>
+                              <div class="text-[0.6rem] text-stone-400 font-semibold mt-0.5">Toyota / Hyundai / similar</div>
+                            </div>
                           </div>
+                          <span class="text-[0.62rem] font-bold text-stone-500 flex items-center gap-0.5 shrink-0 bg-stone-50 px-2 py-1 rounded-lg border border-stone-200/60">
+                            <span class="material-symbols-outlined text-xs text-stone-400">group</span> 6 Pax
+                          </span>
                         </div>
-                        <div class="p-3 flex-1 flex flex-col justify-between">
-                          <div>
-                            <div class="flex items-center justify-between">
-                              <span class="text-xs font-bold text-stb-charcoal">6-Seater</span>
-                              <span class="text-[0.62rem] font-bold text-stone-500 flex items-center gap-0.5">
-                                <span class="material-symbols-outlined text-xs">group</span> 6 Pax
-                              </span>
-                            </div>
-                            <div class="text-[0.62rem] text-stone-400 font-semibold mt-0.5">Toyota / Hyundai / similar</div>
-                            <div class="text-[0.65rem] text-stone-500 mt-1 leading-normal">Spacious private transport.</div>
+                        <div class="pt-2.5 flex flex-col space-y-1">
+                          <span class="text-[0.55rem] font-black text-stone-400 uppercase tracking-widest leading-none">Estimated Transport Fare</span>
+                          <div class="flex items-baseline justify-between mt-1">
+                            <span id="fare-6-seater-val" class="text-base font-extrabold text-stb-red leading-none">—</span>
+                            <span id="dist-6-seater-val" class="text-[0.68rem] font-bold text-stone-500 leading-none">— km</span>
                           </div>
-                          <div class="mt-2 pt-2 border-t border-stone-100 flex flex-col space-y-1">
-                            <span class="text-[0.55rem] font-black text-stone-400 uppercase tracking-widest leading-none">Estimated Transport Fare</span>
-                            <div class="flex items-baseline justify-between mt-1">
-                              <span id="fare-6-seater-val" class="text-base font-extrabold text-stb-red leading-none">—</span>
-                              <span id="dist-6-seater-val" class="text-[0.68rem] font-bold text-stone-500 leading-none">— km</span>
-                            </div>
-                            <div id="breakdown-6-seater" class="text-[0.58rem] text-stone-400 font-semibold leading-normal mt-0.5">S$45.00 base + 0.0 km × S$2.50/km</div>
-                            <div class="text-[0.55rem] text-emerald-700 font-bold leading-normal">No peak-hour surcharge · No night surcharge · Tolls included</div>
-                          </div>
+                          <div id="breakdown-6-seater" class="text-[0.58rem] text-stone-400 font-semibold leading-normal mt-0.5">S$45.00 base + 0.0 km × S$2.50/km</div>
+                          <div class="text-[0.55rem] text-stone-500 font-bold leading-normal">Tolls excluded</div>
                         </div>
                       </button>
                     </div>
@@ -610,7 +628,7 @@
                   <!-- Advance Notice Info / Error Container -->
                   <div id="advance-notice-msg" class="hidden text-[0.68rem] text-stb-red font-bold p-2 bg-red-50 rounded-xl border border-red-200 flex items-start gap-1.5">
                     <span class="material-symbols-outlined text-sm">schedule</span>
-                    <span id="advance-notice-text">Advance bookings must be at least 1 hour before pickup time.</span>
+                    <span id="advance-notice-text">Advance bookings must be at least 24 hours before pickup time.</span>
                   </div>
 
                   <!-- Primary CTA: Continue to Review -->
@@ -647,117 +665,310 @@
         </div>
       </section>
 
+      <!-- ================= BOOKING TIMER STRIP (sticky, shown only when review is active) ================= -->
+      <div id="booking-timer-strip" class="hidden fixed top-[76px] left-0 right-0 z-40 flex items-center justify-center gap-2.5 sm:gap-3 py-2.5 text-sm font-bold select-none shadow-sm border-b border-red-200/70" style="background: #fff8f8;">
+        <span class="material-symbols-outlined text-stb-red text-base">timer</span>
+        <span class="text-stb-charcoal text-xs sm:text-sm font-bold">Please complete your booking within</span>
+        <span id="booking-timer-display" class="text-stb-red font-black text-base sm:text-lg tracking-widest tabular-nums">05:00</span>
+        <span class="text-stone-500 text-xs sm:text-sm font-semibold">mins</span>
+      </div>
+
       <!-- ================= DEDICATED REVIEW & DETAILS VIEW ================= -->
-      <section id="review-booking-view" class="hidden min-h-[90vh] py-20 px-4 flex items-center justify-center animate-fade-in" style="background: var(--stb-cream);">
-        <div class="max-w-xl w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-stone-200 relative overflow-hidden" data-testid="review-booking-card">
-          <div class="h-2 w-full absolute top-0 left-0 right-0" style="background: linear-gradient(90deg, #E31E24, #D4A24A, #E31E24);"></div>
-          
-          <!-- Back button -->
-          <button type="button" id="btn-back-to-edit" class="absolute top-6 left-6 text-stone-500 hover:text-stb-red flex items-center gap-1 text-xs font-bold transition-all" data-testid="back-to-edit-btn">
-            <span class="material-symbols-outlined text-sm">arrow_back</span>
-            Back to edit
-          </button>
-          
-          <div class="text-center mt-6 mb-6">
-            <h2 class="font-display font-bold text-2xl text-stb-charcoal tracking-tight">Review Your Booking</h2>
-            <p class="text-xs text-stone-500 mt-1">Please confirm your booking details and provide contact information.</p>
-          </div>
+      <section id="review-booking-view" class="hidden animate-fade-in" style="background: var(--stb-cream);">
 
-          <!-- Trip summary card -->
-          <div class="bg-stone-50 rounded-2xl p-4 border border-stone-200/60 mb-5 space-y-3 text-xs">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-stone-200/80">
-              <div>
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Pickup Location</span>
-                <strong id="review-pickup-val" class="text-stb-charcoal font-semibold">—</strong>
-              </div>
-              <div id="review-dest-container">
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Destination</span>
-                <strong id="review-dest-val" class="text-stb-charcoal font-semibold">—</strong>
-              </div>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Date & Time</span>
-                <strong id="review-datetime-val" class="text-stb-charcoal font-semibold block mt-0.5">—</strong>
-              </div>
-              <div>
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Passengers</span>
-                <strong id="review-pax-val" class="text-stb-charcoal font-semibold block mt-0.5">—</strong>
-              </div>
-              <div>
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Booking Type</span>
-                <strong id="review-type-val" class="text-stb-charcoal font-semibold block mt-0.5">—</strong>
-              </div>
-            </div>
+        <!-- ========= FULL-WIDTH CONTENT WRAPPER ========= -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 lg:pt-28 lg:pb-16">
 
-            <!-- Dynamic Fare Summary (revealed only for One Way route bookings) -->
-            <div id="review-fare-row" class="hidden border-t border-stone-200/80 pt-3 flex items-center justify-between">
-              <div>
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Vehicle Selection</span>
-                <strong id="review-vehicle-val" class="text-stb-charcoal font-semibold">—</strong>
-              </div>
-              <div class="text-right">
-                <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500">Estimated Transport Fare</span>
-                <strong id="review-fare-val" class="text-stb-charcoal font-extrabold text-sm text-stb-red">—</strong>
-              </div>
+          <!-- Back + Title row -->
+          <div class="flex items-center gap-4 mb-8">
+            <button type="button" id="btn-back-to-edit" class="flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-stb-red transition-colors shrink-0" data-testid="back-to-edit-btn">
+              <span class="material-symbols-outlined text-sm">arrow_back</span>
+              Back to edit
+            </button>
+            <div class="flex-1 flex items-center gap-2">
+              <h2 class="font-display font-bold text-xl sm:text-2xl text-stb-charcoal tracking-tight">Booking Summary</h2>
+              <span class="material-symbols-outlined text-stb-red text-base">verified_user</span>
             </div>
           </div>
 
-          <!-- Google Map Preview (on review screen) -->
-          <div id="google-map-preview-wrap" class="hidden mb-5">
-            <label class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500 mb-1">Route Preview</label>
-            <div id="google-map-preview" class="w-full h-40 rounded-2xl overflow-hidden border border-stone-200 shadow-inner"></div>
-          </div>
+          <!-- ======== SPLIT GRID ======== -->
+          <div class="grid grid-cols-1 lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_460px] gap-8 items-start">
 
-          <!-- Form inside review screen -->
-          <form id="review-details-form" onsubmit="return false;" class="space-y-4" autocomplete="off">
-            
-            <!-- Guest details inputs -->
-            <div class="space-y-3">
-              <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500">Passenger Information</span>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">person</span>
-                  <input type="text" id="cust-name" required placeholder="Full Name *" class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="cust-name" />
-                </div>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">phone</span>
-                  <input type="tel" id="cust-phone" required placeholder="WhatsApp Number *" class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="cust-phone" />
+            <!-- ════════════════════════════════
+                 LEFT COLUMN — BOOKING SUMMARY
+                 ════════════════════════════════ -->
+            <div class="space-y-5" data-testid="review-booking-card">
+
+              <!-- ① Trip details card -->
+              <div class="bg-white rounded-2xl shadow-sm border border-stone-200/70 overflow-hidden">
+                <div class="h-1" style="background: linear-gradient(90deg,#E31E24,#D4A24A,#E31E24);"></div>
+                <div class="p-5 space-y-4">
+                  <p class="text-[0.65rem] font-bold uppercase tracking-wider text-stone-400">Please review your trip details.</p>
+
+                  <!-- Pickup & destination -->
+                  <div class="space-y-3">
+                    <div class="flex gap-3 items-start">
+                      <span class="material-symbols-outlined text-stb-red text-base mt-0.5 shrink-0">location_on</span>
+                      <div>
+                        <div class="text-[0.6rem] font-bold uppercase tracking-wider text-stone-400">Pickup Location</div>
+                        <strong id="review-pickup-val" class="text-sm text-stb-charcoal font-bold leading-snug mt-0.5 block">—</strong>
+                      </div>
+                    </div>
+                    <!-- connector line -->
+                    <div class="ml-[11px] w-px h-5 bg-stone-200"></div>
+                    <div id="review-dest-container" class="flex gap-3 items-start">
+                      <span class="material-symbols-outlined text-stb-red text-base mt-0.5 shrink-0">pin_drop</span>
+                      <div>
+                        <div class="text-[0.6rem] font-bold uppercase tracking-wider text-stone-400">Destination</div>
+                        <strong id="review-dest-val" class="text-sm text-stb-charcoal font-bold leading-snug mt-0.5 block">—</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Date / Pax / Type chips -->
+                  <div class="grid grid-cols-3 gap-3 pt-1 border-t border-stone-100">
+                    <div class="flex gap-2 items-start">
+                      <span class="material-symbols-outlined text-stone-400 text-base shrink-0 mt-0.5">calendar_today</span>
+                      <div>
+                        <div class="text-[0.58rem] font-bold uppercase tracking-wider text-stone-400">Date & Time</div>
+                        <strong id="review-datetime-val" class="text-xs text-stb-charcoal font-bold block mt-0.5">—</strong>
+                      </div>
+                    </div>
+                    <div class="flex gap-2 items-start">
+                      <span class="material-symbols-outlined text-stone-400 text-base shrink-0 mt-0.5">group</span>
+                      <div>
+                        <div class="text-[0.58rem] font-bold uppercase tracking-wider text-stone-400">Passengers</div>
+                        <strong id="review-pax-val" class="text-xs text-stb-charcoal font-bold block mt-0.5">—</strong>
+                      </div>
+                    </div>
+                    <div class="flex gap-2 items-start">
+                      <span class="material-symbols-outlined text-stone-400 text-base shrink-0 mt-0.5">directions_car</span>
+                      <div>
+                        <div class="text-[0.58rem] font-bold uppercase tracking-wider text-stone-400">Booking Type</div>
+                        <strong id="review-type-val" class="text-xs text-stb-charcoal font-bold block mt-0.5">—</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">mail</span>
-                <input type="email" id="cust-email" required placeholder="Email Address (for booking summary) *" class="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="cust-email" />
-              </div>
-            </div>
 
-            <!-- Optional Flight Details / Notes -->
-            <div class="space-y-2.5 pt-2">
-              <span class="block text-[0.65rem] font-bold uppercase tracking-wider text-stone-500">Flight & Special Notes (Optional)</span>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div class="relative sm:col-span-1">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">flight</span>
-                  <input type="text" id="flight-input" placeholder="Flight No." class="w-full pl-9 pr-3 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="flight-input" />
+              <!-- ② Large Stats: Distance / Duration / Fare for all 3 booking types -->
+              <div class="bg-white rounded-2xl shadow-sm border border-stone-200/70 p-5">
+                <div class="grid grid-cols-3 gap-3 divide-x divide-stone-100 text-center">
+                  <!-- Stat 1: Distance / Duration / Charter Days -->
+                  <div class="pr-2 sm:pr-4">
+                    <div id="review-stat-lbl-1" class="text-[0.58rem] sm:text-[0.6rem] font-bold uppercase tracking-widest text-stone-400 mb-1">Distance</div>
+                    <div id="review-stat-dist" class="text-lg sm:text-2xl font-black text-stb-charcoal leading-none tracking-tight">—</div>
+                    <div id="review-stat-sub-1" class="text-[0.58rem] sm:text-[0.62rem] text-stone-400 font-semibold mt-1">km</div>
+                  </div>
+                  <!-- Stat 2: Est. Duration / Hourly Rate / Daily Rate -->
+                  <div class="px-2 sm:px-4">
+                    <div id="review-stat-lbl-2" class="text-[0.58rem] sm:text-[0.6rem] font-bold uppercase tracking-widest text-stone-400 mb-1">Est. Duration</div>
+                    <div id="review-stat-dur" class="text-lg sm:text-2xl font-black text-stb-red leading-none tracking-tight">—</div>
+                    <div id="review-stat-sub-2" class="text-[0.58rem] sm:text-[0.62rem] text-stone-400 font-semibold mt-1">mins</div>
+                  </div>
+                  <!-- Stat 3: Approx Fare -->
+                  <div class="pl-2 sm:pl-4">
+                    <div id="review-stat-lbl-3" class="text-[0.58rem] sm:text-[0.6rem] font-bold uppercase tracking-widest text-stone-400 mb-1">Approx. Fare</div>
+                    <div id="review-vehicle-fare-val" class="text-lg sm:text-2xl font-black text-stb-red leading-none tracking-tight">—</div>
+                    <div id="review-stat-sub-3" class="text-[0.58rem] sm:text-[0.62rem] text-stone-400 font-semibold mt-1">Estimated Transport Fare</div>
+                  </div>
                 </div>
-                <div class="relative sm:col-span-2">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">chat_bubble</span>
-                  <input type="text" id="notes-input" placeholder="e.g. Need child seat, extra luggage..." class="w-full pl-9 pr-3 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stb-red transition-all" data-testid="notes-input" />
+              </div>
+
+              <!-- ③ Vehicle + fare breakdown -->
+              <div id="review-vehicle-card" class="bg-white rounded-2xl shadow-sm border border-stone-200/70 overflow-hidden">
+                <!-- vehicle strip with tasteful representative image -->
+                <div class="flex items-center gap-4 p-5 border-b border-stone-100">
+                  <div class="relative w-28 h-18 sm:w-32 sm:h-20 bg-stone-50 rounded-xl overflow-hidden shrink-0 border border-stone-200/80 shadow-inner">
+                    <img id="review-vehicle-img" src="https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=600&q=80" alt="Selected Vehicle" class="w-full h-full object-cover" />
+                    <div class="absolute bottom-0 inset-x-0 bg-stone-900/80 backdrop-blur-[2px] text-[0.45rem] font-bold text-white text-center py-0.5 px-1 leading-tight">
+                      Representative vehicle · Subject to availability
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center gap-1">
+                      <h3 id="review-vehicle-cat-title" class="font-display font-bold text-base sm:text-lg text-stb-charcoal">4-Seater</h3>
+                      <span class="material-symbols-outlined text-stb-red text-sm">check_circle</span>
+                    </div>
+                    <div id="review-vehicle-cat-subtitle" class="text-[0.68rem] text-stone-400 font-semibold mt-0.5">Up to 4 Passengers</div>
+                    <div class="flex gap-3 mt-1.5 text-[0.62rem] font-bold text-stone-500">
+                      <span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">group</span><span id="review-vehicle-pax-count">4 Pax</span></span>
+                      <span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">work</span><span id="review-vehicle-luggage-count">2 Bags</span></span>
+                    </div>
+                  </div>
+                  <!-- hidden distance/duration for JS compatibility -->
+                  <div class="hidden">
+                    <span id="review-vehicle-dist-val">—</span>
+                    <span id="review-vehicle-duration-val">—</span>
+                  </div>
+                </div>
+
+                <!-- fare breakdown table -->
+                <div id="review-breakdown-card" class="grid grid-cols-1 md:grid-cols-5 gap-0">
+                  <div class="md:col-span-3 p-5 space-y-2 text-xs border-b md:border-b-0 md:border-r border-stone-100">
+                    <div class="flex items-center gap-1 text-[0.68rem] font-black uppercase tracking-wider text-stone-400 mb-3">
+                      <span class="material-symbols-outlined text-sm">receipt_long</span>Fare Breakdown
+                    </div>
+                    <div class="flex justify-between text-stone-600 font-medium"><span id="breakdown-lbl-base">Base Fare (4-Seater)</span><span id="breakdown-val-base">—</span></div>
+                    <div class="flex justify-between text-stone-600 font-medium"><span id="breakdown-lbl-dist">Distance Fare</span><span id="breakdown-val-dist">—</span></div>
+                    <div class="border-t border-stone-100 my-1.5"></div>
+                    <div class="flex justify-between text-stone-600 font-bold"><span>Subtotal</span><span id="breakdown-val-subtotal">—</span></div>
+                    <div class="flex justify-between text-stone-400 font-semibold text-[0.65rem]"><span>Rounding</span><span id="breakdown-val-rounding">—</span></div>
+                    <div class="border-t border-stone-200 my-1.5"></div>
+                    <div class="flex justify-between text-stb-red font-black text-sm"><span>Estimated Transport Fare</span><span id="breakdown-val-total">—</span></div>
+                  </div>
+                  <div class="md:col-span-2 bg-stone-50 p-5 flex flex-col justify-between text-xs space-y-3">
+                    <div class="space-y-2.5">
+                      <div class="flex items-center gap-2 text-emerald-800 font-bold"><span class="material-symbols-outlined text-base text-emerald-600">check</span><span>No peak-hour surcharge</span></div>
+                      <div class="flex items-center gap-2 text-stone-600 font-bold"><span class="material-symbols-outlined text-base text-stone-400">info</span><span>Tolls excluded</span></div>
+                    </div>
+                    <div class="flex items-start gap-1.5 text-[0.65rem] text-stone-500 font-semibold leading-tight pt-2.5 border-t border-stone-200/60">
+                      <span class="material-symbols-outlined text-sm text-emerald-600 shrink-0">verified</span>
+                      <span>Final fare subject to booking verification.</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Final Submission CTA -->
-            <div class="pt-2">
-              <button type="button" id="btn-calc-confirm" class="w-full py-3.5 px-4 rounded-2xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-98" style="background: var(--stb-red); box-shadow: 0 8px 24px rgba(227, 30, 36, 0.35);" data-testid="confirm-book-btn">
-                <span id="btn-submit-label">SUBMIT BOOKING REQUEST</span>
-                <span class="material-symbols-outlined text-base">arrow_forward</span>
-              </button>
-              <p class="text-[0.65rem] text-center text-stone-500 font-semibold mt-2.5">No prepayment required • Pay directly to chauffeur after ride</p>
-            </div>
-          </form>
+              <!-- ④ Route Preview (secondary) -->
+              <div id="google-map-preview-wrap" class="hidden bg-white rounded-2xl shadow-sm border border-stone-200/70 overflow-hidden">
+                <div class="flex items-center gap-2 px-5 pt-4 pb-2 text-[0.68rem] font-black uppercase tracking-wider text-stone-400">
+                  <span class="material-symbols-outlined text-sm">map</span>Route Preview
+                </div>
+                <div id="google-map-preview" class="w-full h-48 rounded-b-2xl overflow-hidden"></div>
+              </div>
 
-        </div>
+              <!-- ⑤ Vehicle availability notice -->
+              <div class="bg-white rounded-2xl shadow-sm border border-stone-200/70 p-4 flex items-start gap-3 text-xs">
+                <span class="material-symbols-outlined text-amber-500 text-lg shrink-0 mt-0.5">directions_car</span>
+                <div class="flex-1">
+                  <strong class="text-stb-charcoal font-bold block text-xs">Vehicle is subject to availability</strong>
+                  <span class="text-stone-500 font-medium leading-normal mt-0.5 block">The vehicle shown is representative. Actual vehicle may vary based on availability.</span>
+                </div>
+                <div class="hidden sm:block shrink-0 w-20 h-12 rounded-lg overflow-hidden border border-stone-100">
+                  <img src="https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=400&q=80" class="w-full h-full object-cover" alt="Representative vehicle" />
+                </div>
+              </div>
+
+            </div><!-- /LEFT -->
+
+
+            <!-- ════════════════════════════════
+                 RIGHT COLUMN — PASSENGER FORM
+                 ════════════════════════════════ -->
+            <div class="lg:sticky lg:top-[132px] space-y-5">
+
+              <!-- Passenger details card -->
+              <div class="bg-white rounded-2xl shadow-sm border border-stone-200/70 overflow-hidden">
+                <div class="h-1" style="background: linear-gradient(90deg,#E31E24,#D4A24A,#E31E24);"></div>
+                <div class="p-5">
+
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-stb-red text-base">person</span>
+                    <h3 class="font-display font-bold text-base text-stb-charcoal">Passenger Details</h3>
+                  </div>
+                  <p class="text-[0.65rem] text-stone-400 font-medium mb-5">Enter passenger contact details for booking confirmation.</p>
+
+                  <form id="review-details-form" onsubmit="return false;" class="space-y-3.5" autocomplete="off">
+
+                    <!-- Full Name -->
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">person_outline</span>
+                      <input type="text" id="cust-name" required placeholder="Full Name *"
+                        class="w-full pl-10 pr-4 py-3 text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stb-red/20 focus:border-stb-red transition-all"
+                        data-testid="cust-name" />
+                    </div>
+
+                    <!-- WhatsApp -->
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">phone_iphone</span>
+                      <input type="tel" id="cust-phone" required placeholder="WhatsApp Number *"
+                        class="w-full pl-10 pr-4 py-3 text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stb-red/20 focus:border-stb-red transition-all"
+                        data-testid="cust-phone" />
+                    </div>
+
+                    <!-- Email -->
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-base pointer-events-none">mail_outline</span>
+                      <input type="email" id="cust-email" required placeholder="Email Address (for booking summary) *"
+                        class="w-full pl-10 pr-4 py-3 text-sm font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stb-red/20 focus:border-stb-red transition-all"
+                        data-testid="cust-email" />
+                    </div>
+
+                    <!-- Flight info section -->
+                    <div class="pt-2">
+                      <div class="text-[0.65rem] font-bold uppercase tracking-wider text-stone-400 mb-2.5 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">flight_takeoff</span>
+                        Flight Information (Optional)
+                      </div>
+                      <div class="grid grid-cols-2 gap-3">
+                        <div class="relative">
+                          <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-sm pointer-events-none">flight</span>
+                          <input type="text" id="flight-input" placeholder="e.g. SQ123"
+                            class="w-full pl-9 pr-3 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stb-red/20 focus:border-stb-red transition-all"
+                            data-testid="flight-input" />
+                        </div>
+                        <div class="relative">
+                          <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-stone-400 text-sm pointer-events-none">calendar_month</span>
+                          <input type="text" placeholder="Flight Date (optional)"
+                            class="w-full pl-9 pr-3 py-2.5 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stb-red/20 focus:border-stb-red transition-all" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Special requests / notes -->
+                    <div class="pt-1">
+                      <div class="text-[0.65rem] font-bold uppercase tracking-wider text-stone-400 mb-2.5 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">notes</span>
+                        Special Requests (Optional)
+                      </div>
+                      <div class="relative">
+                        <textarea id="notes-input" rows="3" maxlength="200"
+                          placeholder="e.g. Need child seat, extra luggage, meet &amp; greet…"
+                          class="w-full px-4 py-3 text-xs font-semibold text-stb-charcoal bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stb-red/20 focus:border-stb-red transition-all resize-none"
+                          data-testid="notes-input"></textarea>
+                        <div class="text-right text-[0.6rem] text-stone-400 mt-0.5">0/200</div>
+                      </div>
+                    </div>
+
+                    <!-- Reassurance -->
+                    <div class="bg-gradient-to-r from-emerald-50 to-emerald-100/40 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between gap-3 mt-4">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                          <span class="material-symbols-outlined text-base">check</span>
+                        </div>
+                        <div>
+                          <strong class="text-emerald-950 font-bold text-xs block">Everything looks right?</strong>
+                          <span class="text-emerald-800 font-semibold text-[0.65rem] block mt-0.5">By clicking the button below, you are confirming your booking details.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- CTA -->
+                    <button type="button" id="btn-calc-confirm"
+                      class="w-full py-4 px-5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-99 transition-all cursor-pointer mt-2"
+                      style="background: var(--stb-red); box-shadow: 0 10px 30px rgba(227,30,36,0.35);"
+                      data-testid="confirm-book-btn">
+                      <span class="material-symbols-outlined text-lg leading-none">lock</span>
+                      <span id="btn-submit-label" class="tracking-wide">Confirm &amp; Request Booking</span>
+                      <span class="material-symbols-outlined text-lg leading-none">arrow_forward</span>
+                    </button>
+
+                    <p class="text-[0.62rem] text-center text-stone-400 font-semibold flex items-center justify-center gap-1.5 mt-1">
+                      <span class="material-symbols-outlined text-xs">lock</span>No prepayment required
+                      <span class="opacity-40">•</span>
+                      <span class="material-symbols-outlined text-xs">payments</span>Pay directly to chauffeur after ride
+                    </p>
+
+                  </form>
+                </div>
+              </div><!-- /passenger card -->
+
+            </div><!-- /RIGHT -->
+
+          </div><!-- /SPLIT GRID -->
+        </div><!-- /max-w wrapper -->
       </section>
 
       <!-- ================= DEDICATED CONFIRMATION VIEW ================= -->
@@ -1133,51 +1344,6 @@
       </div>
     </div>
 
-    <!-- Modern Custom Calendar Modal -->
-    <div id="modal-calendar" class="modal-backdrop hidden" data-testid="modal-calendar">
-      <div class="modal-card max-w-sm w-full bg-white rounded-3xl p-5 shadow-2xl relative">
-        <button class="modal-close absolute top-4 right-4 text-stone-400 hover:text-stb-red p-1" onclick="closeModal('modal-calendar')">
-          <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-
-        <div class="flex items-center justify-between mb-4 pr-6">
-          <h3 id="cal-month-title" class="font-display font-bold text-lg text-stb-charcoal">August 2026</h3>
-          <div class="flex gap-1">
-            <button type="button" id="btn-cal-prev" class="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 font-bold">‹</button>
-            <button type="button" id="btn-cal-next" class="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-100 font-bold">›</button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-7 gap-1 text-center text-[0.7rem] font-bold text-stone-400 uppercase mb-2">
-          <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-        </div>
-
-        <div id="cal-days-grid" class="grid grid-cols-7 gap-1 text-center text-xs font-semibold"></div>
-
-        <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
-          <button type="button" id="btn-cal-today" class="text-stb-red font-bold hover:underline">Select Today</button>
-          <button type="button" onclick="closeModal('modal-calendar')" class="text-stone-500 hover:text-stone-800 font-semibold">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modern Custom Time Selector Modal -->
-    <div id="modal-time-picker" class="modal-backdrop hidden" data-testid="modal-time-picker">
-      <div class="modal-card max-w-sm w-full bg-white rounded-3xl p-5 shadow-2xl relative">
-        <button class="modal-close absolute top-4 right-4 text-stone-400 hover:text-stb-red p-1" onclick="closeModal('modal-time-picker')">
-          <span class="material-symbols-outlined text-lg">close</span>
-        </button>
-
-        <h3 class="font-display font-bold text-lg text-stb-charcoal mb-1">Select Pickup Time</h3>
-        <p class="text-xs text-stone-500 mb-4">Minimum 1 hour advance booking required</p>
-
-        <div id="time-slots-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1 no-scrollbar text-xs font-semibold"></div>
-
-        <div class="mt-4 pt-3 border-t border-stone-100 text-right">
-          <button type="button" onclick="closeModal('modal-time-picker')" class="text-xs font-semibold text-stone-500 hover:text-stone-800">Close</button>
-        </div>
-      </div>
-    </div>
 
     <!-- Analytics + Cookie Consent + Main Application -->
     <script src="/src/analytics.js"></script>

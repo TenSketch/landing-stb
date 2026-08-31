@@ -727,7 +727,7 @@ function reminderEmail(booking, brand) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           ${nextStep('01', 'Be ready 10 minutes early', 'Your chauffeur arrives 10 minutes ahead of pickup time. Complimentary waiting from actual landing if flight delayed.')}
           ${nextStep('02', 'Look for the name board', b.flightNo ? 'At Changi arrivals hall, your chauffeur will hold a printed board with your name.' : 'Your chauffeur will call/WhatsApp you upon arrival.')}
-          ${nextStep('03', 'Zero surcharges', 'ERP, tolls, and peak charges are all included. Your fare is guaranteed.')}
+          ${nextStep('03', 'Fixed transport fare', 'Your transport fare is guaranteed as calculated. ERP tolls and parking charges are excluded.')}
         </table>
       </td>
     </tr>

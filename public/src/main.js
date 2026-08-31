@@ -287,7 +287,7 @@ const FAQS = [
   {
     cat: 'booking',
     question: 'What is the minimum advance booking time?',
-    answer: 'All bookings must be made at least 1 hour in advance of the pickup time. Please note that we operate on a strict advance-booking-only basis and do not support urgent or immediate/on-demand bookings.',
+    answer: 'All bookings must be made at least 24 hours in advance of the pickup time. Please note that we operate on a strict advance-booking-only basis and do not support urgent or immediate/on-demand bookings.',
   },
   {
     cat: 'airport',
@@ -296,8 +296,8 @@ const FAQS = [
   },
   {
     cat: 'pricing',
-    question: 'Are ERP tolls, parking, and peak-hour surcharges included?',
-    answer: 'Yes! All STB transport quotes are 100% fixed and all-inclusive. ERP road tolls, peak hour surcharges, airport surcharges, and fuel are strictly included.',
+    question: 'Are ERP tolls and parking fees included in the quote?',
+    answer: 'No, ERP road tolls and parking charges are excluded and will be billed separately based on actual travel usage.',
   },
   {
     cat: 'vehicles',
@@ -818,17 +818,27 @@ function initFormControls() {
 
   $$('.hourly-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      $$('.hourly-btn').forEach((b) => b.classList.remove('active', 'bg-stb-red', 'text-white'));
-      btn.classList.add('active');
+      $$('.hourly-btn').forEach((b) => {
+        b.classList.remove('active', 'bg-stb-red', 'text-white', 'border-stb-red', 'shadow-sm');
+        b.classList.add('bg-white', 'text-stone-700', 'border-stone-200');
+      });
+      btn.classList.add('active', 'bg-stb-red', 'text-white', 'border-stb-red', 'shadow-sm');
+      btn.classList.remove('bg-white', 'text-stone-700', 'border-stone-200');
       state.hourlyDuration = Number(btn.dataset.hours || 4);
+      triggerFareEstimation();
     });
   });
 
   $$('.daily-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      $$('.daily-btn').forEach((b) => b.classList.remove('active', 'bg-stb-red', 'text-white'));
-      btn.classList.add('active');
-      state.dailyDuration = Number(btn.dataset.days || 2);
+      $$('.daily-btn').forEach((b) => {
+        b.classList.remove('active', 'bg-stb-red', 'text-white', 'border-stb-red', 'shadow-sm');
+        b.classList.add('bg-white', 'text-stone-700', 'border-stone-200');
+      });
+      btn.classList.add('active', 'bg-stb-red', 'text-white', 'border-stb-red', 'shadow-sm');
+      btn.classList.remove('bg-white', 'text-stone-700', 'border-stone-200');
+      state.dailyDuration = Number(btn.dataset.days || 1);
+      triggerFareEstimation();
     });
   });
 
@@ -988,86 +998,92 @@ function scrollToHeroBooking() {
 }
 
 // ============================================
-// DATE & TIME PICKERS (WITH 1-HR ADVANCE VALIDATION)
+// DATE & TIME PICKERS (WITH 24-HR ADVANCE VALIDATION & POPUP CALENDAR)
 // ============================================
 let calMonth = new Date().getMonth();
 let calYear = new Date().getFullYear();
 
 function initDateAndTimePickers() {
-  const dateTrigger = $('#trigger-date-modal');
   const dateInput = $('#date-display-input');
-  const timeTrigger = $('#trigger-time-modal');
-  const timeInput = $('#time-display-input');
+  const timeSelect = $('#time-display-input');
+  const triggerWrap = $('#trigger-date-input-wrap');
+  const dropdown = $('#dropdown-calendar');
 
-  dateTrigger?.addEventListener('click', () => {
-    renderCalendarGrid();
-    openModal('modal-calendar');
-  });
-  dateInput?.addEventListener('click', () => {
-    renderCalendarGrid();
-    openModal('modal-calendar');
-  });
+  if (dateInput) {
+    // Set default SGT tomorrow value on init
+    const sgNow = getSingaporeNow();
+    const sgTomorrow = new Date(sgNow.getTime() + 24 * 60 * 60 * 1000);
+    
+    if (!state.travelDate) {
+      state.travelDate = sgTomorrow;
+    }
+    
+    calMonth = state.travelDate.getMonth();
+    calYear = state.travelDate.getFullYear();
 
-  $('#btn-cal-prev')?.addEventListener('click', () => {
-    calMonth--;
-    if (calMonth < 0) { calMonth = 11; calYear--; }
-    renderCalendarGrid();
-  });
-  $('#btn-cal-next')?.addEventListener('click', () => {
-    calMonth++;
-    if (calMonth > 11) { calMonth = 0; calYear++; }
-    renderCalendarGrid();
-  });
-  $('#btn-cal-today')?.addEventListener('click', () => {
-    const today = getSingaporeNow();
-    window.selectCalendarDate(today.getFullYear(), today.getMonth(), today.getDate());
-  });
+    dateInput.value = state.travelDate.toLocaleDateString('en-SG', {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+    });
 
-  timeTrigger?.addEventListener('click', () => {
-    renderTimeSlots();
-    openModal('modal-time-picker');
-  });
-  timeInput?.addEventListener('click', () => {
-    renderTimeSlots();
-    openModal('modal-time-picker');
-  });
-}
+    // Populate dropdown and set default selection
+    populateTimeDropdown();
 
-// Singapore Time Zone Helpers
-function getSingaporeNow() {
-  const d = new Date();
-  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
-  return new Date(utc + (3600000 * 8));
-}
+    // Toggle popover calendar on trigger click
+    triggerWrap?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (dropdown) {
+        const isHidden = dropdown.classList.contains('hidden');
+        if (isHidden) {
+          renderCalendarGrid();
+          dropdown.classList.remove('hidden');
+        } else {
+          dropdown.classList.add('hidden');
+        }
+      }
+    });
 
-function isSingaporeToday(date) {
-  if (!date) return false;
-  const sgNow = getSingaporeNow();
-  const d = new Date(date);
-  return d.getFullYear() === sgNow.getFullYear() &&
-         d.getMonth() === sgNow.getMonth() &&
-         d.getDate() === sgNow.getDate();
-}
+    // Month Navigation inside calendar popover
+    $('#btn-cal-prev')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      calMonth--;
+      if (calMonth < 0) { calMonth = 11; calYear--; }
+      renderCalendarGrid();
+    });
 
-function isTimeSlotValid(timeStr) {
-  if (!state.travelDate) return true;
-  if (!isSingaporeToday(state.travelDate)) return true;
+    $('#btn-cal-next')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      calMonth++;
+      if (calMonth > 11) { calMonth = 0; calYear++; }
+      renderCalendarGrid();
+    });
 
-  const sgNow = getSingaporeNow();
-  const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
-  if (!match) return true;
+    $('#btn-cal-today')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sgNow2 = getSingaporeNow();
+      const sgTomorrow2 = new Date(sgNow2.getTime() + 24 * 60 * 60 * 1000);
+      window.selectCalendarDate(sgTomorrow2.getFullYear(), sgTomorrow2.getMonth(), sgTomorrow2.getDate());
+    });
 
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const isPM = match[3].toUpperCase() === 'PM';
-  if (isPM && hours < 12) hours += 12;
-  if (!isPM && hours === 12) hours = 0;
+    $('#btn-cal-close')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown?.classList.add('hidden');
+    });
 
-  const slotTime = new Date(sgNow);
-  slotTime.setHours(hours, minutes, 0, 0);
+    // Close calendar when clicking anywhere else on page
+    document.addEventListener('click', (e) => {
+      if (dropdown && !dropdown.contains(e.target) && !triggerWrap.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  }
 
-  const minAdvanceMs = 60 * 60 * 1000; // 1 hour
-  return (slotTime.getTime() - sgNow.getTime()) >= minAdvanceMs;
+  if (timeSelect) {
+    timeSelect.addEventListener('change', () => {
+      state.travelTime = timeSelect.value;
+      validateAdvanceNotice();
+      triggerFareEstimation();
+    });
+  }
 }
 
 function renderCalendarGrid() {
@@ -1081,8 +1097,9 @@ function renderCalendarGrid() {
   const firstDay = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
-  const today = getSingaporeNow();
-  today.setHours(0, 0, 0, 0);
+  const sgNow = getSingaporeNow();
+  const sgTomorrow = new Date(sgNow.getTime() + 24 * 60 * 60 * 1000);
+  sgTomorrow.setHours(0, 0, 0, 0);
 
   let html = '';
   for (let i = 0; i < firstDay; i++) {
@@ -1093,18 +1110,18 @@ function renderCalendarGrid() {
     const cellDate = new Date(calYear, calMonth, day);
     cellDate.setHours(0, 0, 0, 0);
 
-    const isPast = cellDate < today;
-    const isToday = cellDate.getTime() === today.getTime();
+    const isPastOrToday = cellDate < sgTomorrow;
+    const isTomorrow = cellDate.getTime() === sgTomorrow.getTime();
     const isSelected = state.travelDate && new Date(state.travelDate).toDateString() === cellDate.toDateString();
 
-    let classes = 'p-2 rounded-xl transition-all font-semibold font-mono text-center ';
+    let classes = 'p-1.5 rounded-lg transition-all font-semibold font-mono text-center text-xs ';
 
-    if (isPast) {
-      classes += 'text-stone-300 pointer-events-none opacity-40';
+    if (isPastOrToday) {
+      classes += 'text-stone-300 pointer-events-none opacity-65'; // Increased opacity for readability, visually disabled but readable
     } else if (isSelected) {
       classes += 'bg-stb-red text-white shadow-md font-bold scale-105';
-    } else if (isToday) {
-      classes += 'border-2 border-stb-red text-stb-red font-bold hover:bg-red-50';
+    } else if (isTomorrow) {
+      classes += 'border border-stb-red text-stb-red font-bold hover:bg-red-50 cursor-pointer';
     } else {
       classes += 'hover:bg-stone-100 text-stb-charcoal cursor-pointer';
     }
@@ -1124,59 +1141,89 @@ window.selectCalendarDate = function (y, m, d) {
       weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
     });
   }
-  closeModal('modal-calendar');
+  $('#dropdown-calendar')?.classList.add('hidden');
+  populateTimeDropdown();
   validateAdvanceNotice();
+  triggerFareEstimation();
 };
 
-function renderTimeSlots() {
-  const grid = $('#time-slots-grid');
-  if (!grid) return;
-
-  const slots = [
-    '06:00 AM', '06:30 AM', '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM',
-    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-    '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
-    '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
-    '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM',
-    '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM',
-    '12:00 AM', '12:30 AM', '01:00 AM', '01:30 AM', '02:00 AM', '02:30 AM',
-    '03:00 AM', '03:30 AM', '04:00 AM', '04:30 AM', '05:00 AM', '05:30 AM',
-  ];
-
-  grid.innerHTML = slots.map((s) => {
-    const isSelected = state.travelTime === s;
-    const isValid = isTimeSlotValid(s);
-    let activeClass = '';
-    let disabledAttr = '';
-
-    if (!isValid) {
-      activeClass = 'bg-stone-100 text-stone-300 pointer-events-none opacity-40 border border-stone-200/50';
-      disabledAttr = 'disabled';
-    } else if (isSelected) {
-      activeClass = 'bg-stb-red text-white font-bold shadow-md';
-    } else {
-      activeClass = 'bg-stone-50 border border-stone-200 text-stone-700 hover:bg-red-50 hover:border-stb-red cursor-pointer';
-    }
-
-    return `<button type="button" ${disabledAttr} class="py-2.5 px-1 rounded-xl text-center transition-all ${activeClass}" onclick="window.selectTimeSlot('${s}')">${s}</button>`;
-  }).join('');
+// Singapore Time Zone Helpers
+function getSingaporeNow() {
+  const d = new Date();
+  const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 8));
 }
 
-window.selectTimeSlot = function (s) {
-  state.travelTime = s;
-  const display = $('#time-display-input');
-  if (display) {
-    display.value = s;
+function isTimeSlotValid(timeStr) {
+  if (!state.travelDate) return true;
+
+  const sgNow = getSingaporeNow();
+  const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
+  if (!match) return true;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const isPM = match[3].toUpperCase() === 'PM';
+  if (isPM && hours < 12) hours += 12;
+  if (!isPM && hours === 12) hours = 0;
+
+  const slotTimeSGT = new Date(state.travelDate);
+  slotTimeSGT.setHours(hours, minutes, 0, 0);
+
+  const minAdvanceMs = 24 * 60 * 60 * 1000; // 24 hours
+  return (slotTimeSGT.getTime() - sgNow.getTime()) >= minAdvanceMs;
+}
+
+function populateTimeDropdown() {
+  const timeSelect = $('#time-display-input');
+  if (!timeSelect) return;
+
+  const currentSelection = timeSelect.value || state.travelTime;
+  timeSelect.innerHTML = '<option value="" disabled>Select Time</option>';
+
+  const periods = ['AM', 'PM'];
+  const hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  const minutes = ['00', '30'];
+
+  const slots = [];
+  for (const period of periods) {
+    for (const hour of hours) {
+      for (const min of minutes) {
+        const formattedHour = String(hour).padStart(2, '0');
+        const timeStr = `${formattedHour}:${min} ${period}`;
+        slots.push(timeStr);
+      }
+    }
   }
-  closeModal('modal-time-picker');
-  validateAdvanceNotice();
-};
+
+  let firstValidSlot = null;
+  for (const slot of slots) {
+    const valid = isTimeSlotValid(slot);
+    if (valid) {
+      const option = document.createElement('option');
+      option.value = slot;
+      option.textContent = slot;
+      if (!firstValidSlot) {
+        firstValidSlot = slot;
+      }
+      timeSelect.appendChild(option);
+    }
+  }
+
+  if (currentSelection) {
+    timeSelect.value = currentSelection;
+    if (timeSelect.selectedIndex === -1) {
+      timeSelect.value = firstValidSlot || "";
+      state.travelTime = firstValidSlot;
+    }
+  } else {
+    timeSelect.value = firstValidSlot || "";
+    state.travelTime = firstValidSlot;
+  }
+}
 
 function getSelectedTravelDateTimeSGT() {
   if (!state.travelDate || !state.travelTime) return null;
-  const y = state.travelDate.getFullYear();
-  const m = state.travelDate.getMonth();
-  const d = state.travelDate.getDate();
 
   const timeStr = state.travelTime;
   const match = timeStr.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
@@ -1188,8 +1235,9 @@ function getSelectedTravelDateTimeSGT() {
   if (isPM && hours < 12) hours += 12;
   if (!isPM && hours === 12) hours = 0;
 
-  const utcTime = Date.UTC(y, m, d, hours, minutes, 0, 0);
-  return new Date(utcTime - (8 * 3600000));
+  const slotTimeSGT = new Date(state.travelDate);
+  slotTimeSGT.setHours(hours, minutes, 0, 0);
+  return slotTimeSGT;
 }
 
 function validateAdvanceNotice() {
@@ -1200,16 +1248,16 @@ function validateAdvanceNotice() {
     return true;
   }
 
-  const now = new Date();
-  const diffMs = selectedDT.getTime() - now.getTime();
-  const minAdvanceMs = 60 * 60 * 1000; // 1 hour
+  const sgNow = getSingaporeNow();
+  const diffMs = selectedDT.getTime() - sgNow.getTime();
+  const minAdvanceMs = 24 * 60 * 60 * 1000; // 24 hours
 
   if (diffMs < minAdvanceMs) {
     if (noticeEl) {
       noticeEl.classList.remove('hidden');
       const textEl = $('#advance-notice-text');
       if (textEl) {
-        textEl.textContent = 'Please select a pickup time at least 1 hour from now.';
+        textEl.textContent = 'Please select a pickup time at least 24 hours from now.';
       }
     }
     return false;
@@ -1217,6 +1265,48 @@ function validateAdvanceNotice() {
 
   noticeEl?.classList.add('hidden');
   return true;
+}
+
+// ============================================
+// BOOKING TIMER CONTROL
+// ============================================
+let bookingTimerInterval = null;
+
+function startBookingTimer() {
+  stopBookingTimer();
+  const timerStrip = $('#booking-timer-strip');
+  const timerDisplay = $('#booking-timer-display');
+  if (!timerStrip || !timerDisplay) return;
+
+  timerStrip.classList.remove('hidden');
+  let durationSec = 300; // 5 minutes
+
+  const updateDisplay = () => {
+    const m = Math.floor(durationSec / 60);
+    const s = durationSec % 60;
+    timerDisplay.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  updateDisplay();
+  bookingTimerInterval = setInterval(() => {
+    durationSec--;
+    if (durationSec <= 0) {
+      durationSec = 0;
+      updateDisplay();
+      clearInterval(bookingTimerInterval);
+      bookingTimerInterval = null;
+    } else {
+      updateDisplay();
+    }
+  }, 1000);
+}
+
+function stopBookingTimer() {
+  if (bookingTimerInterval) {
+    clearInterval(bookingTimerInterval);
+    bookingTimerInterval = null;
+  }
+  $('#booking-timer-strip')?.classList.add('hidden');
 }
 
 // ============================================
@@ -1228,7 +1318,20 @@ function showReviewView() {
   const reviewView = $('#review-booking-view');
   if (reviewView) {
     reviewView.classList.remove('hidden');
-    reviewView.classList.add('flex'); // matches index.html flex centering
+    reviewView.classList.add('block');
+  }
+
+  // Start 5-minute countdown
+  startBookingTimer();
+
+  // Generate a temporary booking reference if it doesn't exist
+  if (!state.tempReference) {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const rand = String(Math.floor(1000 + Math.random() * 9000));
+    state.tempReference = `STB-${yyyy}${mm}${dd}-${rand}`;
   }
 
   // Populate Review Details
@@ -1263,7 +1366,15 @@ function showReviewView() {
   if (reviewDest) reviewDest.textContent = finalDest;
 
   const reviewDateTime = $('#review-datetime-val');
-  if (reviewDateTime) reviewDateTime.textContent = `${dateVal} at ${timeVal}`;
+  if (reviewDateTime) {
+    let formattedDate = dateVal;
+    if (state.travelDate) {
+      formattedDate = state.travelDate.toLocaleDateString('en-SG', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+      });
+    }
+    reviewDateTime.textContent = `${formattedDate} at ${timeVal}`;
+  }
 
   const reviewPax = $('#review-pax-val');
   if (reviewPax) reviewPax.textContent = pax;
@@ -1276,22 +1387,193 @@ function showReviewView() {
   const reviewType = $('#review-type-val');
   if (reviewType) reviewType.textContent = modeTitle;
 
-  const reviewFareRow = $('#review-fare-row');
-  const reviewVehicleVal = $('#review-vehicle-val');
-  const reviewFareVal = $('#review-fare-val');
+  const reviewRef = $('#review-ref-val');
+  if (reviewRef) reviewRef.textContent = state.tempReference;
 
-  if (state.tripMode === 'one_way' && state.calculatedFares && state.calculatedFares[state.selectedSimpleVehicle]) {
-    reviewFareRow?.classList.remove('hidden');
-    if (reviewVehicleVal) {
-      const formattedDistance = state.distanceKm ? ` (${state.distanceKm.toFixed(1)} km)` : '';
-      reviewVehicleVal.textContent = `${state.selectedSimpleVehicle}${formattedDistance}`;
+  // Selected Vehicle Info
+  const selectedVehicle = state.selectedSimpleVehicle || '4-Seater';
+  const is4Seater = selectedVehicle === '4-Seater';
+
+  const vTitle = $('#review-vehicle-cat-title');
+  const vSubtitle = $('#review-vehicle-cat-subtitle');
+  const vPaxCount = $('#review-vehicle-pax-count');
+  const vLuggageCount = $('#review-vehicle-luggage-count');
+  const vImg = $('#review-vehicle-img');
+
+  if (vTitle) vTitle.textContent = selectedVehicle;
+  if (vSubtitle) vSubtitle.textContent = is4Seater ? 'Up to 4 Passengers' : 'Up to 6 Passengers';
+  if (vPaxCount) vPaxCount.textContent = is4Seater ? '4 Pax' : '6 Pax';
+  if (vLuggageCount) vLuggageCount.textContent = is4Seater ? '2 Bags' : '4 Bags';
+  if (vImg) {
+    vImg.src = is4Seater 
+      ? 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=600&q=80'
+      : 'https://images.unsplash.com/photo-1631295868223-63265b40d9e4?auto=format&fit=crop&w=600&q=80';
+  }
+
+  // Populate Distance / Duration / Rates & Fare for all 3 booking types
+  const statLbl1 = $('#review-stat-lbl-1');
+  const statDistEl = $('#review-stat-dist');
+  const statSub1 = $('#review-stat-sub-1');
+
+  const statLbl2 = $('#review-stat-lbl-2');
+  const statDurEl = $('#review-stat-dur');
+  const statSub2 = $('#review-stat-sub-2');
+
+  const statLbl3 = $('#review-stat-lbl-3');
+  const fareValEl = $('#review-vehicle-fare-val');
+  const statSub3 = $('#review-stat-sub-3');
+
+  const distValEl = $('#review-vehicle-dist-val');
+  const durValEl = $('#review-vehicle-duration-val');
+
+  // Breakdown fields
+  const breakLblBase = $('#breakdown-lbl-base');
+  const breakValBase = $('#breakdown-val-base');
+  const breakLblDist = $('#breakdown-lbl-dist');
+  const breakValDist = $('#breakdown-val-dist');
+  const breakValSubtotal = $('#breakdown-val-subtotal');
+  const breakValRounding = $('#breakdown-val-rounding');
+  const breakValTotal = $('#breakdown-val-total');
+
+  if (state.tripMode === 'one_way') {
+    const rawFare = (state.calculatedFares && state.calculatedFares[selectedVehicle]) || (is4Seater ? 40.0 : 45.0);
+    const roundedFare = Math.round(rawFare);
+    const rounding = roundedFare - rawFare;
+
+    const baseFare = is4Seater ? 40.0 : 45.0;
+    const perKmRate = is4Seater ? 2.2 : 2.5;
+    const distanceKm = state.distanceKm || 0.0;
+    const distanceFare = distanceKm * perKmRate;
+
+    const durationMinutes = state.durationSeconds
+      ? Math.round(state.durationSeconds / 60)
+      : Math.round(distanceKm * 1.5 + 5);
+    const durText = `~${durationMinutes} mins`;
+    const distText = `${distanceKm.toFixed(1)} km`;
+
+    // 3-Stat Card Labels & Values
+    if (statLbl1) statLbl1.textContent = 'Distance';
+    if (statDistEl) statDistEl.textContent = distText;
+    if (statSub1) statSub1.textContent = 'km';
+
+    if (statLbl2) statLbl2.textContent = 'Est. Duration';
+    if (statDurEl) statDurEl.textContent = durText;
+    if (statSub2) statSub2.textContent = 'mins';
+
+    if (statLbl3) statLbl3.textContent = 'Approx. Fare';
+    if (fareValEl) fareValEl.textContent = formatCurrency(roundedFare);
+    if (statSub3) statSub3.textContent = 'Estimated Transport Fare';
+
+    // Hidden compatibility elements
+    if (distValEl) distValEl.textContent = distText;
+    if (durValEl) durValEl.textContent = durText;
+
+    // Breakdown Table
+    if (breakLblBase) breakLblBase.textContent = `Base Fare (${selectedVehicle})`;
+    if (breakValBase) breakValBase.textContent = formatCurrency(baseFare);
+    if (breakLblDist) breakLblDist.textContent = `Distance Fare (${distanceKm.toFixed(1)} km × S$${perKmRate.toFixed(2)}/km)`;
+    if (breakValDist) breakValDist.textContent = formatCurrency(distanceFare);
+
+    if (breakValSubtotal) breakValSubtotal.textContent = formatCurrency(rawFare);
+    if (breakValRounding) {
+      const sign = rounding >= 0 ? '+' : '';
+      breakValRounding.textContent = `${sign}${formatCurrency(rounding)}`;
     }
-    if (reviewFareVal) {
-      const amt = state.calculatedFares[state.selectedSimpleVehicle];
-      reviewFareVal.textContent = formatCurrency(amt);
+    if (breakValTotal) breakValTotal.textContent = formatCurrency(roundedFare);
+
+  } else if (state.tripMode === 'hourly') {
+    const hours = Number(state.hourlyDuration) || 4;
+    state.hourlyDuration = hours;
+
+    const hourlyRate = is4Seater ? 60.0 : 65.0;
+    const totalFare = hours * hourlyRate;
+
+    // 3-Stat Card Labels & Values
+    if (statLbl1) statLbl1.textContent = 'Duration';
+    if (statDistEl) statDistEl.textContent = `${hours} Hours`;
+    if (statSub1) statSub1.textContent = 'Hourly Chauffeur Disposal';
+
+    if (statLbl2) statLbl2.textContent = 'Hourly Rate';
+    if (statDurEl) statDurEl.textContent = `S$${hourlyRate.toFixed(0)}/hr`;
+    if (statSub2) statSub2.textContent = `${selectedVehicle}`;
+
+    if (statLbl3) statLbl3.textContent = 'Approx. Fare';
+    if (fareValEl) fareValEl.textContent = formatCurrency(totalFare);
+    if (statSub3) statSub3.textContent = 'Estimated Transport Fare';
+
+    // Hidden compatibility elements
+    if (distValEl) distValEl.textContent = `${hours} Hours`;
+    if (durValEl) durValEl.textContent = `${hours} Hours Disposal`;
+
+    // Breakdown Table
+    if (breakLblBase) breakLblBase.textContent = `Hourly Rate (${selectedVehicle})`;
+    if (breakValBase) breakValBase.textContent = `S$${hourlyRate.toFixed(2)} / hr`;
+    if (breakLblDist) breakLblDist.textContent = `Duration (${hours} Hours Disposal)`;
+    if (breakValDist) breakValDist.textContent = `${hours} Hours`;
+
+    if (breakValSubtotal) breakValSubtotal.textContent = formatCurrency(totalFare);
+    if (breakValRounding) breakValRounding.textContent = 'S$0.00';
+    if (breakValTotal) breakValTotal.textContent = formatCurrency(totalFare);
+
+  } else if (state.tripMode === 'daily') {
+    const days = Number(state.dailyDuration) || 1;
+    state.dailyDuration = days;
+
+    const dailyRate = is4Seater ? 450.0 : 500.0;
+    const totalFare = days * dailyRate;
+
+    // 3-Stat Card Labels & Values
+    if (statLbl1) statLbl1.textContent = 'Charter Days';
+    if (statDistEl) statDistEl.textContent = `${days} ${days === 1 ? 'Day' : 'Days'}`;
+    if (statSub1) statSub1.textContent = 'Full-Day Charter';
+
+    if (statLbl2) statLbl2.textContent = 'Daily Rate';
+    if (statDurEl) statDurEl.textContent = `S$${dailyRate.toFixed(0)}/day`;
+    if (statSub2) statSub2.textContent = `${selectedVehicle}`;
+
+    if (statLbl3) statLbl3.textContent = 'Approx. Fare';
+    if (fareValEl) fareValEl.textContent = formatCurrency(totalFare);
+    if (statSub3) statSub3.textContent = 'Estimated Transport Fare';
+
+    // Hidden compatibility elements
+    if (distValEl) distValEl.textContent = `${days} Days`;
+    if (durValEl) durValEl.textContent = `${days} Days Charter`;
+
+    // Breakdown Table
+    if (breakLblBase) breakLblBase.textContent = `Daily Rate (${selectedVehicle})`;
+    if (breakValBase) breakValBase.textContent = `S$${dailyRate.toFixed(2)} / day`;
+    if (breakLblDist) breakLblDist.textContent = `Charter Duration`;
+    if (breakValDist) breakValDist.textContent = `${days} ${days === 1 ? 'Day' : 'Days'}`;
+
+    if (breakValSubtotal) breakValSubtotal.textContent = formatCurrency(totalFare);
+    if (breakValRounding) breakValRounding.textContent = 'S$0.00';
+    if (breakValTotal) breakValTotal.textContent = formatCurrency(totalFare);
+  }
+
+  // Tolls Badge dynamically based on current configuration
+  if (tollsBadge) {
+    const tollsIncluded = state.surcharges ? state.surcharges.tollsIncluded : false;
+    const badgeParent = tollsBadge.parentElement;
+    
+    if (tollsIncluded) {
+      tollsBadge.textContent = 'Tolls included';
+      badgeParent?.classList.remove('text-stone-600');
+      badgeParent?.classList.add('text-emerald-800');
+      if (tollsIcon) {
+        tollsIcon.textContent = 'check';
+        tollsIcon.classList.remove('text-stone-400');
+        tollsIcon.classList.add('text-emerald-600');
+      }
+    } else {
+      tollsBadge.textContent = 'Tolls excluded';
+      badgeParent?.classList.remove('text-emerald-800');
+      badgeParent?.classList.add('text-stone-600');
+      if (tollsIcon) {
+        tollsIcon.textContent = 'info';
+        tollsIcon.classList.remove('text-emerald-600');
+        tollsIcon.classList.add('text-stone-400');
+      }
     }
-  } else {
-    reviewFareRow?.classList.add('hidden');
   }
 
   // Scroll to review section top
@@ -1304,9 +1586,10 @@ function showReviewView() {
 }
 
 function hideReviewView() {
+  stopBookingTimer();
   const reviewView = $('#review-booking-view');
   if (reviewView) {
-    reviewView.classList.remove('flex');
+    reviewView.classList.remove('block', 'flex');
     reviewView.classList.add('hidden');
   }
   $('#hero-booking-section')?.classList.remove('hidden');
@@ -1336,20 +1619,18 @@ function handleContinueToReview() {
   // 3. Validate Date & Time
   if (!dateVal) {
     alert('Please select your travel date.');
-    renderCalendarGrid();
-    openModal('modal-calendar');
+    $('#date-display-input')?.focus();
     return;
   }
   if (!timeVal) {
     alert('Please select your travel time.');
-    renderTimeSlots();
-    openModal('modal-time-picker');
+    $('#time-display-input')?.focus();
     return;
   }
 
-  // 4. Validate 1-Hour Advance Booking Requirement
+  // 4. Validate 24-Hour Advance Booking Requirement
   if (!validateAdvanceNotice()) {
-    alert('Please select a pickup time at least 1 hour from now.');
+    alert('Please select a pickup time at least 24 hours from now.');
     return;
   }
 
@@ -1397,22 +1678,20 @@ async function handleBookingSubmit() {
   // 3. Validate Date & Time
   if (!dateVal) {
     alert('Please select your travel date.');
-    renderCalendarGrid();
-    openModal('modal-calendar');
+    $('#date-display-input')?.focus();
     _isBookingSubmitting = false;
     return;
   }
   if (!timeVal) {
     alert('Please select your travel time.');
-    renderTimeSlots();
-    openModal('modal-time-picker');
+    $('#time-display-input')?.focus();
     _isBookingSubmitting = false;
     return;
   }
 
-  // 4. Validate 1-Hour Advance Booking Requirement
+  // 4. Validate 24-Hour Advance Booking Requirement
   if (!validateAdvanceNotice()) {
-    alert('Please select a pickup time at least 1 hour from now.');
+    alert('Please select a pickup time at least 24 hours from now.');
     _isBookingSubmitting = false;
     return;
   }
@@ -1458,14 +1737,26 @@ async function handleBookingSubmit() {
   let bookingSuccessful = false;
   let serverVoucherCode = '';
 
-  let submitVehicle = modeTitle;
+  let submitVehicle = state.selectedSimpleVehicle || '4-Seater';
   let submitFare = 'Pending Quote';
+  const is4S = submitVehicle === '4-Seater';
+
   if (state.tripMode === 'one_way') {
-    submitVehicle = state.selectedSimpleVehicle;
-    if (state.calculatedFares && state.calculatedFares[state.selectedSimpleVehicle]) {
-      const amt = state.calculatedFares[state.selectedSimpleVehicle];
+    if (state.calculatedFares && state.calculatedFares[submitVehicle]) {
+      const amt = state.calculatedFares[submitVehicle];
       submitFare = `Estimated SGD ${amt.toFixed(2)}`;
+    } else {
+      const base = is4S ? 40.0 : 45.0;
+      submitFare = `Estimated SGD ${base.toFixed(2)}`;
     }
+  } else if (state.tripMode === 'hourly') {
+    const hrs = Number(state.hourlyDuration) || 4;
+    const rate = is4S ? 60.0 : 65.0;
+    submitFare = `Estimated SGD ${(hrs * rate).toFixed(2)}`;
+  } else if (state.tripMode === 'daily') {
+    const days = Number(state.dailyDuration) || 1;
+    const rate = is4S ? 450.0 : 500.0;
+    submitFare = `Estimated SGD ${(days * rate).toFixed(2)}`;
   }
 
   // Submit to Backend API
@@ -1658,10 +1949,11 @@ function showDedicatedConfirmation(data) {
   const waBtn = $('#confirm-whatsapp-btn');
   if (waBtn) waBtn.href = data.waUrl;
 
+  stopBookingTimer();
   $('#hero-booking-section')?.classList.add('hidden');
   const reviewView = $('#review-booking-view');
   if (reviewView) {
-    reviewView.classList.remove('flex');
+    reviewView.classList.remove('block', 'flex');
     reviewView.classList.add('hidden');
   }
   
@@ -2039,7 +2331,7 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 
 function initModals() {
-  ['modal-vehicle', 'modal-calendar', 'modal-time-picker'].forEach((id) => {
+  ['modal-vehicle'].forEach((id) => {
     const modal = document.getElementById(id);
     modal?.addEventListener('click', (e) => {
       if (e.target === modal) closeModal(id);
@@ -2047,7 +2339,7 @@ function initModals() {
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      ['modal-vehicle', 'modal-calendar', 'modal-time-picker'].forEach((id) => closeModal(id));
+      ['modal-vehicle'].forEach((id) => closeModal(id));
     }
   });
 }
@@ -2133,10 +2425,46 @@ function selectSimpleVehicle(category) {
 async function triggerFareEstimation() {
   const pickupReady = state.pickupPlaceId || state.pickupCoords;
   const destReady = state.destPlaceId || state.destCoords;
-
   const estimateContainer = $('#estimate-container');
-  if (state.tripMode !== 'one_way') {
-    estimateContainer?.classList.add('hidden');
+
+  const fare4 = $('#fare-4-seater-val');
+  const fare6 = $('#fare-6-seater-val');
+  const dist4 = $('#dist-4-seater-val');
+  const dist6 = $('#dist-6-seater-val');
+  const break4 = $('#breakdown-4-seater');
+  const break6 = $('#breakdown-6-seater');
+
+  if (state.tripMode === 'hourly') {
+    if (!pickupReady) {
+      estimateContainer?.classList.add('hidden');
+      return;
+    }
+    estimateContainer?.classList.remove('hidden');
+    const hrs = Number(state.hourlyDuration) || 4;
+
+    if (fare4) fare4.textContent = formatCurrency(hrs * 60);
+    if (fare6) fare6.textContent = formatCurrency(hrs * 65);
+    if (dist4) dist4.textContent = `${hrs} Hours`;
+    if (dist6) dist6.textContent = `${hrs} Hours`;
+    if (break4) break4.textContent = `S$60.00/hr × ${hrs} Hours`;
+    if (break6) break6.textContent = `S$65.00/hr × ${hrs} Hours`;
+    return;
+  }
+
+  if (state.tripMode === 'daily') {
+    if (!pickupReady) {
+      estimateContainer?.classList.add('hidden');
+      return;
+    }
+    estimateContainer?.classList.remove('hidden');
+    const days = Number(state.dailyDuration) || 1;
+
+    if (fare4) fare4.textContent = formatCurrency(days * 450);
+    if (fare6) fare6.textContent = formatCurrency(days * 500);
+    if (dist4) dist4.textContent = `${days} ${days === 1 ? 'Day' : 'Days'}`;
+    if (dist6) dist6.textContent = `${days} ${days === 1 ? 'Day' : 'Days'}`;
+    if (break4) break4.textContent = `S$450.00/day × ${days} ${days === 1 ? 'Day' : 'Days'}`;
+    if (break6) break6.textContent = `S$500.00/day × ${days} ${days === 1 ? 'Day' : 'Days'}`;
     return;
   }
 
@@ -2146,11 +2474,6 @@ async function triggerFareEstimation() {
   }
 
   estimateContainer?.classList.remove('hidden');
-
-  const fare4 = $('#fare-4-seater-val');
-  const fare6 = $('#fare-6-seater-val');
-  const dist4 = $('#dist-4-seater-val');
-  const dist6 = $('#dist-6-seater-val');
 
   if (fare4) fare4.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
   if (fare6) fare6.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
@@ -2186,6 +2509,8 @@ async function triggerFareEstimation() {
       state.calculatedFares = data.fares;
       state.distanceKm = data.distanceKm;
       state.pricingRates = data.rates;
+      state.durationSeconds = data.durationSeconds;
+      state.surcharges = data.surcharges;
       renderEstimatedFares();
     } else {
       throw new Error(data.error || "Estimation unsuccessful");
