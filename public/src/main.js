@@ -423,56 +423,37 @@ function setupGooglePlacesAutocomplete() {
     fields: ['place_id', 'formatted_address', 'name', 'geometry'],
   };
 
-  if (pickupInput && pickupInput.parentElement) {
-    const pickupWrapper = pickupInput.parentElement;
-    const pickupAutocomplete = new google.maps.places.PlaceAutocompleteElement({
-      componentRestrictions: { country: 'sg' },
-      requestedLanguage: 'en',
-    });
-    pickupAutocomplete.id = 'gmp-pickup';
-    pickupAutocomplete.classList.add('w-full', 'pl-9', 'pr-9', 'py-2.5', 'text-xs', 'sm:text-sm', 'font-semibold', 'text-stb-charcoal', 'bg-stone-50', 'border', 'border-stone-200', 'rounded-xl');
+  if (pickupInput) {
+    const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
     
-    // Replace existing input styling logically
-    pickupInput.style.display = 'none';
-    pickupWrapper.appendChild(pickupAutocomplete);
-
-    pickupAutocomplete.addEventListener('gmp-placeselect', async (e) => {
-      const place = e.place;
-      if (!place) {
+    pickupAutocomplete.addListener('place_changed', () => {
+      const place = pickupAutocomplete.getPlace();
+      if (!place || !place.geometry) {
         updatePickupState(pickupInput.value, null, null, null);
         return;
       }
-      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'id'] });
       
-      const name = place.displayName || place.formattedAddress;
-      const coords = place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null;
-      updatePickupState(name, place.id, coords, place.formattedAddress);
+      const name = place.name || place.formatted_address;
+      const coords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+      pickupInput.value = name;
+      updatePickupState(name, place.place_id, coords, place.formatted_address);
     });
   }
 
-  if (destInput && destInput.parentElement) {
-    const destWrapper = destInput.parentElement;
-    const destAutocomplete = new google.maps.places.PlaceAutocompleteElement({
-      componentRestrictions: { country: 'sg' },
-      requestedLanguage: 'en',
-    });
-    destAutocomplete.id = 'gmp-dest';
-    destAutocomplete.classList.add('w-full', 'pl-9', 'pr-9', 'py-2.5', 'text-xs', 'sm:text-sm', 'font-semibold', 'text-stb-charcoal', 'bg-stone-50', 'border', 'border-stone-200', 'rounded-xl');
+  if (destInput) {
+    const destAutocomplete = new google.maps.places.Autocomplete(destInput, options);
 
-    destInput.style.display = 'none';
-    destWrapper.appendChild(destAutocomplete);
-
-    destAutocomplete.addEventListener('gmp-placeselect', async (e) => {
-      const place = e.place;
-      if (!place) {
+    destAutocomplete.addListener('place_changed', () => {
+      const place = destAutocomplete.getPlace();
+      if (!place || !place.geometry) {
         updateDestState(destInput.value, null, null, null);
         return;
       }
-      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'id'] });
       
-      const name = place.displayName || place.formattedAddress;
-      const coords = place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null;
-      updateDestState(name, place.id, coords, place.formattedAddress);
+      const name = place.name || place.formatted_address;
+      const coords = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() };
+      destInput.value = name;
+      updateDestState(name, place.place_id, coords, place.formatted_address);
     });
   }
 }
