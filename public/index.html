@@ -201,8 +201,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0..100,0..1;1,9..144,400..700,0..100,0..1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
-    <!-- Tailwind CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (Built) -->
+    <link rel="stylesheet" href="/src/tailwind.css" />
 
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="/src/styles.css" />
@@ -224,14 +224,14 @@
         </a>
 
         <div class="hidden md:flex items-center gap-6">
-          <a href="/" class="stb-nav-link" data-testid="nav-home">Home</a>
+          <!-- <a href="/" class="stb-nav-link" data-testid="nav-home">Home</a> -->
           <a href="#services" class="stb-nav-link" data-testid="nav-services">Travel</a>
           <a href="#fleet" class="stb-nav-link" data-testid="nav-fleet">Fleet</a>
           <a href="#destinations" class="stb-nav-link" data-testid="nav-destinations">Destinations</a>
           <a href="#how-to-book" class="stb-nav-link" data-testid="nav-howto">How it Works</a>
           <a href="#faq" class="stb-nav-link" data-testid="nav-faq">FAQ</a>
 
-          <!-- Language Selector (Hidden for now) -->
+          <!-- Language Selector (Hidden for now)
           <div class="lang-pill hidden" data-testid="lang-pill">
             <span class="material-symbols-outlined text-sm text-stb-muted">language</span>
             <select id="lang-select" aria-label="Select Language" data-testid="lang-select">
@@ -240,6 +240,7 @@
               <option value="ms">Bahasa (MS)</option>
             </select>
           </div>
+          -->
 
           <!-- Currency Selector (Hidden for now) -->
           <div class="currency-pill hidden" data-testid="currency-pill">
@@ -266,20 +267,6 @@
         </button>
       </div>
 
-      <!-- Mobile Header -->
-      <div class="flex md:hidden items-center justify-between px-4 py-3 border-b border-stone-200 bg-white" data-testid="mobile-header">
-        <a href="/" class="flex items-center gap-2">
-          <img src="/stb-logo.png" alt="STB Logo" class="h-9 w-auto object-contain" />
-          <div class="leading-none">
-            <div class="font-display font-black text-xs text-stb-charcoal tracking-tight">Singapore Tour Booking</div>
-            <div class="text-[0.45rem] font-bold tracking-[0.25em] text-stb-red uppercase">Official Transport</div>
-          </div>
-        </a>
-
-        <button id="menu-btn" class="text-stb-charcoal p-1 focus:outline-none" aria-label="Toggle Menu" data-testid="menu-btn">
-          <span id="menu-btn-icon" class="material-symbols-outlined text-2xl">menu</span>
-        </button>
-      </div>
 
       <!-- Mobile Drawer -->
       <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-stone-200 shadow-xl px-4 py-6" data-testid="mobile-menu">
@@ -1152,7 +1139,7 @@
             <p class="section-sub text-sm">Private transport for the rest of your Singapore trip.</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="service-grid"></div>
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 md:grid md:grid-cols-3 md:gap-6 pb-6 -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar" id="service-grid"></div>
         </div>
       </section>
 

@@ -1323,8 +1323,260 @@ body {
     border-color: rgba(16, 185, 129, 0.55) !important;
   }
 }
+}
+.stb-cookie-pref-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--stb-red);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.stb-cookie-pref-item strong { color: var(--stb-charcoal); }
+
+@media (max-width: 640px) {
+  .stb-cookie-content { flex-direction: column; align-items: flex-start; }
+  .stb-cookie-actions { width: 100%; }
+  .stb-cookie-btn { flex: 1; text-align: center; }
+}
+
+/* ============================================
+   Floating WhatsApp Button
+   ============================================ */
+.floating-whatsapp-btn {
+  position: fixed;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  z-index: 60;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #25D366;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(37, 211, 102, 0.45);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-decoration: none;
+}
+.floating-whatsapp-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 14px 32px rgba(37, 211, 102, 0.65);
+  color: white;
+}
+@media (max-width: 768px) {
+  .floating-whatsapp-btn {
+    bottom: 5.5rem;
+    right: 1.25rem;
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* ============================================
+   Language Pill
+   ============================================ */
+.lang-pill {
+  background: white;
+  border: 1px solid var(--stb-line);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--stb-charcoal);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+.lang-pill select {
+  background: transparent;
+  border: none;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--stb-charcoal);
+  outline: none;
+  cursor: pointer;
+}
+
+/* ============================================
+   Input Clear "×" Button
+   ============================================ */
+.input-clear-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  background: #E8E4DE;
+  color: #6B6B6B;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+.input-clear-btn:hover {
+  background: var(--stb-red);
+  color: white;
+}
+
+/* ============================================
+   Google Places Autocomplete Styling
+   ============================================ */
+.pac-container {
+  background-color: #FFFFFF !important;
+  border-radius: 16px !important;
+  box-shadow: 0 16px 36px rgba(20, 20, 20, 0.14) !important;
+  border: 1px solid #E8E4DE !important;
+  font-family: 'Manrope', sans-serif !important;
+  margin-top: 6px !important;
+  z-index: 9999 !important;
+  overflow: hidden;
+}
+.pac-item {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: #141414 !important;
+  cursor: pointer !important;
+  border-top: 1px solid #F5F3EF !important;
+  transition: background-color 0.15s ease !important;
+}
+.pac-item:first-child {
+  border-top: none !important;
+}
+.pac-item:hover, .pac-item-selected {
+  background-color: var(--stb-red-soft) !important;
+}
+.pac-item-query {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #141414 !important;
+}
+.pac-matched {
+  font-weight: 800 !important;
+  color: var(--stb-red) !important;
+}
+.pac-icon {
+  margin-top: 4px !important;
+}
+
+/* ============================================
+   Google Maps Preview
+   ============================================ */
+#google-map-preview-wrap {
+  transition: all 0.3s ease;
+}
+#google-map-preview {
+  background: #FBF7F0;
+}
+
+/* ============================================
+   Confirmation View
+   ============================================ */
+#confirmation-view {
+  scroll-margin-top: 80px;
+}
+
+/* ============================================
+   Fade-in Animation
+   ============================================ */
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Float WhatsApp above footer transition */
+.floating-whatsapp-btn {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.floating-whatsapp-btn.above-footer {
+  bottom: 12rem; /* Shifts above footer info on desktop */
+}
+@media (max-width: 768px) {
+  .floating-whatsapp-btn.above-footer {
+    bottom: 22rem; /* Shifts above footer info on mobile */
+  }
+}
+
+/* Premium subtle glow trust badge pulse */
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.15);
+    background-color: rgba(209, 250, 229, 0.6);
+    border-color: rgba(16, 185, 129, 0.3) !important;
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(16, 185, 129, 0.35);
+    background-color: rgba(209, 250, 229, 0.95);
+    border-color: rgba(16, 185, 129, 0.55) !important;
+  }
+}
 .badge-pulse {
   animation: subtle-glow 3.5s infinite ease-in-out;
   transition: all 0.3s ease;
 }
 
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Custom Services Card Styling */
+.service-card {
+  /* Use clamp for card width: mobile shows ~2.5 cards (approx 35vw), tablet/desktop adapts automatically */
+  width: clamp(140px, 35vw, 220px);
+  flex-shrink: 0;
+  scroll-snap-align: center;
+}
+
+@media (min-width: 768px) {
+  .service-card {
+    width: auto;
+  }
+}
+
+.service-card-icon .material-symbols-outlined {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.service-card-title {
+  /* Reduce title size and use a subdued color to contrast with the price */
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  font-weight: 600;
+  color: var(--stb-charcoal);
+  opacity: 0.85;
+}
+
+.service-card-price-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stb-muted);
+}
+
+.service-card-price {
+  /* Make price prominent with distinct size and color */
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+  font-weight: 800;
+  color: var(--stb-red);
+}
+
+.price-suffix {
+  font-size: 0.75em;
+  color: var(--stb-muted);
+  font-weight: 600;
+}
+
+.srv-book-btn {
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stb-red);
+}

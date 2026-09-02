@@ -187,56 +187,7 @@ const VEHICLES = [
   },
 ];
 
-const SERVICES = [
-  {
-    id: 'airport_arrival',
-    icon: 'flight_land',
-    tag: 'Meet & Greet',
-    title: 'Airport Arrival Pickup',
-    desc: 'Changi Airport arrival hall meet & greet with printed name board. 60-min complimentary flight delay buffer.',
-    priceSGD: 55,
-  },
-  {
-    id: 'airport_departure',
-    icon: 'flight_takeoff',
-    tag: 'Express Drop-off',
-    title: 'Airport Departure Transfer',
-    desc: 'Punctual door-to-terminal transport directly to Changi T1/T2/T3/T4 departure gates with luggage assistance.',
-    priceSGD: 55,
-  },
-  {
-    id: 'point_to_point',
-    icon: 'directions_car',
-    tag: 'Direct Transfer',
-    title: 'Point-to-Point Transport',
-    desc: 'Seamless private city transfers between hotels, Marina Bay Sands, Sentosa, restaurants, and attractions.',
-    priceSGD: 45,
-  },
-  {
-    id: 'hourly_disposal',
-    icon: 'schedule',
-    tag: 'Flexible Charter',
-    title: 'Hourly Chauffeur Disposal',
-    desc: 'Dedicated vehicle and licensed professional chauffeur on standby for business meetings, sightseeing, or shopping.',
-    priceSGD: 60,
-  },
-  {
-    id: 'daily_booking',
-    icon: 'calendar_today',
-    tag: 'Full Day',
-    title: 'Full-Day Tour Charter',
-    desc: 'Unlimited mileage full-day tour chauffeur across all Singapore attractions. Customizable itineraries.',
-    priceSGD: 350,
-  },
-  {
-    id: 'cross_border',
-    icon: 'commute',
-    tag: 'Singapore - Malaysia',
-    title: 'Cross-Border (JB / Desaru)',
-    desc: 'Direct private transfer to Johor Bahru, Legoland Malaysia, and Desaru Coast. No alighting required at customs.',
-    priceSGD: 120,
-  },
-];
+let SERVICES = [];
 
 const REVIEWS = [
   {
@@ -472,37 +423,56 @@ function setupGooglePlacesAutocomplete() {
     fields: ['place_id', 'formatted_address', 'name', 'geometry'],
   };
 
-  if (pickupInput) {
-    const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput, options);
-    pickupAutocomplete.addListener('place_changed', () => {
-      const place = pickupAutocomplete.getPlace();
-      if (!place || !place.geometry) {
+  if (pickupInput && pickupInput.parentElement) {
+    const pickupWrapper = pickupInput.parentElement;
+    const pickupAutocomplete = new google.maps.places.PlaceAutocompleteElement({
+      componentRestrictions: { country: 'sg' },
+      requestedLanguage: 'en',
+    });
+    pickupAutocomplete.id = 'gmp-pickup';
+    pickupAutocomplete.classList.add('w-full', 'pl-9', 'pr-9', 'py-2.5', 'text-xs', 'sm:text-sm', 'font-semibold', 'text-stb-charcoal', 'bg-stone-50', 'border', 'border-stone-200', 'rounded-xl');
+    
+    // Replace existing input styling logically
+    pickupInput.style.display = 'none';
+    pickupWrapper.appendChild(pickupAutocomplete);
+
+    pickupAutocomplete.addEventListener('gmp-placeselect', async (e) => {
+      const place = e.place;
+      if (!place) {
         updatePickupState(pickupInput.value, null, null, null);
         return;
       }
-      const name = place.name || place.formatted_address;
-      const coords = {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      };
-      updatePickupState(name, place.place_id, coords, place.formatted_address);
+      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'id'] });
+      
+      const name = place.displayName || place.formattedAddress;
+      const coords = place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null;
+      updatePickupState(name, place.id, coords, place.formattedAddress);
     });
   }
 
-  if (destInput) {
-    const destAutocomplete = new google.maps.places.Autocomplete(destInput, options);
-    destAutocomplete.addListener('place_changed', () => {
-      const place = destAutocomplete.getPlace();
-      if (!place || !place.geometry) {
+  if (destInput && destInput.parentElement) {
+    const destWrapper = destInput.parentElement;
+    const destAutocomplete = new google.maps.places.PlaceAutocompleteElement({
+      componentRestrictions: { country: 'sg' },
+      requestedLanguage: 'en',
+    });
+    destAutocomplete.id = 'gmp-dest';
+    destAutocomplete.classList.add('w-full', 'pl-9', 'pr-9', 'py-2.5', 'text-xs', 'sm:text-sm', 'font-semibold', 'text-stb-charcoal', 'bg-stone-50', 'border', 'border-stone-200', 'rounded-xl');
+
+    destInput.style.display = 'none';
+    destWrapper.appendChild(destAutocomplete);
+
+    destAutocomplete.addEventListener('gmp-placeselect', async (e) => {
+      const place = e.place;
+      if (!place) {
         updateDestState(destInput.value, null, null, null);
         return;
       }
-      const name = place.name || place.formatted_address;
-      const coords = {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      };
-      updateDestState(name, place.place_id, coords, place.formatted_address);
+      await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location', 'id'] });
+      
+      const name = place.displayName || place.formattedAddress;
+      const coords = place.location ? { lat: place.location.lat(), lng: place.location.lng() } : null;
+      updateDestState(name, place.id, coords, place.formattedAddress);
     });
   }
 }
@@ -2098,7 +2068,7 @@ function renderFleetCards(category = 'all') {
     : VEHICLES.filter((v) => v.category === category);
 
   container.innerHTML = filtered.map((v) => `
-    <article class="fleet-card reveal" data-testid="fleet-card-${v.id}">
+    <article class="fleet-card" data-testid="fleet-card-${v.id}">
       <div class="fleet-img-wrap">
         <img src="${v.image}" alt="${v.name}" onerror="this.src='${v.fallback}'" />
         <span class="fleet-tag ${v.tagStyle === 'gold' ? 'gold' : ''}">${v.tag || ''}</span>
@@ -2168,33 +2138,97 @@ function renderFleetCards(category = 'all') {
   });
 }
 
-function initServiceGrid() {
-  renderServiceGrid();
+async function initServiceGrid() {
+  try {
+    const res = await fetch('/src/services.json');
+    SERVICES = await res.json();
+    renderServiceGrid();
+    initServiceCarousel();
+  } catch (err) {
+    console.error('Failed to load services:', err);
+  }
 }
+
+function initServiceCarousel() {
+  const grid = $('#service-grid');
+  if (!grid || window.innerWidth >= 768) return; // Only on mobile/tab
+
+  let scrollInterval;
+  let isPaused = false;
+  
+  // Clone cards to allow seamless looping
+  const originalCards = Array.from(grid.children);
+  originalCards.forEach(card => {
+    const clone = card.cloneNode(true);
+    // Bind click events on clones
+    const btn = clone.querySelector('.srv-book-btn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const sid = btn.dataset.service;
+        if (sid === 'hourly_disposal') {
+          const hourlyBtn = $('.type-btn[data-type="hourly"]');
+          if (hourlyBtn) hourlyBtn.click();
+        } else if (sid === 'daily_booking') {
+          const dailyBtn = $('.type-btn[data-type="daily"]');
+          if (dailyBtn) dailyBtn.click();
+        } else {
+          const oneWayBtn = $('.type-btn[data-type="one_way"]');
+          if (oneWayBtn) oneWayBtn.click();
+        }
+        scrollToHeroBooking();
+      });
+    }
+    grid.appendChild(clone);
+  });
+
+  const scrollNext = () => {
+    if (isPaused) return;
+    
+    // Width of one card including gap (approx)
+    const cardWidth = grid.querySelector('.service-card').offsetWidth;
+    const gap = 16; // 1rem gap
+    const scrollAmount = cardWidth + gap;
+    
+    // Smooth scroll by one card
+    grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+
+    // Seamless loop check: If scrolled past original cards, jump back instantly
+    // We wait 600ms for the smooth scroll animation to finish before jumping
+    setTimeout(() => {
+      const scrollLimit = (originalCards.length * scrollAmount);
+      if (grid.scrollLeft >= scrollLimit - gap) {
+        grid.scrollTo({ left: grid.scrollLeft - scrollLimit, behavior: 'instant' });
+      }
+    }, 600);
+  };
+
+  scrollInterval = setInterval(scrollNext, 3000);
+
+  // Pause on user interaction
+  grid.addEventListener('touchstart', () => isPaused = true, { passive: true });
+  grid.addEventListener('touchend', () => {
+    setTimeout(() => isPaused = false, 2000);
+  }, { passive: true });
+}
+
 
 function renderServiceGrid() {
   const grid = $('#service-grid');
   if (!grid) return;
 
   grid.innerHTML = SERVICES.map((s, i) => `
-    <article class="service-card reveal" data-delay="${i}" data-testid="service-card-${s.id}">
-      <div class="flex items-start justify-between mb-1">
-        <div class="service-card-icon">
-          <span class="material-symbols-outlined fill-1">${s.icon}</span>
-        </div>
-        ${s.tag ? `<span class="service-card-tag">${s.tag}</span>` : ''}
+    <article class="service-card flex flex-col items-center text-center p-3" data-testid="service-card-${s.id}">
+      <div class="service-card-icon mb-1.5">
+        <span class="material-symbols-outlined fill-1">${s.icon}</span>
       </div>
-      <h3 class="service-card-title">${s.title}</h3>
-      <p class="service-card-desc">${s.desc}</p>
-      <div class="service-card-foot">
-        <div>
-          <div class="text-[0.6rem] font-bold text-stb-muted uppercase tracking-widest">From</div>
-          <div class="service-card-price">${formatCurrency(s.priceSGD)}${s.id === 'hourly_disposal' ? '<span class="text-xs text-stb-muted">/hr</span>' : ''}</div>
-        </div>
-        <button class="service-card-cta srv-book-btn" data-service="${s.id}" data-testid="srv-book-${s.id}">
-          Book <span class="material-symbols-outlined text-base">arrow_forward</span>
-        </button>
+      <h3 class="service-card-title mb-1.5">${s.title}</h3>
+      <div class="mt-auto flex flex-col items-center">
+        <div class="service-card-price-label">From</div>
+        <div class="service-card-price">${formatCurrency(s.priceSGD)}${s.id === 'hourly_disposal' ? '<span class="price-suffix">/hr</span>' : ''}</div>
       </div>
+      <button class="srv-book-btn mt-2 flex items-center justify-center gap-1" data-service="${s.id}" data-testid="srv-book-${s.id}">
+        Book
+      </button>
     </article>
   `).join('');
 

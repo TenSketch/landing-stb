@@ -1,0 +1,32 @@
+[
+  {
+    "id": "airport_transfer",
+    "icon": "flight_takeoff",
+    "title": "Airport Transfer",
+    "priceSGD": 55
+  },
+  {
+    "id": "point_to_point",
+    "icon": "directions_car",
+    "title": "Point-to-Point",
+    "priceSGD": 45
+  },
+  {
+    "id": "hourly_disposal",
+    "icon": "schedule",
+    "title": "Hourly Disposal",
+    "priceSGD": 60
+  },
+  {
+    "id": "daily_booking",
+    "icon": "calendar_today",
+    "title": "Full-Day Tour",
+    "priceSGD": 350
+  },
+  {
+    "id": "cross_border",
+    "icon": "commute",
+    "title": "Cross-Border",
+    "priceSGD": 120
+  }
+]
