@@ -1735,6 +1735,8 @@ async function handleBookingSubmit() {
         destPlaceId: state.destPlaceId,
         destCoords: state.destCoords,
         distanceKm: state.tripMode === 'one_way' ? state.distanceKm : null,
+        hours: state.tripMode === 'hourly' ? Number(state.hourlyDuration) || 4 : null,
+        days: state.tripMode === 'daily' ? Number(state.dailyDuration) || 1 : null,
       }),
     });
     if (res.ok) {
@@ -2455,10 +2457,40 @@ async function triggerFareEstimation() {
     estimateContainer?.classList.remove('hidden');
     const hrs = Number(state.hourlyDuration) || 4;
 
-    if (fare4) fare4.textContent = formatCurrency(hrs * 60);
-    if (fare6) fare6.textContent = formatCurrency(hrs * 65);
+    if (fare4) fare4.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
+    if (fare6) fare6.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
     if (dist4) dist4.textContent = `${hrs} Hours`;
     if (dist6) dist6.textContent = `${hrs} Hours`;
+
+    try {
+      const res = await fetch('/api/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingType: 'Hourly',
+          hours: hrs,
+          dateTime: `${$('#input-date')?.value || ''} ${$('#input-time')?.value || ''}`
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.fares) {
+        state.calculatedFares = data.fares;
+        state.pricingRates = data.rates;
+        state.surcharges = data.surcharges;
+        if (fare4) fare4.textContent = formatCurrency(data.fares['4-Seater']);
+        if (fare6) fare6.textContent = formatCurrency(data.fares['6-Seater']);
+        const r4 = data.rates?.['4-Seater']?.hourlyRate || 60;
+        const r6 = data.rates?.['6-Seater']?.hourlyRate || 65;
+        if (break4) break4.textContent = `S$${r4.toFixed(2)}/hr × ${hrs} Hours`;
+        if (break6) break6.textContent = `S$${r6.toFixed(2)}/hr × ${hrs} Hours`;
+        return;
+      }
+    } catch (e) {
+      console.warn('[ESTIMATE HOURLY ERROR]:', e);
+    }
+
+    if (fare4) fare4.textContent = formatCurrency(hrs * 60);
+    if (fare6) fare6.textContent = formatCurrency(hrs * 65);
     if (break4) break4.textContent = `S$60.00/hr × ${hrs} Hours`;
     if (break6) break6.textContent = `S$65.00/hr × ${hrs} Hours`;
     return;
@@ -2472,10 +2504,40 @@ async function triggerFareEstimation() {
     estimateContainer?.classList.remove('hidden');
     const days = Number(state.dailyDuration) || 1;
 
-    if (fare4) fare4.textContent = formatCurrency(days * 450);
-    if (fare6) fare6.textContent = formatCurrency(days * 500);
+    if (fare4) fare4.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
+    if (fare6) fare6.innerHTML = `<span class="animate-pulse text-stone-400">Calculating...</span>`;
     if (dist4) dist4.textContent = `${days} ${days === 1 ? 'Day' : 'Days'}`;
     if (dist6) dist6.textContent = `${days} ${days === 1 ? 'Day' : 'Days'}`;
+
+    try {
+      const res = await fetch('/api/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingType: 'Daily',
+          days: days,
+          dateTime: `${$('#input-date')?.value || ''} ${$('#input-time')?.value || ''}`
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.fares) {
+        state.calculatedFares = data.fares;
+        state.pricingRates = data.rates;
+        state.surcharges = data.surcharges;
+        if (fare4) fare4.textContent = formatCurrency(data.fares['4-Seater']);
+        if (fare6) fare6.textContent = formatCurrency(data.fares['6-Seater']);
+        const r4 = data.rates?.['4-Seater']?.dailyRate || 450;
+        const r6 = data.rates?.['6-Seater']?.dailyRate || 500;
+        if (break4) break4.textContent = `S$${r4.toFixed(2)}/day × ${days} ${days === 1 ? 'Day' : 'Days'}`;
+        if (break6) break6.textContent = `S$${r6.toFixed(2)}/day × ${days} ${days === 1 ? 'Day' : 'Days'}`;
+        return;
+      }
+    } catch (e) {
+      console.warn('[ESTIMATE DAILY ERROR]:', e);
+    }
+
+    if (fare4) fare4.textContent = formatCurrency(days * 450);
+    if (fare6) fare6.textContent = formatCurrency(days * 500);
     if (break4) break4.textContent = `S$450.00/day × ${days} ${days === 1 ? 'Day' : 'Days'}`;
     if (break6) break6.textContent = `S$500.00/day × ${days} ${days === 1 ? 'Day' : 'Days'}`;
     return;
@@ -2500,6 +2562,7 @@ async function triggerFareEstimation() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        bookingType: 'One Way',
         origin: {
           placeId: state.pickupPlaceId,
           lat: state.pickupCoords?.lat,
@@ -2509,7 +2572,8 @@ async function triggerFareEstimation() {
           placeId: state.destPlaceId,
           lat: state.destCoords?.lat,
           lng: state.destCoords?.lng
-        }
+        },
+        dateTime: `${$('#input-date')?.value || ''} ${$('#input-time')?.value || ''}`
       })
     });
 

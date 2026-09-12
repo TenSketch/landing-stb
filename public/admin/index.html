@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing Admin Panel — STB Singapore</title>
+  <link rel="icon" href="/stb-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+
+  <!-- AUTHENTICATION OVERLAY -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-modal">
+      <img src="/stb-logo.png" alt="STB Singapore" class="auth-logo">
+      <h1 class="auth-title">Admin Sign In</h1>
+      <p class="auth-subtitle" id="auth-step-desc">Enter your authorized email address to receive a secure one-time login code.</p>
+
+      <!-- Step 1: Email Form -->
+      <form id="form-request-otp">
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="admin-email-input">Admin Email</label>
+          <input type="email" id="admin-email-input" class="form-input" placeholder="e.g. bala@tensketch.com" required autofocus>
+        </div>
+        <button type="submit" id="btn-send-otp" class="btn-primary" style="width: 100%; margin-top: 8px;">
+          Send Verification Code
+        </button>
+      </form>
+
+      <!-- Step 2: OTP Form -->
+      <form id="form-verify-otp" style="display: none;">
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label">6-Digit Code</label>
+          <input type="text" id="admin-otp-input" class="otp-digit-input" maxlength="6" pattern="[0-9]{6}" placeholder="000000" inputmode="numeric" autocomplete="one-time-code" required>
+        </div>
+        <button type="submit" id="btn-submit-otp" class="btn-primary" style="width: 100%;">
+          Verify & Sign In
+        </button>
+        <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" id="btn-back-email" class="btn-secondary" style="font-size: 0.75rem; padding: 6px 12px;">← Change Email</button>
+          <button type="button" id="btn-resend-otp" class="btn-secondary" style="font-size: 0.75rem; padding: 6px 12px;">Resend Code</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADMIN APPLICATION WRAPPER (HIDDEN UNTIL AUTHENTICATED) -->
+  <div id="admin-app" style="display: none;">
+    <!-- Top Header -->
+    <header class="admin-header">
+      <div class="brand-wrapper">
+        <img src="/stb-logo.png" alt="STB" class="brand-logo">
+        <span class="brand-title">STB Singapore</span>
+        <span class="brand-badge">Pricing Engine</span>
+      </div>
+      <div class="user-controls">
+        <span id="user-email-display" class="user-email-tag">admin@stb</span>
+        <button id="btn-logout" class="btn-logout">Sign Out</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="admin-nav">
+      <button class="nav-tab active" data-tab="tab-distance">Base &amp; KM Fares</button>
+      <button class="nav-tab" data-tab="tab-charter">Hourly &amp; Daily</button>
+      <button class="nav-tab" data-tab="tab-overrides">Route Overrides</button>
+      <button class="nav-tab" data-tab="tab-surcharges">Surcharges</button>
+      <button class="nav-tab" data-tab="tab-audit">Audit History</button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+
+      <!-- TAB 1: BASE & KM PRICING -->
+      <section id="tab-distance" class="view-section active">
+        <div class="admin-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">One-Way Distance Pricing Rules</h2>
+              <p class="card-sub">Configure base fares, per-kilometer rates, and minimum fare thresholds for point-to-point transfers.</p>
+            </div>
+            <button id="btn-save-distance-rules" class="btn-primary">Save Pricing Rules</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Vehicle Category</th>
+                  <th>Base Fare (SGD)</th>
+                  <th>Per KM Rate (SGD)</th>
+                  <th>Minimum Fare (SGD)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="distance-rules-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: HOURLY & DAILY CHARTERS -->
+      <section id="tab-charter" class="view-section">
+        <div class="admin-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Hourly &amp; Daily Charter Rates</h2>
+              <p class="card-sub">Configure dedicated chauffeur hourly disposal and full-day charter rates.</p>
+            </div>
+            <button id="btn-save-charter-rules" class="btn-primary">Save Charter Rates</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Vehicle Category</th>
+                  <th>Hourly Rate (SGD / hr)</th>
+                  <th>Daily Charter Rate (SGD / day)</th>
+                </tr>
+              </thead>
+              <tbody id="charter-rules-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: ROUTE OVERRIDES -->
+      <section id="tab-overrides" class="view-section">
+        <!-- Add Override Card -->
+        <div class="admin-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Add Route-Specific Fixed Price Override</h2>
+              <p class="card-sub">Use Google Places search to lock a fixed transport base fare between specific locations (matched via Google Place IDs).</p>
+            </div>
+          </div>
+
+          <form id="form-add-override">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Vehicle Category</label>
+                <select id="override-vehicle-select" class="form-select" required>
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fixed Override Price (SGD)</label>
+                <div class="input-prefix-wrapper">
+                  <span class="input-prefix">SGD</span>
+                  <input type="number" step="0.5" min="1" id="override-price-input" class="form-input" placeholder="e.g. 65.00" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Pickup Location (Origin)</label>
+                <input type="text" id="override-origin-input" class="form-input" placeholder="Search Place / Airport / Hotel..." required>
+                <input type="hidden" id="override-origin-placeid">
+                <input type="hidden" id="override-origin-name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Drop-off Location (Destination)</label>
+                <input type="text" id="override-dest-input" class="form-input" placeholder="Search Place / Attraction / Hotel..." required>
+                <input type="hidden" id="override-dest-placeid">
+                <input type="hidden" id="override-dest-name">
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="margin-top: 8px;">Add Fixed Route Override</button>
+          </form>
+        </div>
+
+        <!-- Existing Overrides List -->
+        <div class="admin-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Active Route Overrides</h2>
+              <p class="card-sub">Fixed prices that supersede KM-based fallback calculations.</p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Vehicle</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Fixed Base Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="overrides-list-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SURCHARGES -->
+      <section id="tab-surcharges" class="view-section">
+        <div class="admin-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Dynamic Surcharges (Singapore Time / UTC+8)</h2>
+              <p class="card-sub">Configure Night Surcharges, Peak Hour Fees, and time windows. Surcharges are calculated additively against the base fare.</p>
+            </div>
+            <button id="btn-save-surcharges" class="btn-primary">Save Surcharges</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Surcharge Name</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Start Time (SGT)</th>
+                  <th>End Time (SGT)</th>
+                  <th>Applicable Mode</th>
+                  <th>Active</th>
+                </tr>
+              </thead>
+              <tbody id="surcharges-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: AUDIT LOG -->
+      <section id="tab-audit" class="view-section">
+        <div class="admin-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Pricing Change Audit History</h2>
+              <p class="card-sub">Immutable, append-only log of every rate and override adjustment made by administrators.</p>
+            </div>
+            <button id="btn-refresh-audit" class="btn-secondary">↻ Refresh Logs</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Timestamp (SGT)</th>
+                  <th>Admin User</th>
+                  <th>Table</th>
+                  <th>Action</th>
+                  <th>Changes (Before → After)</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ADMIN JAVASCRIPT -->
+  <script src="/admin/admin.js" type="module"></script>
+</body>
+</html>

@@ -1,16 +1,21 @@
-// Local dev server — wraps the same handlers used by Vercel /api/* functions.
-// Not used in production. On Vercel, /api/* files are serverless functions.
+// STB Singapore — Persistent Express Server with Dynamic PostgreSQL Pricing Engine
 import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { randomUUID } from "crypto";
+import crypto from "crypto";
+import cookieParser from "cookie-parser";
+
 import {
   handleCreateBooking, handleGetAssign, handlePostAssign,
   getTransporter, handleEstimateFare,
 } from "./lib/handlers.js";
 import { storageMode } from "./lib/store.js";
+import { query, logAudit, testConnection } from "./lib/db.js";
+import { 
+  requestAdminOtp, verifyAdminOtp, logoutAdminSession, requireAdminAuth 
+} from "./lib/auth.js";
 
 dotenv.config();
 
@@ -23,21 +28,19 @@ try {
   const targetHero = path.join(__dirname, "public", "hero-bg.jpg");
   if (fs.existsSync(artifactHero)) {
     fs.copyFileSync(artifactHero, targetHero);
-    console.log("[HERO-BG] Copied luxury Mercedes skyline image to public/hero-bg.jpg");
   }
 } catch (err) {
-  console.warn("[HERO-BG] Copy fallback skipped:", err.message);
+  // Skip fallback
 }
 
 const app = express();
 const PORT = process.env.PORT || 3003;
 
-// ─── Security Headers (CSP + HSTS + Frame Options + Content Type + XSS + Referrer + Permissions) ───
+// ─── Security Headers ───
 app.use((req, res, next) => {
   const nonce = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36);
   res.locals.nonce = nonce;
 
-  // Content Security Policy
   res.setHeader(
     "Content-Security-Policy",
     [
@@ -70,8 +73,9 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Static assets — mirror how Vercel serves them (from /public folder at root URL)
+// Static assets
 app.use(express.static(path.join(__dirname, "public"), { index: false, extensions: ["html"] }));
 
 // ---------- Warm SMTP + log ----------
@@ -84,7 +88,15 @@ if (transporter) {
 } else {
   console.warn("[SMTP] not configured — bookings will log to console only.");
 }
-console.log("[STORAGE]", storageMode);
+
+// Check DB connectivity
+testConnection().then((dbStatus) => {
+  if (dbStatus.ok) {
+    console.log("[POSTGRESQL] Connected successfully to database at", dbStatus.time);
+  } else {
+    console.warn("[POSTGRESQL] Database connection not ready:", dbStatus.error);
+  }
+});
 
 // ---------- Config (public) ----------
 app.get("/api/config", (_req, res) => {
@@ -97,28 +109,354 @@ app.get("/api/config", (_req, res) => {
 });
 
 // ---------- Health ----------
-app.get("/api/health", (_req, res) => {
+app.get("/api/health", async (_req, res) => {
+  const dbStatus = await testConnection();
   res.json({
     status: "ok",
     service: "STB Singapore",
     smtp: Boolean(transporter),
+    database: dbStatus.ok ? "connected" : "disconnected",
     storage: storageMode,
     node: process.version,
   });
 });
 
-// ---------- Bookings ----------
+// ---------- Customer Bookings (Authoritative Server Validation) ----------
 app.post("/api/bookings", async (req, res) => {
   const baseUrl = `${req.protocol}://${req.get("host")}`;
   const r = await handleCreateBooking(req.body || {}, baseUrl);
   res.status(r.status).json(r.body);
 });
 
-// ---------- Fare Estimation ----------
+// ---------- Customer Fare Estimation ----------
 app.post("/api/estimate", async (req, res) => {
   const referer = req.headers.referer || "https://singaporetourbooking.com/";
   const r = await handleEstimateFare(req.body || {}, referer);
   res.status(r.status).json(r.body);
+});
+
+// ============================================================
+// ADMIN AUTHENTICATION API
+// ============================================================
+app.post("/api/admin/auth/request-otp", async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const result = await requestAdminOtp(req.body.email, baseUrl);
+  res.status(result.status).json(result.body);
+});
+
+app.post("/api/admin/auth/verify-otp", async (req, res) => {
+  const result = await verifyAdminOtp(req.body.email, req.body.otp);
+  if (result.sessionToken) {
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("stb_admin_session", result.sessionToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: "/"
+    });
+  }
+  res.status(result.status).json(result.body);
+});
+
+app.post("/api/admin/auth/logout", async (req, res) => {
+  const token = req.cookies?.stb_admin_session;
+  if (token) {
+    await logoutAdminSession(token);
+  }
+  res.clearCookie("stb_admin_session", { path: "/" });
+  res.json({ success: true, message: "Logged out successfully." });
+});
+
+app.get("/api/admin/auth/me", requireAdminAuth(), (req, res) => {
+  res.json({ success: true, email: req.admin.email });
+});
+
+// ============================================================
+// ADMIN PRICING MANAGEMENT API (Protected)
+// ============================================================
+
+// 1. Fetch full pricing configuration
+app.get("/api/admin/pricing", requireAdminAuth(), async (_req, res) => {
+  try {
+    const [vehiclesRes, rulesRes, overridesRes, surchargesRes] = await Promise.all([
+      query(`SELECT id, name, description, pax_max, is_active FROM vehicle_types ORDER BY id ASC`),
+      query(`
+        SELECT pr.id, pr.vehicle_id, vt.name as vehicle_name, 
+               pr.base_fare, pr.per_km_rate, pr.minimum_fare, pr.hourly_rate, pr.daily_rate, pr.is_active
+        FROM pricing_rules pr
+        JOIN vehicle_types vt ON pr.vehicle_id = vt.id
+        ORDER BY vt.id ASC
+      `),
+      query(`
+        SELECT ro.id, ro.vehicle_id, vt.name as vehicle_name, 
+               ro.origin_place_id, ro.destination_place_id, 
+               ro.origin_display_name, ro.destination_display_name, 
+               ro.fixed_price, ro.is_active, ro.created_at, ro.updated_at
+        FROM route_overrides ro
+        JOIN vehicle_types vt ON ro.vehicle_id = vt.id
+        ORDER BY ro.created_at DESC
+      `),
+      query(`
+        SELECT id, name, type, value, start_time, end_time, applicable_mode, is_active
+        FROM surcharges
+        ORDER BY id ASC
+      `)
+    ]);
+
+    res.json({
+      success: true,
+      vehicles: vehiclesRes.rows,
+      rules: rulesRes.rows,
+      overrides: overridesRes.rows,
+      surcharges: surchargesRes.rows
+    });
+  } catch (err) {
+    console.error("[ADMIN PRICING GET] Error:", err.message);
+    res.status(500).json({ error: "Failed to load pricing configuration." });
+  }
+});
+
+// 2. Update pricing rules (Base fare, KM rate, Min fare, Hourly, Daily)
+app.put("/api/admin/pricing/rules", requireAdminAuth(), async (req, res) => {
+  const { rules } = req.body || {};
+  if (!Array.isArray(rules) || rules.length === 0) {
+    return res.status(400).json({ error: "Invalid rules payload. Expected array of pricing rules." });
+  }
+
+  try {
+    for (const rule of rules) {
+      const { vehicle_id, base_fare, per_km_rate, minimum_fare, hourly_rate, daily_rate, is_active } = rule;
+      
+      // Get existing values for audit log
+      const existing = await query(`SELECT * FROM pricing_rules WHERE vehicle_id = $1`, [vehicle_id]);
+      const oldVals = existing.rows[0] || null;
+
+      const updated = await query(`
+        INSERT INTO pricing_rules (vehicle_id, base_fare, per_km_rate, minimum_fare, hourly_rate, daily_rate, is_active, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        ON CONFLICT (vehicle_id) DO UPDATE
+        SET base_fare = EXCLUDED.base_fare,
+            per_km_rate = EXCLUDED.per_km_rate,
+            minimum_fare = EXCLUDED.minimum_fare,
+            hourly_rate = EXCLUDED.hourly_rate,
+            daily_rate = EXCLUDED.daily_rate,
+            is_active = EXCLUDED.is_active,
+            updated_at = NOW()
+        RETURNING *
+      `, [
+        Number(vehicle_id),
+        parseFloat(base_fare || 0),
+        parseFloat(per_km_rate || 0),
+        parseFloat(minimum_fare || 0),
+        parseFloat(hourly_rate || 0),
+        parseFloat(daily_rate || 0),
+        is_active !== false
+      ]);
+
+      // Record audit history
+      await logAudit({
+        adminEmail: req.admin.email,
+        tableName: "pricing_rules",
+        recordId: vehicle_id,
+        action: oldVals ? "UPDATE" : "INSERT",
+        oldValues: oldVals,
+        newValues: updated.rows[0]
+      });
+    }
+
+    res.json({ success: true, message: "Pricing rules updated successfully." });
+  } catch (err) {
+    console.error("[ADMIN PRICING RULES PUT] Error:", err.message);
+    res.status(500).json({ error: "Failed to update pricing rules: " + err.message });
+  }
+});
+
+// 3. Create route override
+app.post("/api/admin/pricing/overrides", requireAdminAuth(), async (req, res) => {
+  const {
+    vehicle_id, origin_place_id, destination_place_id,
+    origin_display_name, destination_display_name, fixed_price, is_active
+  } = req.body || {};
+
+  if (!vehicle_id || !origin_place_id || !destination_place_id || fixed_price === undefined) {
+    return res.status(400).json({ error: "Missing required fields for route override." });
+  }
+
+  try {
+    const insertRes = await query(`
+      INSERT INTO route_overrides 
+        (vehicle_id, origin_place_id, destination_place_id, origin_display_name, destination_display_name, fixed_price, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (vehicle_id, origin_place_id, destination_place_id) DO UPDATE
+      SET fixed_price = EXCLUDED.fixed_price,
+          origin_display_name = EXCLUDED.origin_display_name,
+          destination_display_name = EXCLUDED.destination_display_name,
+          is_active = EXCLUDED.is_active,
+          updated_at = NOW()
+      RETURNING *
+    `, [
+      Number(vehicle_id),
+      origin_place_id.trim(),
+      destination_place_id.trim(),
+      (origin_display_name || "Custom Pickup").trim(),
+      (destination_display_name || "Custom Dropoff").trim(),
+      parseFloat(fixed_price),
+      is_active !== false
+    ]);
+
+    const record = insertRes.rows[0];
+    await logAudit({
+      adminEmail: req.admin.email,
+      tableName: "route_overrides",
+      recordId: record.id,
+      action: "INSERT",
+      oldValues: null,
+      newValues: record
+    });
+
+    res.json({ success: true, override: record });
+  } catch (err) {
+    console.error("[ADMIN OVERRIDE POST] Error:", err.message);
+    res.status(500).json({ error: "Failed to save route override: " + err.message });
+  }
+});
+
+// 4. Update route override
+app.put("/api/admin/pricing/overrides/:id", requireAdminAuth(), async (req, res) => {
+  const { id } = req.params;
+  const { fixed_price, is_active } = req.body || {};
+
+  try {
+    const existing = await query(`SELECT * FROM route_overrides WHERE id = $1`, [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: "Route override not found." });
+    }
+
+    const oldVals = existing.rows[0];
+    const updateRes = await query(`
+      UPDATE route_overrides
+      SET fixed_price = COALESCE($1, fixed_price),
+          is_active = COALESCE($2, is_active),
+          updated_at = NOW()
+      WHERE id = $3
+      RETURNING *
+    `, [
+      fixed_price !== undefined ? parseFloat(fixed_price) : null,
+      is_active !== undefined ? Boolean(is_active) : null,
+      id
+    ]);
+
+    const updated = updateRes.rows[0];
+    await logAudit({
+      adminEmail: req.admin.email,
+      tableName: "route_overrides",
+      recordId: id,
+      action: "UPDATE",
+      oldValues: oldVals,
+      newValues: updated
+    });
+
+    res.json({ success: true, override: updated });
+  } catch (err) {
+    console.error("[ADMIN OVERRIDE PUT] Error:", err.message);
+    res.status(500).json({ error: "Failed to update route override." });
+  }
+});
+
+// 5. Delete route override
+app.delete("/api/admin/pricing/overrides/:id", requireAdminAuth(), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const existing = await query(`SELECT * FROM route_overrides WHERE id = $1`, [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: "Route override not found." });
+    }
+
+    const oldVals = existing.rows[0];
+    await query(`DELETE FROM route_overrides WHERE id = $1`, [id]);
+
+    await logAudit({
+      adminEmail: req.admin.email,
+      tableName: "route_overrides",
+      recordId: id,
+      action: "DELETE",
+      oldValues: oldVals,
+      newValues: null
+    });
+
+    res.json({ success: true, message: "Route override deleted." });
+  } catch (err) {
+    console.error("[ADMIN OVERRIDE DELETE] Error:", err.message);
+    res.status(500).json({ error: "Failed to delete route override." });
+  }
+});
+
+// 6. Update surcharges
+app.put("/api/admin/pricing/surcharges", requireAdminAuth(), async (req, res) => {
+  const { surcharges } = req.body || {};
+  if (!Array.isArray(surcharges)) {
+    return res.status(400).json({ error: "Invalid surcharges payload." });
+  }
+
+  try {
+    for (const sc of surcharges) {
+      const { id, name, type, value, start_time, end_time, applicable_mode, is_active } = sc;
+      const existing = await query(`SELECT * FROM surcharges WHERE id = $1`, [id]);
+      const oldVals = existing.rows[0] || null;
+
+      const updateRes = await query(`
+        UPDATE surcharges
+        SET name = COALESCE($1, name),
+            type = COALESCE($2, type),
+            value = COALESCE($3, value),
+            start_time = COALESCE($4, start_time),
+            end_time = COALESCE($5, end_time),
+            applicable_mode = COALESCE($6, applicable_mode),
+            is_active = COALESCE($7, is_active),
+            updated_at = NOW()
+        WHERE id = $8
+        RETURNING *
+      `, [
+        name, type, value !== undefined ? parseFloat(value) : null,
+        start_time, end_time, applicable_mode,
+        is_active !== undefined ? Boolean(is_active) : null,
+        id
+      ]);
+
+      if (updateRes.rows.length > 0) {
+        await logAudit({
+          adminEmail: req.admin.email,
+          tableName: "surcharges",
+          recordId: id,
+          action: "UPDATE",
+          oldValues: oldVals,
+          newValues: updateRes.rows[0]
+        });
+      }
+    }
+
+    res.json({ success: true, message: "Surcharges updated successfully." });
+  } catch (err) {
+    console.error("[ADMIN SURCHARGES PUT] Error:", err.message);
+    res.status(500).json({ error: "Failed to update surcharges: " + err.message });
+  }
+});
+
+// 7. Get Audit Log (Append-only read log)
+app.get("/api/admin/audit", requireAdminAuth(), async (_req, res) => {
+  try {
+    const result = await query(`
+      SELECT id, admin_email, table_name, record_id, action, old_values, new_values, changed_at
+      FROM pricing_audit_history
+      ORDER BY changed_at DESC
+      LIMIT 100
+    `);
+    res.json({ success: true, logs: result.rows });
+  } catch (err) {
+    console.error("[ADMIN AUDIT GET] Error:", err.message);
+    res.status(500).json({ error: "Failed to load audit history." });
+  }
 });
 
 // ---------- Assign (GET form, POST save) ----------
@@ -144,11 +482,16 @@ app.post(["/assign/:voucherCode", "/api/assign/:voucherCode"], async (req, res) 
   res.status(r.status).send(r.html);
 });
 
+// ---------- Admin App Route ----------
+app.get(["/admin", "/admin/*"], (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin", "index.html"));
+});
+
 // ---------- SPA-ish fallback ----------
 app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`STB Singapore local dev server on http://localhost:${PORT}`);
+  console.log(`STB Singapore server running on http://localhost:${PORT}`);
 });

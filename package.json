@@ -6,13 +6,18 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
+    "dev:all": "node scripts/migrate.js && node server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "test": "node backend/tests/pricing_engine.test.js && node backend/tests/auth_and_audit.test.js",
     "build:css": "tailwindcss -i ./public/src/input.css -o ./public/src/tailwind.css --minify"
   },
   "dependencies": {
     "@vercel/kv": "^3.0.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
-    "nodemailer": "^9.0.4"
+    "nodemailer": "^9.0.4",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.1"
