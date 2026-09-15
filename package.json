@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev:all": "node scripts/migrate.js && node server.js",
     "db:migrate": "node scripts/migrate.js",
-    "test": "node backend/tests/pricing_engine.test.js && node backend/tests/auth_and_audit.test.js",
+    "test": "node backend/tests/pricing_engine.test.js && node backend/tests/auth_and_audit.test.js && node backend/tests/platform_hardening.test.js",
     "build:css": "tailwindcss -i ./public/src/input.css -o ./public/src/tailwind.css --minify"
   },
   "dependencies": {

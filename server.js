@@ -16,6 +16,9 @@ import { query, logAudit, testConnection } from "./lib/db.js";
 import { 
   requestAdminOtp, verifyAdminOtp, logoutAdminSession, requireAdminAuth 
 } from "./lib/auth.js";
+import apiRouter from "./lib/api.js";
+import { optionalCustomerAuth } from "./lib/customerAuth.js";
+import { getPublicBrandConfig, getBookingConfig, getContentConfig, getCurrencyConfig } from "./lib/settings.js";
 
 dotenv.config();
 
@@ -99,13 +102,43 @@ testConnection().then((dbStatus) => {
 });
 
 // ---------- Config (public) ----------
-app.get("/api/config", (_req, res) => {
-  res.json({
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
-    brandName: process.env.BRAND_NAME || "STB Singapore",
-    contactPhone: process.env.CONTACT_PHONE || "+65 9062 9107",
-    adminWhatsApp: process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || "+6590629107",
-  });
+app.get("/api/config", async (_req, res) => {
+  try {
+    res.json({
+      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+      brand: await getPublicBrandConfig(),
+      booking: await getBookingConfig(),
+      content: await getContentConfig(),
+      currency: await getCurrencyConfig()
+    });
+  } catch (err) {
+    console.warn("[Config] failed to load dynamic config:", err.message);
+    res.json({
+      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+      brand: {
+        name: process.env.BRAND_NAME || "STB Singapore",
+        tagline: process.env.BRAND_TAGLINE || "Majestic Hospitality Since 2014",
+        phone: process.env.CONTACT_PHONE || "+65 9062 9107",
+        whatsapp: process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || "+659****9107"
+      },
+      content: {}
+    });
+  }
+});
+
+// Mount new admin/customer API routes (these handle /api/admin/* and /api/*)
+app.use("/api", apiRouter);
+
+// ---------- Customer Bookings (Authoritative Server Validation) ----------
+app.post("/api/bookings", optionalCustomerAuth, async (req, res) => {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const payload = req.body || {};
+  // Link logged-in customer if present and no customer_id provided
+  if (req.customer && !payload.customerId) {
+    payload.customerId = req.customer.id;
+  }
+  const r = await handleCreateBooking(payload, baseUrl);
+  res.status(r.status).json(r.body);
 });
 
 // ---------- Health ----------
@@ -119,13 +152,6 @@ app.get("/api/health", async (_req, res) => {
     storage: storageMode,
     node: process.version,
   });
-});
-
-// ---------- Customer Bookings (Authoritative Server Validation) ----------
-app.post("/api/bookings", async (req, res) => {
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
-  const r = await handleCreateBooking(req.body || {}, baseUrl);
-  res.status(r.status).json(r.body);
 });
 
 // ---------- Customer Fare Estimation ----------

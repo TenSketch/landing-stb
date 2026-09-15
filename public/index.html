@@ -219,7 +219,7 @@
           <img src="/stb-logo.png" alt="Singapore Tour Booking Logo" class="h-12 w-auto object-contain" />
           <div class="leading-tight">
             <div class="font-display font-bold text-base sm:text-lg text-stb-charcoal tracking-tight">Singapore Tour Booking</div>
-            <div class="text-[0.6rem] font-bold tracking-[0.2em] text-stb-red uppercase">Official Transport</div>
+            <div class="text-[0.6rem] font-bold tracking-[0.2em] text-stb-red uppercase" data-dynamic="brand-tagline">Official Transport</div>
           </div>
         </a>
 
@@ -254,6 +254,13 @@
               <option value="MYR">MYR (RM)</option>
               <option value="INR">INR (₹)</option>
             </select>
+          </div>
+
+          <div class="relative" id="account-menu">
+            <a href="#" id="account-link" class="stb-nav-link flex items-center gap-2" data-testid="account-link">
+              <span class="material-symbols-outlined">account_circle</span>
+              <span class="hidden sm:inline">Account</span>
+            </a>
           </div>
 
           <button id="nav-btn-book" class="btn-primary" data-testid="nav-book-btn">
@@ -336,8 +343,8 @@
             <!-- Left Copy Card -->
             <div class="reveal text-white text-center flex flex-col items-center justify-center lg:text-left lg:items-start mb-4 lg:mb-0" data-testid="hero-copy">
               <!-- Main H1 -->
-              <h1 class="text-2xl sm:text-3xl lg:text-5xl font-display font-medium leading-tight text-white mb-2 lg:mb-4 text-center lg:text-left">
-                Singapore Airport Transfer & Private Transport
+              <h1 class="text-2xl sm:text-3xl lg:text-5xl font-display font-medium leading-tight text-white mb-2 lg:mb-4 text-center lg:text-left"><span data-dynamic="brand-name">
+                Singapore Airport Transfer & Private Transport</span>
               </h1>
 
               <!-- Subtitle -->
@@ -1415,5 +1422,23 @@
         });
       }
     </script>
-  </body>
+    <script src="/src/customer-app.js" type="module"></script>
+
+<script>
+(function(){
+  function apply(cfg){
+    if(!cfg || !cfg.brand) return;
+    document.querySelectorAll('[data-dynamic]').forEach(function(el){
+      var key=el.getAttribute('data-dynamic');
+      if(key==='brand-name' && cfg.brand.name) el.textContent=cfg.brand.name;
+      if(key==='brand-tagline' && cfg.brand.tagline) el.textContent=cfg.brand.tagline;
+      if(key==='brand-phone' && cfg.brand.phone){ el.textContent=cfg.brand.phone; if(el.tagName==='A') el.href='tel:'+cfg.brand.phone.replace(/\s/g,''); }
+      if(key==='brand-email' && cfg.brand.email){ el.textContent=cfg.brand.email; if(el.tagName==='A') el.href='mailto:'+cfg.brand.email; }
+      if(key==='brand-whatsapp' && cfg.brand.whatsapp){ el.textContent=cfg.brand.whatsapp; if(el.tagName==='A') el.href='https://wa.me/'+cfg.brand.whatsapp.replace(/\D/g,''); }
+    });
+  }
+  fetch('/api/config').then(r=>r.json()).then(apply).catch(function(e){console.warn('Dynamic config load failed',e);});
+})();
+</script>
+</body>
 </html>

@@ -1,0 +1,12 @@
+{
+  "name": "STB Singapore Admin",
+  "short_name": "STB Admin",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#FBF7F0",
+  "theme_color": "#E31E24",
+  "icons": [
+    { "src": "/stb-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/stb-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
