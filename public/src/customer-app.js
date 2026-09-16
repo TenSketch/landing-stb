@@ -8,6 +8,7 @@
 
   let customer = null;
   let appConfig = {};
+  let accountMenuBound = false;
 
   async function api(path, options = {}) {
     const url = path.startsWith('/api') ? path : `/api${path}`;
@@ -50,11 +51,10 @@
     try {
       const data = await api('/auth/session');
       customer = data.customer;
-      updateAccountUI();
     } catch (e) {
       customer = null;
-      updateAccountUI();
     }
+    updateAccountUI();
   }
 
   function updateAccountUI() {
@@ -62,7 +62,7 @@
     if (!container) return;
     if (customer) {
       container.innerHTML = `
-        <button id="account-btn" class="stb-nav-link flex items-center gap-2">
+        <button id="account-btn" class="stb-nav-link flex items-center gap-2" data-action="toggle-dropdown">
           <span class="material-symbols-outlined">account_circle</span>
           <span class="hidden sm:inline">${escapeHtml(customer.name)}</span>
         </button>
@@ -73,38 +73,42 @@
         </div>`;
     } else {
       container.innerHTML = `
-        <button id="account-btn" class="stb-nav-link flex items-center gap-2">
+        <button id="account-btn" class="stb-nav-link flex items-center gap-2" data-action="open-auth">
           <span class="material-symbols-outlined">account_circle</span>
           <span class="hidden sm:inline">Account</span>
         </button>`;
     }
-    bindAccountMenu();
   }
 
   function bindAccountMenu() {
-    const btn = $('#account-btn');
-    const drop = $('#account-dropdown');
-    if (!btn) return;
-    btn.addEventListener('click', (e) => {
+    if (accountMenuBound) return;
+    const container = $('#account-menu');
+    if (!container) return;
+    container.addEventListener('click', async (e) => {
+      const actionEl = e.target.closest('[data-action]');
+      if (!actionEl) return;
       e.preventDefault();
-      if (!customer) return openAuthModal();
-      drop?.classList.toggle('hidden');
+      e.stopPropagation();
+      const action = actionEl.dataset.action;
+      if (action === 'open-auth') return openAuthModal();
+      if (action === 'toggle-dropdown') {
+        const drop = $('#account-dropdown');
+        drop?.classList.toggle('hidden');
+        return;
+      }
+      $('#account-dropdown')?.classList.add('hidden');
+      if (action === 'profile') openProfileModal();
+      if (action === 'bookings') openBookingsModal();
+      if (action === 'logout') { await api('/auth/logout', { method: 'POST' }); customer = null; updateAccountUI(); }
     });
-    $$('#account-dropdown [data-action]').forEach(a => {
-      a.addEventListener('click', async (e) => {
-        e.preventDefault();
-        $('#account-dropdown')?.classList.add('hidden');
-        const action = a.dataset.action;
-        if (action === 'profile') openProfileModal();
-        if (action === 'bookings') openBookingsModal();
-        if (action === 'logout') { await api('/auth/logout', { method: 'POST' }); customer = null; updateAccountUI(); }
-      });
-    });
+    accountMenuBound = true;
   }
+
+  window.openStbAuthModal = () => openAuthModal();
 
   function openAuthModal() {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4';
+    modal.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 stb-auth-modal';
     modal.innerHTML = `
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <button class="absolute top-4 right-4 text-gray-500 hover:text-black" id="close-auth"><span class="material-symbols-outlined">close</span></button>
@@ -177,7 +181,7 @@
   async function openBookingsModal() {
     const data = await api('/customer/bookings');
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4';
+    modal.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 stb-bookings-modal';
     const rows = data.bookings?.length ? data.bookings.map(b => `
       <tr class="border-b border-[#E8E4DE]">
         <td class="py-3 px-2 font-bold">${escapeHtml(b.voucher_code)}</td>
@@ -209,7 +213,7 @@
 
   function openProfileModal() {
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4';
+    modal.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 stb-profile-modal';
     modal.innerHTML = `
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <button class="absolute top-4 right-4 text-gray-500 hover:text-black" id="close-profile"><span class="material-symbols-outlined">close</span></button>
@@ -249,6 +253,7 @@
   }
 
   function init() {
+    bindAccountMenu();
     loadConfig();
     loadSession();
     registerServiceWorker();

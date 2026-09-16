@@ -1,5 +1,5 @@
 // STB Singapore — Service Worker (PWA)
-const CACHE_NAME = 'stb-v1';
+const CACHE_NAME = 'stb-v2';
 const PRECACHE = [
   '/',
   '/index.html',

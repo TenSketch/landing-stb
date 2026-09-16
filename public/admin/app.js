@@ -153,9 +153,11 @@ function renderOtp(email) {
 async function loadPermissions() {
   try {
     const session = await api('/auth/session');
-    permissions = new Set(session.isSuper ? ['*'] : []);
+    permissions = new Set(session.isSuper ? ['*'] : (session.permissions || []));
     currentAdmin = session.admin;
-  } catch (e) {}
+  } catch (e) {
+    permissions = new Set();
+  }
 }
 
 // Layout
@@ -244,7 +246,8 @@ async function navigate(view) {
     else if (view === 'audit') await renderAudit();
     else content.innerHTML = '<div class="empty-state"><p>Page not found.</p></div>';
   } catch (err) {
-    content.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">error</span><p>Failed to load ${view}.</p></div>`;
+    console.error(`[navigate:${view}]`, err);
+    content.innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">error</span><p>Failed to load ${view}: ${escapeHtml(err.message || 'unknown error')}</p></div>`;
   }
 }
 
@@ -543,66 +546,203 @@ async function renderPayments() {
 }
 
 // Integrations
+const INTEGRATION_FIELDS = {
+  EMAIL: [
+    { key: 'host', label: 'SMTP Host', type: 'text', secret: false, required: true },
+    { key: 'port', label: 'SMTP Port', type: 'number', secret: false, required: true, default: 587 },
+    { key: 'secure', label: 'Use SSL/465', type: 'checkbox', secret: false, default: false },
+    { key: 'user', label: 'SMTP Username', type: 'text', secret: false, required: true },
+    { key: 'password', label: 'SMTP Password', type: 'password', secret: true, required: true },
+    { key: 'from', label: 'From Address', type: 'text', secret: false, required: true, placeholder: 'STB \u003cbala@example.com\u003e' }
+  ],
+  SMS: [
+    { key: 'providerKey', label: 'Provider (twilio | msg91 | ...)', type: 'text', secret: false, required: true, default: 'twilio' },
+    { key: 'senderId', label: 'Sender ID', type: 'text', secret: false, required: true },
+    { key: 'accountSid', label: 'Account SID / Username', type: 'text', secret: false, required: true },
+    { key: 'authToken', label: 'Auth Token / API Key', type: 'password', secret: true, required: true },
+    { key: 'region', label: 'Region', type: 'text', secret: false }
+  ],
+  WHATSAPP: [
+    { key: 'providerKey', label: 'Provider (twilio | wati | 360dialog)', type: 'text', secret: false, required: true, default: 'twilio' },
+    { key: 'senderNumber', label: 'Sender Number', type: 'text', secret: false, required: true },
+    { key: 'apiKey', label: 'API Key / Token', type: 'password', secret: true, required: true },
+    { key: 'fallbackEnabled', label: 'Enable wa.me fallback', type: 'checkbox', secret: false, default: true }
+  ],
+  FIREBASE: [
+    { key: 'projectId', label: 'Firebase Project ID', type: 'text', secret: false, required: true },
+    { key: 'clientEmail', label: 'Service Account Client Email', type: 'text', secret: false, required: true },
+    { key: 'privateKey', label: 'Service Account Private Key', type: 'textarea', secret: true, required: true },
+    { key: 'serverKey', label: 'Legacy Server Key (optional)', type: 'password', secret: true }
+  ],
+  PAYMENT: [
+    { key: 'providerKey', label: 'Provider (stripe | billdesk | razorpay)', type: 'text', secret: false, required: true, default: 'stripe' },
+    { key: 'publishableKey', label: 'Publishable Key', type: 'text', secret: false },
+    { key: 'secretKey', label: 'Secret Key', type: 'password', secret: true },
+    { key: 'webhookSecret', label: 'Webhook Secret', type: 'password', secret: true }
+  ],
+  EFC: [
+    { key: 'providerKey', label: 'Provider Name', type: 'text', secret: false, required: true, default: 'efc' },
+    { key: 'merchantId', label: 'Merchant ID', type: 'text', secret: false, required: true },
+    { key: 'apiKey', label: 'API Key', type: 'password', secret: true, required: true },
+    { key: 'endpoint', label: 'API Endpoint', type: 'text', secret: false }
+  ]
+};
+
+function integrationFormHtml(type, data = null) {
+  const cfg = data?.config || {};
+  const secrets = data?.secrets || {};
+  const fields = INTEGRATION_FIELDS[type] || [];
+  const providerKeyValue = cfg.providerKey || data?.provider_key || secrets.providerKey || '';
+  const common = `
+    <div class="form-group"><label class="form-label">Provider Type</label><select id="i-type" class="form-select" ${data ? 'disabled' : ''}>${Object.keys(INTEGRATION_FIELDS).map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+    <div class="form-group"><label class="form-label">Display Name</label><input type="text" id="i-name" class="form-input" value="${escapeHtml(data?.display_name || '')}" placeholder="e.g. Gmail SMTP"></div>
+    <div class="form-group"><label class="form-label">Mode</label><select id="i-mode" class="form-select"><option value="sandbox" ${(data?.mode || 'sandbox') === 'sandbox' ? 'selected' : ''}>Sandbox</option><option value="live" ${data?.mode === 'live' ? 'selected' : ''}>Live</option></select></div>
+    <div class="form-group"><label class="form-label">Enabled</label><select id="i-enabled" class="form-select"><option value="true" ${data?.enabled !== false ? 'selected' : ''}>Yes</option><option value="false" ${data?.enabled === false ? 'selected' : ''}>No</option></select></div>
+  `;
+  const fieldsHtml = fields.map(f => {
+    const val = cfg[f.key] ?? secrets[f.key] ?? f.default ?? '';
+    const isCheck = f.type === 'checkbox';
+    const inputId = `i-f-${f.key}`;
+    const checkAttr = isCheck && val ? 'checked' : '';
+    const input = f.type === 'textarea'
+      ? `<textarea id="${inputId}" class="form-textarea" rows="4" ${f.required ? 'required' : ''} placeholder="${escapeHtml(f.placeholder || '')}">${escapeHtml(val)}</textarea>`
+      : `<input type="${f.type}" id="${inputId}" class="form-input" value="${isCheck ? '' : escapeHtml(val)}" ${checkAttr} ${f.required ? 'required' : ''} placeholder="${escapeHtml(f.placeholder || '')}">`;
+    return `<div class="form-group" style="${f.type === 'textarea' || f.key === 'privateKey' ? 'grid-column:1/-1;' : ''}"><label class="form-label">${escapeHtml(f.label)}${f.secret ? ' (encrypted)' : ''}</label>${input}</div>`;
+  }).join('');
+  return `<form id="integration-form" class="form-grid" data-type="${type}">${common}${fieldsHtml}</form>`;
+}
+
+function getIntegrationFormData(type) {
+  const fields = INTEGRATION_FIELDS[type] || [];
+  const config = {};
+  const secrets = {};
+  fields.forEach(f => {
+    const el = $(`#i-f-${f.key}`);
+    let value = el ? (f.type === 'checkbox' ? el.checked : el.value.trim()) : (f.default ?? '');
+    if (f.type === 'number') value = Number(value) || 0;
+    if (f.secret) secrets[f.key] = value;
+    else config[f.key] = value;
+  });
+  return {
+    providerType: type,
+    providerKey: config.providerKey || (type === 'EMAIL' ? 'smtp' : type.toLowerCase()),
+    displayName: $('#i-name').value.trim(),
+    mode: $('#i-mode').value,
+    enabled: $('#i-enabled').value === 'true',
+    config,
+    secrets
+  };
+}
+
 async function renderIntegrations() {
-  const integrations = await api('/integrations');
+  const { integrations = [] } = await api('/integrations');
   const canManage = hasPerm('integrations.manage');
   $('#page-title').textContent = 'Integrations';
   $('#page-content').innerHTML = `
     <div class="admin-card">
       <div class="card-header">
-        <div><div class="card-title">Integrations</div><div class="card-sub">Configure providers for Email, SMS, WhatsApp, Payments, Firebase, EFC.</div></div>
+        <div><div class="card-title">Provider Integrations</div><div class="card-sub">Configure SMTP, SMS, WhatsApp, Firebase, EFC, and payment gateways (payment is scaffolded for future use).</div></div>
         ${canManage ? '<button class="btn-primary" id="btn-add-integration">Add Integration</button>' : ''}
       </div>
       <div class="table-responsive">
         <table class="admin-table">
-          <thead><tr><th>Type</th><th>Provider</th><th>Display Name</th><th>Mode</th><th>Enabled</th><th>Default</th></tr></thead>
+          <thead><tr><th>Type</th><th>Provider</th><th>Display Name</th><th>Mode</th><th>Enabled</th><th>Default</th><th>Actions</th></tr></thead>
           <tbody>${integrations.map(i => `<tr data-id="${i.id}">
-            <td>${i.provider_type}</td>
-            <td>${i.provider_key}</td>
+            <td><strong>${i.provider_type}</strong></td>
+            <td>${escapeHtml(i.provider_key)}</td>
             <td>${escapeHtml(i.display_name || '-')}</td>
-            <td>${i.mode || '-'}</td>
+            <td><span class="badge ${i.mode === 'live' ? 'badge-active' : 'badge-pending'}">${i.mode || '-'}</span></td>
             <td>${i.enabled ? 'Yes' : 'No'}</td>
             <td>${i.is_default ? 'Yes' : 'No'}</td>
+            <td>
+              ${canManage ? `<button class="btn-ghost btn-sm btn-edit-integration">Edit</button>` : ''}
+              ${canManage && i.provider_type !== 'PAYMENT' ? `<button class="btn-ghost btn-sm btn-test-integration">Test</button>` : ''}
+              ${canManage ? `<button class="btn-ghost btn-sm btn-default-integration" ${i.is_default ? 'disabled' : ''}>Set Default</button>` : ''}
+              ${canManage ? `<button class="btn-danger btn-sm btn-delete-integration">Delete</button>` : ''}
+            </td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
     </div>`;
 
-  if (canManage) {
-    $('#btn-add-integration').addEventListener('click', () => {
-      showModal('Add Integration', `
-        <form id="integration-form" class="form-grid">
-          <div class="form-group"><label class="form-label">Provider Type</label>
-            <select id="i-type" class="form-select">
-              <option value="EMAIL">EMAIL</option><option value="PAYMENT">PAYMENT</option><option value="SMS">SMS</option>
-              <option value="WHATSAPP">WHATSAPP</option><option value="FIREBASE">FIREBASE</option><option value="EFC">EFC</option>
-            </select>
-          </div>
-          <div class="form-group"><label class="form-label">Provider Key</label><input type="text" id="i-key" class="form-input" required></div>
-          <div class="form-group"><label class="form-label">Display Name</label><input type="text" id="i-name" class="form-input"></div>
-          <div class="form-group"><label class="form-label">Mode</label><input type="text" id="i-mode" class="form-input" value="sandbox"></div>
-          <div class="form-group"><label class="form-label">Enabled</label><select id="i-enabled" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div>
-          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Configuration JSON</label><textarea id="i-config" class="form-textarea">{}\u003c/textarea></div>
-          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Secrets JSON (encrypted server-side)</label><textarea id="i-secrets" class="form-textarea" placeholder="{"apiKey":"..."}"\u003e{}\u003c/textarea></div>
-        </form>`, async () => {
-        const body = {
-          providerType: $('#i-type').value,
-          providerKey: $('#i-key').value.trim(),
-          displayName: $('#i-name').value.trim(),
-          mode: $('#i-mode').value.trim(),
-          enabled: $('#i-enabled').value === 'true',
-          config: JSON.parse($('#i-config').value || '{}'),
-          secrets: JSON.parse($('#i-secrets').value || '{}')
-        };
-        await api('/integrations', { method: 'POST', body: JSON.stringify(body) });
-        showToast('Integration added', 'success');
-        navigate('integrations');
-      });
+  if (!canManage) return;
+
+  $('#btn-add-integration').addEventListener('click', () => openIntegrationModal());
+
+  $$('.btn-edit-integration').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('tr').dataset.id;
+      const { integration } = await api(`/integrations/${id}`);
+      openIntegrationModal(integration);
     });
+  });
+
+  $$('.btn-test-integration').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('tr').dataset.id;
+      await testIntegration(id);
+    });
+  });
+
+  $$('.btn-default-integration').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('tr').dataset.id;
+      await api(`/integrations/${id}/default`, { method: 'PUT' });
+      showToast('Default provider set', 'success');
+      navigate('integrations');
+    });
+  });
+
+  $$('.btn-delete-integration').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('tr').dataset.id;
+      if (!confirm('Delete this integration?')) return;
+      await api(`/integrations/${id}`, { method: 'DELETE' });
+      showToast('Integration deleted', 'success');
+      navigate('integrations');
+    });
+  });
+}
+
+function openIntegrationModal(data = null) {
+  const type = data?.provider_type || 'EMAIL';
+  const title = data ? `Edit ${type} Integration` : 'Add Integration';
+  const html = integrationFormHtml(type, data);
+  showModal(title, html, async () => {
+    const selectedType = data ? type : $('#i-type').value;
+    const body = getIntegrationFormData(selectedType);
+    if (data) body.id = data.id;
+    await api(data ? `/integrations/${data.id}` : '/integrations', { method: data ? 'PUT' : 'POST', body: JSON.stringify(body) });
+    showToast(data ? 'Integration updated' : 'Integration added', 'success');
+    navigate('integrations');
+  }, (overlay) => {
+    const typeSelect = $('#i-type', overlay);
+    if (typeSelect && !data) {
+      typeSelect.addEventListener('change', () => {
+        const newType = typeSelect.value;
+        $('#modal-body', overlay).innerHTML = integrationFormHtml(newType, null);
+      });
+    }
+  });
+}
+
+async function testIntegration(id) {
+  try {
+    const { integration } = await api(`/integrations/${id}`);
+    const testTo = prompt(`Send test ${integration.provider_type.toLowerCase()}?\nEmail: enter recipient address and click OK.\nSMS/WhatsApp: enter phone number.\nOther: leave blank to validate config only.`);
+    if (testTo === null) return;
+    const payload = {};
+    if (integration.provider_type === 'EMAIL') payload.to = testTo.trim();
+    else if (['SMS', 'WHATSAPP'].includes(integration.provider_type)) payload.to = testTo.trim();
+    const result = await api(`/integrations/${id}/test`, { method: 'POST', body: JSON.stringify(payload) });
+    if (result.success) showToast('Test passed', 'success');
+    else showToast(result.error || 'Test failed', 'error');
+  } catch (err) {
+    showToast(err.message || 'Test failed', 'error');
   }
 }
 
-function showModal(title, html, onConfirm) {
+function showModal(title, html, onConfirm, onMount) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
@@ -611,7 +751,7 @@ function showModal(title, html, onConfirm) {
         <div class="modal-title">${escapeHtml(title)}</div>
         <button class="btn-ghost" id="modal-close"><span class="material-symbols-outlined">close</span></button>
       </div>
-      <div class="modal-body">${html}</div>
+      <div class="modal-body" id="modal-body">${html}</div>
       <div class="form-actions" style="margin-top:20px;">
         <button class="btn-secondary" id="modal-cancel">Cancel</button>
         <button class="btn-primary" id="modal-confirm">Save</button>
@@ -624,6 +764,7 @@ function showModal(title, html, onConfirm) {
   $('#modal-confirm', overlay).addEventListener('click', async () => {
     try { await onConfirm(); close(); } catch (err) {}
   });
+  if (onMount) onMount(overlay);
 }
 
 // Settings
