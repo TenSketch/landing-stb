@@ -100,11 +100,13 @@ async function runTests() {
   process.env.DATABASE_URL = TEST_DATABASE_URL;
   const { setupInitialAdminPassword, loginAdmin } = await import('../../lib/auth.js');
 
+  const INITIAL_ADMIN = (process.env.INITIAL_ADMIN_EMAIL || 'admin@example.com').trim().toLowerCase();
+
   await test('Admin first-time setup and login', async () => {
     await withTestDb(async () => {
-      const setup = await setupInitialAdminPassword('admin@example.com', 'AdminPass123!');
+      const setup = await setupInitialAdminPassword(INITIAL_ADMIN, 'AdminPass123!');
       assert.strictEqual(setup.success, true);
-      const login = await loginAdmin('admin@example.com', 'AdminPass123!', mockReq());
+      const login = await loginAdmin(INITIAL_ADMIN, 'AdminPass123!', mockReq());
       assert.strictEqual(login.success, true);
       assert.ok(login.sessionToken);
     });
@@ -112,7 +114,7 @@ async function runTests() {
 
   await test('Invalid admin password rejected', async () => {
     await withTestDb(async () => {
-      await assert.rejects(loginAdmin('admin@example.com', 'wrongpass', mockReq()), /Invalid email or password/);
+      await assert.rejects(loginAdmin(INITIAL_ADMIN, 'wrongpass', mockReq()), /Invalid email or password/);
     });
   })();
 
@@ -121,10 +123,10 @@ async function runTests() {
 
   await test('Super admin has all permissions', async () => {
     await withTestDb(async () => {
-      const perms = await getAdminPermissions('admin@example.com');
+      const perms = await getAdminPermissions(INITIAL_ADMIN);
       assert.ok(perms.has('*'));
-      assert.ok(await hasPermission('admin@example.com', 'bookings.view'));
-      assert.ok(await hasPermission('admin@example.com', 'settings.manage'));
+      assert.ok(await hasPermission(INITIAL_ADMIN, 'bookings.view'));
+      assert.ok(await hasPermission(INITIAL_ADMIN, 'settings.manage'));
     });
   })();
 
