@@ -49,7 +49,7 @@ async function runMigrations() {
 
     console.log('🎉 All migrations executed successfully!');
   } catch (err) {
-    console.error('❌ Migration failed:', err.message);
+    console.error('❌ Migration failed:', err.message || err);
     process.exit(1);
   } finally {
     await client.end();

@@ -81,6 +81,55 @@ const DEFAULT_SINGAPORE_LOCATIONS = {
   'Tuas Checkpoint': { lat: 1.3486, lng: 103.6366 },
 };
 
+// ─── Dynamic admin-editable content loader ───
+// Fetches /api/vehicles and /api/content. If admin has populated them, the
+// hardcoded VEHICLES / FAQS / services are overridden with the DB values
+// and a 'dynamicContentLoaded' event is dispatched so sections can re-render.
+let _vehiclesReady = false;
+let _contentReady = false;
+
+async function loadDynamicContent() {
+  try {
+    const [vRes, cRes] = await Promise.all([
+      fetch('/api/vehicles').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/content').then(r => r.ok ? r.json() : null).catch(() => null)
+    ]);
+
+    if (vRes && Array.isArray(vRes.vehicles) && vRes.vehicles.length > 0) {
+      window.__DB_VEHICLES = vRes.vehicles.map(v => ({
+        id: v.slug || ('v' + v.id),
+        name: v.name,
+        fullName: v.full_name || v.name,
+        category: v.category || 'sedan',
+        tag: v.tag || '',
+        tagStyle: v.tag_style || 'gold',
+        pax: v.pax ?? v.pax_max ?? 4,
+        luggage: v.luggage ?? 0,
+        baseFareSGD: v.base_fare_sgd ?? 0,
+        perKmSGD: v.per_km_sgd ?? 0,
+        minFareSGD: v.min_fare_sgd ?? 0,
+        hourlySGD: v.hourly_sgd ?? 0,
+        image: v.image_url || '',
+        fallback: v.fallback_image_url || '',
+        description: v.description || v.description_html || '',
+        features: Array.isArray(v.features_json) ? v.features_json : (typeof v.features_json === 'string' ? JSON.parse(v.features_json) : [])
+      }));
+    }
+
+    if (cRes && Array.isArray(cRes.blocks) && cRes.blocks.length > 0) {
+      window.__DB_CONTENT = cRes.blocks;
+    }
+
+    _vehiclesReady = true;
+    _contentReady = true;
+
+    // Notify any sections that already rendered with hardcoded data
+    document.dispatchEvent(new CustomEvent('dynamicContentLoaded'));
+  } catch (err) {
+    console.warn('[DynamicContent] load failed, using defaults:', err.message);
+  }
+}
+
 const VEHICLES = [
   {
     id: 'alphard',
@@ -275,6 +324,8 @@ function formatCurrency(amountSGD) {
 // INITIALIZATION
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Kick off DB-backed vehicles / FAQ / services / hero fetch in parallel
+  loadDynamicContent();
   initNavScroll();
   initMobileMenu();
   initLanguageAndCurrency();
@@ -379,12 +430,14 @@ async function initGoogleMapsAndPlaces() {
   // Always initialize local presets fallback to show presets when inputs are focused/empty
   setupLocalPresetsFallback();
 
-  if (apiKey) {
+  const isRealApiKey = apiKey && !apiKey.includes('REPLACE_WITH') && !apiKey.includes('YOUR_') && apiKey.length > 15;
+
+  if (isRealApiKey) {
     loadGoogleMapsScript(apiKey, () => {
       setupGooglePlacesAutocomplete();
     });
   } else {
-    console.log('[PLACES] Google Maps API key not yet configured. Local landmark search enabled.');
+    console.log('[PLACES] Google Maps API key not configured or placeholder used. Local landmark search enabled.');
   }
 }
 
@@ -1976,10 +2029,18 @@ function initFleetSection() {
     });
   });
   renderFleetCards('all');
+  // Re-render if DB vehicles arrive after first paint
+  document.addEventListener('dynamicContentLoaded', () => renderFleetCards(state.fleetCategory || 'all'));
+}
+
+function getVehicles() {
+  return (Array.isArray(window.__DB_VEHICLES) && window.__DB_VEHICLES.length > 0)
+    ? window.__DB_VEHICLES
+    : VEHICLES;
 }
 
 function showVehicleSpecs(vid) {
-  const v = VEHICLES.find((x) => x.id === vid);
+  const v = getVehicles().find((x) => x.id === vid);
   if (!v) return;
 
   const content = $('#modal-vehicle-content');
@@ -2046,9 +2107,14 @@ function renderFleetCards(category = 'all') {
   const container = $('#fleet-card-container');
   if (!container) return;
 
+  // Prefer DB-loaded vehicles if available
+  const source = (Array.isArray(window.__DB_VEHICLES) && window.__DB_VEHICLES.length > 0)
+    ? window.__DB_VEHICLES
+    : VEHICLES;
+
   const filtered = category === 'all'
-    ? VEHICLES
-    : VEHICLES.filter((v) => v.category === category);
+    ? source
+    : source.filter((v) => v.category === category);
 
   container.innerHTML = filtered.map((v) => `
     <article class="fleet-card" data-testid="fleet-card-${v.id}">
@@ -2105,7 +2171,7 @@ function renderFleetCards(category = 'all') {
     btn.addEventListener('click', () => {
       const vid = btn.dataset.vid;
       state.selectedVehicleId = vid;
-      const v = VEHICLES.find((x) => x.id === vid);
+      const v = getVehicles().find((x) => x.id === vid);
       if (v) {
         window.selectSimpleVehicle(v.pax <= 4 ? '4-Seater' : '6-Seater');
       }
@@ -2125,6 +2191,21 @@ async function initServiceGrid() {
   try {
     const res = await fetch('/src/services.json');
     SERVICES = await res.json();
+    // If DB content blocks contain service.* entries, override SERVICES with those.
+    document.addEventListener('dynamicContentLoaded', () => {
+      const db = window.__DB_CONTENT || [];
+      const dbServices = db.filter(b => b.category === 'service');
+      if (dbServices.length > 0) {
+        SERVICES = dbServices.map(b => ({
+          id: b.block_key.replace(/^service\./, ''),
+          icon: b.icon || 'directions_car',
+          title: b.title || '',
+          priceSGD: (b.meta_json && b.meta_json.priceSGD) || 0
+        }));
+        renderServiceGrid();
+        initServiceCarousel();
+      }
+    });
     renderServiceGrid();
     initServiceCarousel();
   } catch (err) {
@@ -2239,6 +2320,11 @@ function initDestinations() {
       const loc = card.dataset.location;
       const destInput = $('#dest-input');
       if (destInput && loc) {
+        // Ensure trip mode is point-to-point (one_way) so destination field is visible
+        const oneWayBtn = document.querySelector('.type-btn[data-type="one_way"]');
+        if (oneWayBtn && state.tripMode !== 'one_way') {
+          oneWayBtn.click();
+        }
         destInput.value = loc;
         updateDestState(loc, null, DEFAULT_SINGAPORE_LOCATIONS[loc]);
         scrollToHeroBooking();
@@ -2298,6 +2384,24 @@ function initFAQSection() {
 
   searchInput?.addEventListener('input', () => {
     render(state.faqCategory, searchInput.value);
+  });
+
+  // When DB FAQ blocks arrive, override FAQS and re-render
+  document.addEventListener('dynamicContentLoaded', () => {
+    const db = window.__DB_CONTENT || [];
+    const dbFaqs = db.filter(b => b.category === 'faq' && b.is_active !== false);
+    if (dbFaqs.length > 0) {
+      // Map DB block to FAQ shape; meta_json.cat defaults to 'misc'
+      window.__DB_FAQS = dbFaqs.map(b => ({
+        cat: (b.meta_json && b.meta_json.cat) || 'misc',
+        question: b.title,
+        answer: b.body
+      }));
+      // Patch FAQS lookup via a getter on FAQS would be ideal; simplest: swap in-place
+      FAQS.length = 0;
+      window.__DB_FAQS.forEach(f => FAQS.push(f));
+      render(state.faqCategory || 'all', searchInput?.value || '');
+    }
   });
 }
 

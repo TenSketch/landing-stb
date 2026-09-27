@@ -1,4 +1,10 @@
-// STB Singapore — Admin Panel Frontend Controller
+// ⚠️  DEPRECATED — This file (admin.js) is NO LONGER LOADED.
+// As of commit 18b7850, the admin SPA was refactored and all logic moved to app.js.
+// public/admin/index.html now loads app.js (not admin.js).
+// This file is preserved for historical reference only. Do not modify or re-include it.
+// ---
+// STB Singapore — Admin Panel Frontend Controller (DEPRECATED)
+
 
 let currentPricingData = null;
 let googleMapsLoaded = false;
