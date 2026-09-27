@@ -1,78 +1,108 @@
-# STB Platform Hardening — Implementation Status
+# STB Singapore Tour Booking — Platform Status
 
-> Last updated: 2026-09-15
-> Repository: `/home/bala/Desktop/WEBSITE_PROJECTS/landing-stb`
+> Last updated: 2026-09-27 (commit `15e4184`)
+> Repository: https://github.com/TenSketch/landing-stb
+> Production: Node.js + Express on Hetzner VPS, PostgreSQL
 
-## What is done ✅
+---
 
-### Database
-- All 8 migrations run successfully against `stb_dev`.
-- Roles/permissions, admin users, customers, bookings lifecycle, drivers, vehicles, settings, integrations, audit logs, notification templates seeded.
+## What's Implemented
+
+### Architecture
+- **Subdomain routing**: `admin.*` → Admin SPA, `api.*` → REST API, root → Customer landing
+- **Single Express process** on VPS port 3003, Nginx reverse-proxies subdomains
+- **Cookie-based auth**: HTTP-only, `sameSite=lax`, cross-subdomain for `.singaporetourbooking.com`
+- **10 migrations** (001–010) creating: places, vehicle_types, drivers, roles, permissions, admin_users, admin_sessions, password_reset_tokens, customers, customer_sessions, customer_device_tokens, bookings, booking_status_history, pricing_rules, vehicle_route_overrides, surcharges, system_settings, booking_settings, notification_settings, notification_templates, integration_settings, content_blocks, audit_logs
 
 ### Auth & RBAC
-- Admin password auth with first-time setup, login, logout, session, password reset, optional Super Admin OTP/2FA.
-- Customer register/login/logout/profile/password reset/change password/booking history.
-- Capability-based RBAC with roles SUPER_ADMIN, ADMIN, DISPATCHER, OPERATIONS, VIEWER.
-- Secure sessions with HTTP-only cookies and token hashing.
+- Admin password login + session + optional OTP 2FA for Super Admin
+- Password reset flow (token via email link)
+- Customer register/login/logout/profile/booking history
+- 5 roles: SUPER_ADMIN, ADMIN, DISPATCHER, OPERATIONS, VIEWER
+- Capability-based permissions (`module.action` pattern)
+- Rate limiting on login/OTP/password reset
+- Immutable audit log for security events
 
-### Core libraries
-- `lib/security.js` (scrypt, tokens, OTP, encryption)
-- `lib/ratelimit.js` (in-memory rate limiting)
-- `lib/settings.js` (config getter/setter)
-- `lib/audit.js` (immutable audit logging)
-- `lib/providers/*.js` (base + email/SMS/WhatsApp/payment/Firebase/EFC abstractions)
-- `lib/notifications.js` (notification engine)
-- `lib/customerAuth.js`, `lib/auth.js`, `lib/rbac.js`, `lib/vehicles.js`, `lib/drivers.js`, `lib/integrations.js`, `lib/bookingStatus.js`
+### Admin SPA (`public/admin/app.js`)
+- Dashboard (stats cards + recent bookings)
+- Bookings (list + status change + driver assign)
+- Vehicles (full CRUD: image, features, fares, slug, category, tag)
+- Pricing (rules + route overrides + surcharges)
+- Content (FAQ/services/hero/footer dynamic blocks)
+- Settings (general + booking + notification)
+- Integrations (payment/SMS/WhatsApp/email/Firebase/EFC)
+- Users & Roles (role editor + user CRUD)
+- Audit Logs (filterable)
+- Mobile-responsive sidebar drawer
 
-### API routes
-- `lib/api.js` exposes admin dashboard, users/roles, settings, vehicles, drivers, pricing, bookings, notifications, integrations, audit logs, customer auth, profile, bookings.
-- `server.js` serves public `/api/config` and mounts the new API router; legacy admin OTP endpoints preserved.
+### Customer Website (`public/src/main.js`)
+- Dynamic content from `/api/config` and `/api/content`
+- Vehicle catalog from `/api/vehicles`
+- Booking form: one-way / hourly / daily
+- Google Places Autocomplete for pickup/destination
+- Server-calculated fare estimates
+- Booking confirmation with WhatsApp fallback
+- Guest checkout (no account required)
+- Customer account modal (login/register/profile)
+- Booking history (authenticated customers)
 
-### Admin & Customer UI
-- Admin SPA shell in `public/admin/` with app shell and manifest.
-- Customer UI `public/index.html` has `data-dynamic` attributes and a loader script for brand/contact config.
-- Customer account modal integrated into homepage; opens login/register/profile modal when clicking account icon.
-- PWA service worker updated.
+### API Endpoints
+- Public: `/api/config`, `/api/vehicles`, `/api/content`, `/api/estimate`, `/api/bookings`
+- Admin: auth, dashboard, bookings, vehicles, drivers, pricing, content, settings, integrations, users, roles, audit
+- Customer: register, login, logout, me, bookings, password reset
 
-### Tests
-- `scripts/smoke-test.js` created and passing: **16/16 passed**.
-- `backend/tests/platform_hardening.test.js` added and passing: **10/10 passed**.
-- `npm test` (pricing + auth/audit + platform hardening) passing: **21/21 total**.
+### Integrations (partial)
+- Email: Nodemailer + SMTP — actually sends
+- SMS/WhatsApp/Payment/Firebase/EFC: placeholders (logs only)
+- Google Maps + Places + Routes API
+- Encrypted secrets storage (AES-256-GCM)
 
-### Browser checks
-- Admin login → dashboard renders with all modules.
-- Vehicles page loads category list correctly.
-- Customer account icon opens login modal on homepage.
+---
 
-## What is partially done ⚠️
+## Known Gaps (from Phase 1 audit)
 
-- Admin Panel UI deep CRUD: modules (roles, integrations, templates, pricing rules, driver assignment) have API routes and UI stubs; only vehicles and dashboard were manually exercised in the browser.
-- Real provider credentials remain unconfigured.
+### Critical
+- XSS in `renderAssignPage` (`lib/handlers.js`) — unescaped user data in HTML
+- In-memory rate limiter bypassable in multi-node deployments
+- `updateBooking` cannot clear driver fields (GDPR issue)
+- Provider placeholders: SMS, WhatsApp, Payment, Firebase, EFC don't actually send
 
-## What is not done yet ❌
+### High
+- `createRole` / `assignDriver` not transactional — inconsistent state possible
+- `refreshProviders()` called on every notification — DB round-trip collapse
+- Dashboard loads ALL bookings then filters in JS — memory exhaustion risk
+- `window.prompt()` for driver assignment — no server-side driver validation
+- Hardcoded WhatsApp number in 4 places
+- OTP race condition (attempts check-then-increment not atomic)
+- Silent catch blocks throughout admin SPA — no user feedback on failure
 
-- Real payment/SMS/WhatsApp/Firebase/EFC provider credentials.
-- Production `STB_SECRET_KEY` rotation.
-- CSRF-token header enforcement (deferred; SameSite=Strict cookies currently used).
-- SMTP configured (email still logs to console for local dev).
+### Medium
+- Admin modules not implemented: Customers, Drivers, Notifications, Payments UI
+- Service worker never registered — PWA features inactive
+- `manifest.json` is empty `{}` — PWA not installable
+- No idempotency key on booking — duplicate possible on timeout retry
+- Wrong element IDs for date/time inputs — time-based pricing broken
+- No CSRF token (mitigated by `sameSite=lax` cookies)
+- Migration script non-idempotent — no tracking table
 
-## Next todo list
+### Low
+- `escapeHtml` only covers 4 characters
+- Currency formatting loses decimals for non-JPY/INR
+- Static exchange rates never updated
+- Phone validation too permissive
+- No offline.html fallback page
 
-1. ✅ Run `npm test` and fix regressions — **DONE**.
-2. ✅ Create backend unit tests — **DONE**.
-3. ✅ Manual browser checks for admin dashboard + vehicles, and customer account modal — **DONE**.
-4. ✅ Integrate customer account modals into homepage — **DONE**.
-5. ✅ Configure local SMTP/Google Maps placeholder state — **DONE** (placeholders in `integration_settings`).
-6. ⚠️ Add CSRF protection — **DEFERRED**.
-7. ✅ Final end-to-end smoke test — **DONE** (16/16 passed).
-8. Push to `dev` branch — **READY**.
+**Full audit: see `docs/TECHNICAL_DEBT.md` and `docs/IMPLEMENTATION_ROADMAP.md`**
 
-## Known limitations
+---
 
-- Provider secrets are encrypted at rest with `STB_SECRET_KEY` placeholder value; production needs a real 32-byte hex key.
-- Payment/SMS/WhatsApp/Firebase/EFC vendors need real credentials entered via Admin Panel → Integrations.
-- In-memory rate limiter; production multi-instance deployment needs Redis.
-- SameSite=Strict session cookies require HTTPS for cross-site scenarios; local dev uses plain HTTP.
+## What's Working (smoke tested 2026-09-27)
 
-## Git status
-All changes are local and uncommitted.
+- ✅ `npm run dev` starts cleanly on port 3003
+- ✅ Admin login at `http://admin.localhost:3003/admin`
+- ✅ GET `/api/admin/vehicles` → 200 with full extended fields
+- ✅ PUT `/api/admin/vehicles/1/extended` → 200, DB updated, public API reflects
+- ✅ GET `/api/vehicles` (public) → 200 with correct fares
+- ✅ Dashboard stats load correctly
+- ✅ Content blocks load from DB (no hardcoded fallback)
+- ✅ Migrations 009 + 010 applied cleanly
