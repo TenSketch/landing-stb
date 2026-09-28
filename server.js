@@ -290,6 +290,13 @@ app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ---------- Global error handler (never leak stack traces) ----------
+app.use((err, _req, res, _next) => {
+  const status = err.status || err.statusCode || 500;
+  if (status >= 500) console.error('[ServerError]', err.message);
+  res.status(status).json({ error: status >= 500 ? 'Internal Server Error' : err.message });
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`STB Singapore server running on http://localhost:${PORT}`);
 });
