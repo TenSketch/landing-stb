@@ -127,7 +127,7 @@ function renderAuth() {
     try {
       await api('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
       showToast('If an account exists, a reset link has been sent.', 'success');
-    } catch (err) {}
+    } catch (err) { showToast(err.message, 'error'); }
   });
 }
 
@@ -146,7 +146,7 @@ function renderOtp(email) {
       currentAdmin = data.admin;
       await loadPermissions();
       renderApp();
-    } catch (err) {}
+    } catch (err) { showToast(err.message, 'error'); }
   });
 }
 
@@ -351,6 +351,76 @@ function statusBadge(status) {
   return `<span class="badge ${map[status] || 'badge-pending'}">${status.replace(/_/g, ' ')}</span>`;
 }
 
+function showDriverAssignModal(voucher, drivers) {
+  const existing = (drivers || []).find(d => d.is_active);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:440px;">
+      <div class="modal-header">
+        <h3>Assign Driver</h3>
+        <button class="btn-ghost btn-sm modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0 0 16px;font-size:0.85rem;color:#6B6B6B;">Booking: <strong>${escapeHtml(voucher)}</strong></p>
+        <div class="form-group">
+          <label class="form-label">Select Active Driver</label>
+          <select id="dam-driver" class="form-select">
+            <option value="">— Enter manually —</option>
+            ${(drivers || []).filter(d => d.is_active).map(d =>
+              `<option value="${escapeHtml(d.name)}|||${escapeHtml(d.phone || '')}|||${escapeHtml(d.plate_number || '')}">${escapeHtml(d.name)} ${d.phone ? `(${escapeHtml(d.phone)})` : ''}</option>`
+            ).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Driver Name</label>
+          <input type="text" id="dam-name" class="form-input" placeholder="e.g. Chandran Raj" value="${escapeHtml(existing?.name || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Driver Phone</label>
+          <input type="tel" id="dam-phone" class="form-input" placeholder="+65 9123 4567" value="${escapeHtml(existing?.phone || '')}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vehicle Plate</label>
+          <input type="text" id="dam-plate" class="form-input" placeholder="SGX 1234 A" style="text-transform:uppercase;" value="${escapeHtml(existing?.plate_number || '')}">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary modal-close">Cancel</button>
+        <button class="btn-primary" id="dam-submit">Assign Driver</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  $('#dam-driver').addEventListener('change', () => {
+    const parts = $('#dam-driver').value.split('|||');
+    if (parts.length >= 2) {
+      $('#dam-name').value = parts[0];
+      $('#dam-phone').value = parts[1];
+      if (parts[2]) $('#dam-plate').value = parts[2];
+    }
+  });
+
+  $$('.modal-close', overlay).forEach(btn => btn.addEventListener('click', () => overlay.remove()));
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  $('#dam-submit').addEventListener('click', async () => {
+    const driverName = $('#dam-name').value.trim();
+    const driverPhone = $('#dam-phone').value.trim();
+    const driverPlate = $('#dam-plate').value.trim().toUpperCase();
+    if (!driverName) { showToast('Driver name is required.', 'error'); return; }
+    try {
+      await api(`/bookings/${voucher}/assign-driver`, {
+        method: 'PUT',
+        body: JSON.stringify({ driverName, driverPhone, driverPlate })
+      });
+      showToast('Driver assigned', 'success');
+      overlay.remove();
+      navigate('bookings');
+    } catch (err) { showToast(err.message, 'error'); }
+  });
+}
+
 // Bookings
 async function renderBookings() {
   const { bookings = [] } = await api('/bookings');
@@ -373,21 +443,15 @@ async function renderBookings() {
           await api(`/bookings/${voucher}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
           showToast(`Status updated to ${status}`, 'success');
           navigate('bookings');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     });
 
     $$('.btn-assign-driver').forEach(btn => {
       btn.addEventListener('click', async () => {
         const voucher = btn.closest('tr').dataset.voucher;
-        const driverName = prompt('Enter driver name:');
-        if (!driverName) return;
-        const driverPhone = prompt('Enter driver phone:');
-        try {
-          await api(`/bookings/${voucher}/assign-driver`, { method: 'PUT', body: JSON.stringify({ driverName: driverName.trim(), driverPhone: driverPhone?.trim() || '' }) });
-          showToast('Driver assigned', 'success');
-          navigate('bookings');
-        } catch (err) {}
+        const allDrivers = drivers || [];
+        showDriverAssignModal(voucher, allDrivers);
       });
     });
   }
@@ -549,7 +613,7 @@ async function renderVehicles() {
       await api(`/vehicles/${vehicle.id}/extended`, { method: 'PUT', body: JSON.stringify(extended) });
       showToast('Vehicle added', 'success');
       navigate('vehicles');
-    } catch (err) {}
+    } catch (err) { showToast(err.message, 'error'); }
   });
 
   $$('.btn-edit-vehicle').forEach(btn => btn.addEventListener('click', () => {
@@ -565,7 +629,7 @@ async function renderVehicles() {
       await api(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify({ isActive }) });
       showToast(isActive ? 'Vehicle activated' : 'Vehicle deactivated', 'success');
       navigate('vehicles');
-    } catch (err) {}
+    } catch (err) { showToast(err.message, 'error'); }
   }));
 }
 
@@ -659,7 +723,7 @@ function openVehicleModal(v) {
       overlay.remove();
       showToast('Vehicle updated', 'success');
       navigate('vehicles');
-    } catch (err) {}
+    } catch (err) { showToast(err.message, 'error'); }
   });
 }
 
@@ -765,7 +829,7 @@ async function renderPricing() {
         try {
           await api('/pricing/rules', { method: 'PUT', body: JSON.stringify({ rules: updated }) });
           showToast('Distance rules saved', 'success');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     }
 
@@ -781,7 +845,7 @@ async function renderPricing() {
         try {
           await api('/pricing/rules', { method: 'PUT', body: JSON.stringify({ rules: updated }) });
           showToast('Charter rates saved', 'success');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     }
 
@@ -794,7 +858,7 @@ async function renderPricing() {
           await api(`/pricing/overrides/${id}`, { method: 'DELETE' });
           showToast('Override deleted', 'success');
           navigate('pricing');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     });
 
@@ -810,7 +874,7 @@ async function renderPricing() {
         try {
           await api('/pricing/surcharges', { method: 'PUT', body: JSON.stringify({ surcharges: updated }) });
           showToast('Surcharges saved', 'success');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     }
 
@@ -893,7 +957,7 @@ async function renderContent() {
         await api(`/content/${tr.dataset.id}`, { method: 'DELETE' });
         showToast('Deleted', 'success');
         navigate('content');
-      } catch (err) {}
+      } catch (err) { showToast(err.message, 'error'); }
     }));
   } catch (err) {
     $('#page-content').innerHTML = `<div class="empty-state"><span class="material-symbols-outlined">error</span><p>Could not load content: ${escapeHtml(err.message)}</p></div>`;
@@ -955,7 +1019,7 @@ function openContentModal(block) {
       overlay.remove();
       showToast(isNew ? 'Content created' : 'Content saved', 'success');
       navigate('content');
-    } catch (err) {}
+    } catch (err) { showToast(err.message, 'error'); }
   });
 }
 
@@ -1009,7 +1073,7 @@ async function renderDrivers() {
         await api('/drivers', { method: 'POST', body: JSON.stringify(body) });
         showToast('Driver added', 'success');
         navigate('drivers');
-      } catch (err) {}
+      } catch (err) { showToast(err.message, 'error'); }
     });
     $$('.btn-toggle-driver').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -1019,7 +1083,7 @@ async function renderDrivers() {
           await api(`/drivers/${id}`, { method: 'PUT', body: JSON.stringify({ isActive }) });
           showToast('Driver updated', 'success');
           navigate('drivers');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     });
   }
@@ -1068,7 +1132,7 @@ async function renderNotifications() {
         try {
           await api('/notifications/settings', { method: 'PUT', body: JSON.stringify(payload) });
           showToast('Notification settings saved', 'success');
-        } catch (err) {}
+        } catch (err) { showToast(err.message, 'error'); }
       });
     }
   } catch (err) {
@@ -1324,7 +1388,7 @@ function showModal(title, html, onConfirm, onMount) {
   $('#modal-close', overlay).addEventListener('click', close);
   $('#modal-cancel', overlay).addEventListener('click', close);
   $('#modal-confirm', overlay).addEventListener('click', async () => {
-    try { await onConfirm(); close(); } catch (err) {}
+    try { await onConfirm(); close(); } catch (err) { showToast(err.message, 'error'); }
   });
   if (onMount) onMount(overlay);
 }
@@ -1390,7 +1454,7 @@ async function renderSettings() {
       try {
         await api('/settings/system', { method: 'PUT', body: JSON.stringify(payload) });
         showToast('Settings saved', 'success');
-      } catch (err) {}
+      } catch (err) { showToast(err.message, 'error'); }
     });
   }
 }
@@ -1458,7 +1522,7 @@ async function renderUsers() {
         await api('/users', { method: 'POST', body: JSON.stringify(body) });
         showToast('User added', 'success');
         navigate('users');
-      } catch (err) {}
+      } catch (err) { showToast(err.message, 'error'); }
     });
   }
 }
