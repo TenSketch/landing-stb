@@ -10,3 +10,6 @@ credentials.json
 *.pem
 *.key
 .credentials
+ecosystem.config.cjs
+stb-webhook-start.sh
+webhook-server.js

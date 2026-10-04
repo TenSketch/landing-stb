@@ -285,6 +285,11 @@ app.get(["/admin", "/admin/*"], (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin", "index.html"));
 });
 
+// ---------- Unknown /api routes: JSON 404 (never fall through to the SPA HTML) ----------
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
 // ---------- SPA-ish fallback ----------
 app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
