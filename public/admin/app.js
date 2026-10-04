@@ -258,7 +258,7 @@ function renderNav() {
     .filter(i => hasPerm(i.perm))
     .map(i => `
       <button class="nav-item ${i.id === currentView ? 'active' : ''}" data-view="${i.id}">
-        <span class="material-symbols-outlined">${i.icon}</span>
+        <span class="material-symbols-outlined" aria-hidden="true">${i.icon}</span>
         <span class="nav-label">${i.label}</span>
       </button>`).join('');
 
@@ -328,7 +328,7 @@ function statCard(label, value, variant = '') {
 }
 
 function bookingsTable(bookings) {
-  if (!bookings?.length) return '<p class="empty-state">No bookings yet.</p>';
+  if (!bookings?.length) return '<div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><p><strong>No bookings yet</strong></p><p class="muted-note">New transport inquiries will appear here as soon as customers book.</p></div>';
   return `<table class="admin-table">
     <thead><tr><th>Ref</th><th>Passenger</th><th>Pickup</th><th>Vehicle</th><th>Status</th><th>Date/Time</th></tr></thead>
     <tbody>${bookings.map(b => `<tr>
@@ -458,7 +458,7 @@ async function renderBookings() {
 }
 
 function bookingsTableFull(bookings, drivers) {
-  if (!bookings?.length) return '<p class="empty-state">No bookings yet.</p>';
+  if (!bookings?.length) return '<div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><p><strong>No bookings yet</strong></p><p class="muted-note">New transport inquiries will appear here as soon as customers book.</p></div>';
   const canStatus = hasPerm('bookings.update_status');
   const canAssign = hasPerm('bookings.assign_driver');
   const STATUSES = ['PENDING','CONFIRMED','ASSIGNED','DRIVER_EN_ROUTE','ARRIVED','IN_PROGRESS','COMPLETED','CANCELLED','NO_SHOW'];
@@ -493,7 +493,9 @@ async function renderCustomers() {
         <div class="table-responsive">
           <table class="admin-table">
             <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Bookings</th><th>Active</th><th>Joined</th></tr></thead>
-            <tbody>${customers.map(c => `<tr>
+            <tbody>${customers.length === 0
+              ? `<tr><td colspan="6"><div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">group_off</span><p><strong>No customers yet</strong></p><p class="muted-note">Registered customer accounts will appear here after their first booking or sign-up.</p></div></td></tr>`
+              : customers.map(c => `<tr>
               <td><strong>${escapeHtml(c.name || '-')}</strong></td>
               <td>${escapeHtml(c.email)}</td>
               <td>${escapeHtml(c.phone || '-')}</td>

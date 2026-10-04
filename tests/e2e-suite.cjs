@@ -46,7 +46,7 @@ function findVoucher(obj) {
     check('1-pages', `GET ${p} -> 200`, r.status === 200, `status=${r.status}`);
   }
   const idx = await req('GET', '/');
-  const assets = [...idx.text.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map(m => m[1]).slice(0, 8);
+  const assets = [...idx.text.matchAll(/(?:src|href)="([^"]+\.(?:js|css)(?:\?[^"]*)?)"/g)].map(m => m[1]).slice(0, 8);
   for (const a of assets) {
     const r = await req('GET', a);
     check('1-pages', `asset ${a} -> 200`, r.status === 200, `status=${r.status}`);
