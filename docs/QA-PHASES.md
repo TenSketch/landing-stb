@@ -19,9 +19,9 @@ Result: **66/69 → 3 findings** (see QA report).
 3. `F-ratelimit` — **harness bug** (probe used a fresh email per attempt; limiter keys on email) → fixed the probe, app unchanged.
 
 ## Phase 4 — Test ✅
-- Audit: **69/69**
-- E2E suite: **89/90** (only failure: `GOOGLE_MAPS_API_KEY` not configured — environment gap, needs the key from ops)
-- Combined: **158/159**
+- Audit: **69/69** (70/70 with the cleanup phase added later)
+- E2E suite: **90/90** (coordinate fallback added for the estimate; `GOOGLE_MAPS_API_KEY` now optional)
+- Combined: **160/160**
 
 ## Phase 5 — Commit ✅
 - Fixes + test harness (`tests/`) + docs (`docs/`) committed and pushed.
@@ -34,6 +34,6 @@ Result: **66/69 → 3 findings** (see QA report).
 ## Known open items
 | Item | Owner | Note |
 |---|---|---|
-| `GOOGLE_MAPS_API_KEY` missing | ops (Bala) | only failing check; `/api/estimate` 500s until set in `.env` |
+| `GOOGLE_MAPS_API_KEY` missing | ops (Bala) | optional now — estimates use the approx-coordinate fallback; add the key to `.env` later for road-accurate routes |
 | Outbound port 465 blocked on VPS | provider | SMTP uses 587 STARTTLS (equivalent TLS) |
 | IMAP disabled on `info@` Zoho mailbox | optional | enable only for scriptable mailbox checks |
