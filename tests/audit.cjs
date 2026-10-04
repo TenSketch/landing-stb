@@ -127,6 +127,22 @@ async function req(url, opts = {}) {
   const unkMethod = await req(DIRECT + '/api/bookings', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{}' });
   check('J-errors', 'PUT /api/bookings -> 404/405, no 500', unkMethod.status !== 500, `status=${unkMethod.status}`);
 
+  /* ---------- K: test-data lifecycle (purge customers this audit created) ---------- */
+  try {
+    require('/root/landing-stb/node_modules/dotenv').config({ path: '/root/landing-stb/.env' });
+    const { Client } = require('/root/landing-stb/node_modules/pg');
+    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    await db.connect();
+    const marker = "email ILIKE 'audit-test-%' OR email ILIKE 'livecheck-%'";
+    await db.query(`DELETE FROM customer_sessions WHERE customer_id IN (SELECT id FROM customers WHERE ${marker})`);
+    const del = await db.query(`DELETE FROM customers WHERE ${marker}`);
+    const left = await db.query(`SELECT count(*) FROM customers WHERE ${marker}`);
+    check('K-cleanup', 'audit test customers purged (0 residue)', Number(left.rows[0].count) === 0, `deleted=${del.rowCount} residue=${left.rows[0].count}`);
+    await db.end();
+  } catch (e) {
+    check('K-cleanup', 'audit test customers purged (0 residue)', false, 'cleanup error: ' + e.message);
+  }
+
   /* ---------- summary + save ---------- */
   const fail = results.filter(r => !r.pass);
   const byPhase = {};
