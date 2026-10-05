@@ -1600,7 +1600,66 @@ function hideReviewView() {
   scrollToHeroBooking();
 }
 
+// ---- Inline, accessible field validation (replaces blocking alert()) ----
+// Errors render next to the field, keep the user's entered values intact,
+// and are announced by screen readers (role="alert" + aria-invalid +
+// aria-describedby). Fields clear their error as soon as the user types.
+const BOOKING_FIELD_IDS = [
+  'pickup-input', 'dest-input', 'date-display-input', 'time-display-input',
+  'cust-name', 'cust-phone', 'cust-email',
+];
+
+function clearFieldError(el) {
+  if (!el || !el.id) return;
+  const errId = el.id + '-error';
+  const err = document.getElementById(errId);
+  if (err) err.remove();
+  el.removeAttribute('aria-invalid');
+  const desc = (el.getAttribute('aria-describedby') || '')
+    .split(/\s+/).filter(Boolean)
+    .filter((x) => x !== errId && x !== 'advance-notice-msg');
+  if (desc.length) el.setAttribute('aria-describedby', desc.join(' '));
+  else el.removeAttribute('aria-describedby');
+}
+
+function setFieldError(el, message) {
+  if (!el) return;
+  clearFieldError(el);
+  el.setAttribute('aria-invalid', 'true');
+  const errId = (el.id || 'field') + '-error';
+  const err = document.createElement('p');
+  err.id = errId;
+  err.className = 'field-error';
+  err.setAttribute('role', 'alert');
+  const anchor = el.parentElement || el;
+  anchor.insertAdjacentElement('afterend', err);
+  err.textContent = message; // set after insertion so role="alert" announces it
+  const desc = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+  if (!desc.includes(errId)) el.setAttribute('aria-describedby', desc.concat(errId).join(' '));
+  el.addEventListener('input', () => clearFieldError(el), { once: true });
+}
+
+function clearBookingValidation() {
+  BOOKING_FIELD_IDS.forEach((id) => clearFieldError(document.getElementById(id)));
+}
+
+// The 24-hour advance notice message lives in its own visible box
+// (#advance-notice-msg) which validateAdvanceNotice() shows/hides itself —
+// we only wire it to the time field for assistive tech.
+function markAdvanceNoticeInvalid() {
+  const t = $('#time-display-input');
+  if (!t) return;
+  t.setAttribute('aria-invalid', 'true');
+  const desc = (t.getAttribute('aria-describedby') || '')
+    .split(/\s+/).filter(Boolean)
+    .filter((x) => x !== t.id + '-error');
+  if (!desc.includes('advance-notice-msg')) {
+    t.setAttribute('aria-describedby', desc.concat('advance-notice-msg').join(' '));
+  }
+}
+
 function handleContinueToReview() {
+  clearBookingValidation();
   const pickup = ($('#pickup-input')?.value || '').trim();
   const dest = ($('#dest-input')?.value || '').trim();
   const dateVal = $('#date-display-input')?.value || '';
@@ -1608,33 +1667,35 @@ function handleContinueToReview() {
 
   // 1. Validate Pickup
   if (!pickup) {
-    alert('Please enter your pickup location.');
+    setFieldError($('#pickup-input'), 'Please enter your pickup location.');
     $('#pickup-input')?.focus();
     return;
   }
 
   // 2. Validate Destination (if One Way)
   if (state.tripMode === 'one_way' && !dest) {
-    alert('Please enter your destination.');
+    setFieldError($('#dest-input'), 'Please enter your destination.');
     $('#dest-input')?.focus();
     return;
   }
 
   // 3. Validate Date & Time
   if (!dateVal) {
-    alert('Please select your travel date.');
+    setFieldError($('#date-display-input'), 'Please select your travel date.');
     $('#date-display-input')?.focus();
     return;
   }
   if (!timeVal) {
-    alert('Please select your travel time.');
+    setFieldError($('#time-display-input'), 'Please select your travel time.');
     $('#time-display-input')?.focus();
     return;
   }
 
   // 4. Validate 24-Hour Advance Booking Requirement
+  //    validateAdvanceNotice() shows/hides the existing #advance-notice-msg box.
   if (!validateAdvanceNotice()) {
-    alert('Please select a pickup time at least 24 hours from now.');
+    markAdvanceNoticeInvalid();
+    $('#time-display-input')?.focus();
     return;
   }
 
@@ -1649,6 +1710,7 @@ let _isBookingSubmitting = false;
 async function handleBookingSubmit() {
   if (_isBookingSubmitting) return; // prevent double / spot submits
   _isBookingSubmitting = true;
+  clearBookingValidation();
 
   const pickup = ($('#pickup-input')?.value || '').trim();
   const dest = ($('#dest-input')?.value || '').trim();
@@ -1665,7 +1727,7 @@ async function handleBookingSubmit() {
 
   // 1. Validate Pickup
   if (!pickup) {
-    alert('Please enter your pickup location.');
+    setFieldError($('#pickup-input'), 'Please enter your pickup location.');
     $('#pickup-input')?.focus();
     _isBookingSubmitting = false;
     return;
@@ -1673,7 +1735,7 @@ async function handleBookingSubmit() {
 
   // 2. Validate Destination (if One Way)
   if (state.tripMode === 'one_way' && !dest) {
-    alert('Please enter your destination.');
+    setFieldError($('#dest-input'), 'Please enter your destination.');
     $('#dest-input')?.focus();
     _isBookingSubmitting = false;
     return;
@@ -1681,13 +1743,13 @@ async function handleBookingSubmit() {
 
   // 3. Validate Date & Time
   if (!dateVal) {
-    alert('Please select your travel date.');
+    setFieldError($('#date-display-input'), 'Please select your travel date.');
     $('#date-display-input')?.focus();
     _isBookingSubmitting = false;
     return;
   }
   if (!timeVal) {
-    alert('Please select your travel time.');
+    setFieldError($('#time-display-input'), 'Please select your travel time.');
     $('#time-display-input')?.focus();
     _isBookingSubmitting = false;
     return;
@@ -1695,27 +1757,28 @@ async function handleBookingSubmit() {
 
   // 4. Validate 24-Hour Advance Booking Requirement
   if (!validateAdvanceNotice()) {
-    alert('Please select a pickup time at least 24 hours from now.');
+    markAdvanceNoticeInvalid();
+    $('#time-display-input')?.focus();
     _isBookingSubmitting = false;
     return;
   }
 
   // 5. Validate Customer Details (Name, Email, WhatsApp)
   if (!name) {
-    alert('Please enter your name.');
+    setFieldError($('#cust-name'), 'Please enter your name.');
     $('#cust-name')?.focus();
     _isBookingSubmitting = false;
     return;
   }
   if (!phone || phone.length < 7) {
-    alert('Please enter a valid WhatsApp / contact phone number.');
+    setFieldError($('#cust-phone'), 'Please enter a valid WhatsApp / contact phone number.');
     $('#cust-phone')?.focus();
     _isBookingSubmitting = false;
     return;
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
-    alert('Please enter a valid email address.');
+    setFieldError($('#cust-email'), 'Please enter a valid email address.');
     $('#cust-email')?.focus();
     _isBookingSubmitting = false;
     return;

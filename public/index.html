@@ -206,7 +206,7 @@
     <link rel="stylesheet" href="/src/tailwind.css" />
 
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="/src/styles.css?v=9" />
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
 
   <body>
@@ -621,7 +621,7 @@
                   </div>
 
                   <!-- Advance Notice Info / Error Container -->
-                  <div id="advance-notice-msg" class="hidden text-[0.68rem] text-stb-red font-bold p-2 bg-red-50 rounded-xl border border-red-200 flex items-start gap-1.5">
+                  <div id="advance-notice-msg" role="alert" class="hidden text-[0.68rem] text-stb-red font-bold p-2 bg-red-50 rounded-xl border border-red-200 flex items-start gap-1.5">
                     <span class="material-symbols-outlined text-sm">schedule</span>
                     <span id="advance-notice-text">Advance bookings must be at least 24 hours before pickup time.</span>
                   </div>
@@ -1414,7 +1414,7 @@
     <!-- Analytics + Cookie Consent + Main Application -->
     <script src="/src/analytics.js"></script>
     <script src="/src/cookie-consent.js"></script>
-    <script type="module" src="/src/main.js?v=4"></script>
+    <script type="module" src="/src/main.js?v=5"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {

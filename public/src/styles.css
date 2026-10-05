@@ -1614,3 +1614,27 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   }
 }
+
+/* ============================================
+   Inline validation errors (booking flow)
+   ============================================ */
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  color: var(--stb-red);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0.3rem 0 0;
+}
+.field-error::before {
+  content: "\26A0";
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+input[aria-invalid="true"],
+select[aria-invalid="true"] {
+  border-color: var(--stb-red) !important;
+  background-color: #fff5f5 !important;
+}
