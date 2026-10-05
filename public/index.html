@@ -200,6 +200,45 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0..100,0..1;1,9..144,400..700,0..100,0..1&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    <script>
+      // Icon-font resilience (Google stays primary): if Material Symbols has
+      // not actually LOADED ~3s after DOM ready, pull the same package from
+      // unpkg (allowed by CSP style-src/font-src). No self-hosting.
+      // NB1: document.fonts.check() lies when the Google CSS never arrives
+      //      (family unregisters -> vacuous true), so inspect face status.
+      // NB2: must NOT wait for window 'load': when a Google stylesheet hangs,
+      //      load never fires and the fallback would never run.
+      (function () {
+        var started = false, done = false, tries = 0;
+        function tick() {
+          if (done) return;
+          tries++;
+          var loaded = false;
+          try {
+            document.fonts.forEach(function (f) {
+              if (String(f.family).indexOf('Material Symbols') !== -1 && f.status === 'loaded') loaded = true;
+            });
+          } catch (e) {}
+          if (loaded) { done = true; return; }
+          if (tries >= 3) { // ~3s after DOM ready with no icon font
+            done = true;
+            var l = document.createElement('link');
+            l.rel = 'stylesheet';
+            l.href = 'https://unpkg.com/@material-symbols/font-400@0.28.0/outlined.css';
+            document.head.appendChild(l);
+            return;
+          }
+          setTimeout(tick, 1000);
+        }
+        function start() {
+          if (started) return;
+          started = true;
+          setTimeout(tick, 1000);
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+        else start();
+      })();
+    </script>
 
     <!-- Tailwind CSS (Built) -->
     <script>document.documentElement.classList.add('js');</script>

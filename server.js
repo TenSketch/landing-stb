@@ -47,7 +47,7 @@ app.use((req, res, next) => {
       "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdn.tailwindcss.com https://unpkg.com https://maps.googleapis.com https://maps.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
       "img-src 'self' data: https: blob: https://maps.gstatic.com https://*.googleapis.com https://*.ggpht.com",
-      "font-src 'self' https://fonts.gstatic.com",
+      "font-src 'self' https://fonts.gstatic.com https://unpkg.com",
       `connect-src 'self' https://${API_HOST} http://${API_HOST} https://*.google-analytics.com https://*.googletagmanager.com https://nominatim.openstreetmap.org https://unpkg.com https://maps.googleapis.com https://places.googleapis.com https://*.googleapis.com`,
       "frame-src 'self' https://www.googletagmanager.com https://maps.google.com https://www.google.com",
       "media-src 'self'",
