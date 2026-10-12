@@ -14,6 +14,7 @@ const PORT = parseInt(process.env.PORT || '9003', 10);
 const SECRET = process.env.WEBHOOK_SECRET || '';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8545990443';
+const MAX_WEBHOOK_BODY_BYTES = 1024 * 1024;
 
 function sendTelegram(msg) {
   if (!BOT_TOKEN) {
@@ -36,9 +37,31 @@ function sendTelegram(msg) {
 
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/webhook') {
+    const declaredLength = Number(req.headers['content-length'] || 0);
+    if (declaredLength > MAX_WEBHOOK_BODY_BYTES) {
+      res.writeHead(413, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Webhook payload too large' }));
+      req.resume();
+      return;
+    }
+
     let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    let bodyBytes = 0;
+    let tooLarge = false;
+    req.on('data', (chunk) => {
+      if (tooLarge) return;
+      bodyBytes += chunk.length;
+      if (bodyBytes > MAX_WEBHOOK_BODY_BYTES) {
+        tooLarge = true;
+        body = '';
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Webhook payload too large' }));
+        return;
+      }
+      body += chunk.toString('utf8');
+    });
     req.on('end', () => {
+      if (tooLarge) return;
       const sig = req.headers['x-hub-signature-256'];
       // Fail closed: require WEBHOOK_SECRET to be configured and a valid
       // HMAC signature on every request. Never skip verification.
@@ -56,7 +79,9 @@ const server = http.createServer((req, res) => {
         const hmac = crypto.createHmac('sha256', SECRET);
         hmac.update(body);
         const digest = 'sha256=' + hmac.digest('hex');
-        if (digest !== sig) {
+        const expected = Buffer.from(digest);
+        const provided = Buffer.from(String(sig));
+        if (expected.length !== provided.length || !crypto.timingSafeEqual(expected, provided)) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid signature' }));
           return;
@@ -82,7 +107,11 @@ const server = http.createServer((req, res) => {
               sendTelegram(`❌ *STB Deploy Failed*\nBranch: \`main\`\nExit code: ${code}`);
             }
           });
-          res.writeHead(200, { 'Content-Type': 'application/json' });
+          deploy.on('error', (err) => {
+            console.error('[Deploy] Failed to start deployment:', err.message);
+            sendTelegram(`❌ *STB Deploy Failed*\nCould not start deployment: ${err.message}`);
+          });
+          res.writeHead(202, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true, deploying: true }));
           return;
         }
@@ -91,15 +120,15 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ ok: true, skipped: true, event, branch }));
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: e.message }));
+        res.end(JSON.stringify({ error: 'Invalid webhook JSON' }));
       }
     });
   } else if (req.method === 'GET' && req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, uptime: process.uptime() }));
   } else {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('STB Webhook OK');
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
   }
 });
 
