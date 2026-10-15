@@ -169,9 +169,9 @@ Each PR should contain or link:
 
 Read [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for PR links and the latest recorded isolated CI result. Re-check all details against GitHub before work.
 
-**Next engineering task: booking-creation idempotency investigation and design.** Trace the current booking route from HTTP entry through `handleCreateBooking`, persistence, voucher generation, schema constraints and notification side effects. Document the existing behavior and propose a backward-compatible idempotency contract before implementation. Then add server-side persistence/constraints and concurrency tests on a branch based on the current transaction-safety work, after verifying its current head. If a safe contract cannot be implemented without a breaking client change, document the compatibility issue and continue with the next independent P1 task.
+**Booking idempotency is now implemented in stacked PR #6** ([review PR](https://github.com/TenSketch/landing-stb/pull/6), [contract](BOOKING_IDEMPOTENCY.md)); CI was running when this plan was updated. The next agent must inspect the latest PR head/checks, fix any failure, and review transaction/notification semantics before considering this item verified. PR #6 currently targets the PR #5 branch, not main, to avoid duplicating PR #5 changes; retarget it only after the base work is integrated.
 
-Following that, work through provider refresh performance, admin error/accessibility/authorization, then PWA and customer UX. Update this document and the handoff after each material phase.
+**Next engineering task after PR #6 passes review:** inspect notification provider refresh performance in `lib/notifications.js` and all integration mutation paths. Add a bounded TTL cache with explicit invalidation if the four settings reads per notification are confirmed, and cover expiry/invalidation/concurrency/failure behavior with tests. Then continue admin error/accessibility/authorization, PWA behavior, and customer UX. Update this plan and the handoff after each material phase.
 
 ## 11. Decision log
 
