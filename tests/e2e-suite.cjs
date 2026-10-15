@@ -190,6 +190,8 @@ function findVoucher(obj) {
     check('7-crud', 'illegal transition PENDING->COMPLETED rejected', illegal.status >= 400, `status=${illegal.status}`);
     const confirm = await req('PUT', `/api/admin/bookings/${voucher}/status`, { token: adminToken, body: { status: 'CONFIRMED', notes: 'E2E confirm' } });
     check('7-crud', 'PENDING->CONFIRMED accepted', confirm.status === 200, `status=${confirm.status} body=${JSON.stringify(confirm.json).slice(0, 100)}`);
+    const assigned = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverName: 'E2E-TEST Assigned Driver', driverPhone: '+650000099', driverPlate: 'sga9090' } });
+    check('7-crud', 'assign driver commits driver fields and ASSIGNED status', assigned.status === 200 && assigned.json?.booking?.status === 'ASSIGNED' && assigned.json?.booking?.driverName === 'E2E-TEST Assigned Driver', `status=${assigned.status} body=${JSON.stringify(assigned.json).slice(0, 140)}`);
     const hist = await req('GET', `/api/admin/bookings/${voucher}/status-history`, { token: adminToken });
     check('7-crud', 'status-history -> 200 + entries', hist.status === 200 && JSON.stringify(hist.json).includes('CONFIRMED'), `status=${hist.status}`);
     const cancel = await req('PUT', `/api/admin/bookings/${voucher}/status`, { token: adminToken, body: { status: 'CANCELLED', notes: 'E2E cleanup' } });
