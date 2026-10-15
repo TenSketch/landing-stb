@@ -60,7 +60,7 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 - E2E now checks same-key replay, payload mismatch, malformed key, single-row persistence and concurrent same-key requests.
 - Verify latest CI and review failure/notification semantics before marking complete. See [PR #6](https://github.com/TenSketch/landing-stb/pull/6) and [idempotency contract](BOOKING_IDEMPOTENCY.md).
 
-### P1 — Notifications provider refresh (next engineering task after PR #6 checks)
+### P1 — Notifications provider refresh (next engineering task)
 - Inspect `lib/notifications.js` and every mutation path in `lib/integrations.js`.
 - If provider settings are reloaded for every notification, introduce a bounded TTL cache with explicit invalidation after integration setting changes.
 - Add tests for cache expiry, invalidation, concurrent refresh and provider failure. Do not cache credentials in logs or expose them in test output.
