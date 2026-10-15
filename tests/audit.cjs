@@ -150,15 +150,18 @@ async function req(url, opts = {}) {
   }
 
   /* ---------- summary + save ---------- */
-  const fail = results.filter(r => !r.pass);
+  const fail = results.filter(r => !r.pass && !r.skipped);
+  const skipped = results.filter(r => r.skipped);
   const byPhase = {};
   for (const r of results) {
-    byPhase[r.phase] = byPhase[r.phase] || { pass: 0, fail: 0 };
-    byPhase[r.phase][r.pass ? 'pass' : 'fail']++;
+    byPhase[r.phase] = byPhase[r.phase] || { pass: 0, fail: 0, skipped: 0 };
+    if (r.skipped) byPhase[r.phase].skipped++;
+    else if (r.pass) byPhase[r.phase].pass++;
+    else byPhase[r.phase].fail++;
   }
   console.log('\n===== AUDIT SUMMARY =====');
-  for (const [ph, v] of Object.entries(byPhase)) console.log(`  ${ph}: ${v.pass} pass / ${v.fail} fail`);
-  console.log(`TOTAL: ${results.length - fail.length}/${results.length}`);
+  for (const [ph, v] of Object.entries(byPhase)) console.log(`  ${ph}: ${v.pass} pass / ${v.fail} fail / ${v.skipped} skipped`);
+  console.log(`TOTAL: ${results.length - fail.length - skipped.length} passed / ${results.length - skipped.length} executed / ${skipped.length} skipped / ${fail.length} failed`);
   console.log('--- FAILURES ---');
   for (const f of fail) console.log(`  [FAIL][${f.phase}] ${f.name} :: ${f.detail}`);
   const resultsPath = process.env.STB_AUDIT_RESULTS_PATH || '/tmp/stb-audit-results.json';
