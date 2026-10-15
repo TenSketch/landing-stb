@@ -104,6 +104,20 @@ function findVoucher(obj) {
     const count = await db.query('SELECT COUNT(*)::int AS count FROM bookings WHERE voucher_code = $1', [voucher]);
     check('4-booking', 'idempotent replay creates exactly one booking row', count.rows[0].count === 1, `rows=${count.rows[0].count}`);
   }
+  const concurrentKey = 'e2e-concurrent-' + crypto.randomBytes(8).toString('hex');
+  const concurrentPayload = { ...bookingPayload, passengerName: 'E2E-TEST concurrent idempotency' };
+  const concurrentResults = await Promise.all([
+    req('POST', '/api/bookings', { headers: { 'Idempotency-Key': concurrentKey }, body: concurrentPayload }),
+    req('POST', '/api/bookings', { headers: { 'Idempotency-Key': concurrentKey }, body: concurrentPayload })
+  ]);
+  const concurrentVouchers = concurrentResults.map(r => findVoucher(r.json) || findVoucher(r.text));
+  check('4-booking', 'concurrent same-key requests return the same voucher', concurrentResults.every(r => r.status === 200) && concurrentVouchers[0] && concurrentVouchers[0] === concurrentVouchers[1], JSON.stringify({ statuses: concurrentResults.map(r => r.status), vouchersMatch: concurrentVouchers[0] === concurrentVouchers[1] }));
+  if (concurrentVouchers[0]) {
+    const count = await db.query('SELECT COUNT(*)::int AS count FROM bookings WHERE voucher_code = $1', [concurrentVouchers[0]]);
+    check('4-booking', 'concurrent replay creates exactly one booking row', count.rows[0].count === 1, `rows=${count.rows[0].count}`);
+  }
+  const badKey = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': 'bad' }, body: bookingPayload });
+  check('4-booking', 'malformed idempotency key rejected', badKey.status === 400, `status=${badKey.status}`);
   if (voucher) {
     const assign = await req('GET', `/assign/${voucher}`);
     const rawXss = assign.text.includes('<img src=x');
