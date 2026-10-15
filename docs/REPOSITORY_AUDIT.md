@@ -193,3 +193,25 @@ Only request configuration values from the owner when the implementation is read
 - Source findings require runtime confirmation where stated.
 - No production files, secrets, database records or deployments were changed.
 - This audit supersedes stale claims only for the specific facts it explicitly rechecks; it does not mark old debt as fixed without evidence.
+
+
+## 12. Follow-up implementation status — 2026-10-15
+
+This section supplements the source snapshot audit above; it does not rewrite the historical findings. The following work was recorded in separate open pull requests and must be re-checked against their latest heads before relying on it:
+
+- **PR #2 — webhook hardening:** request size limit, timing-safe signature comparison and safer route/error handling. Review and test the complete webhook path before merge.
+- **PR #3 — audit/QA documentation:** repository audit, Agile QA method, documentation index and agent handoff.
+- **PR #4 — portable isolated QA:** configurable local test targets, removal of VPS-specific absolute test paths, opt-in public probes and PostgreSQL-backed CI.
+- **PR #5 — booking transaction safety and Maps key separation:** client-scoped booking mutation transaction, audit/history atomicity, concurrency/rollback regression tests and distinct browser/server Maps key configuration.
+
+The latest recorded isolated run for PR #5 is [GitHub Actions run 38691010883](https://github.com/TenSketch/landing-stb/actions/runs/38691010883), tested head `a10637088b1f42494fdbf73479c5607ab75b92ac`. Its dated evidence is in [QA-REPORT-2026-10-15.md](QA-REPORT-2026-10-15.md): 164 passed, 0 failed, 4 skipped across the reported suites. The three E2E skips and one security-audit skip are explicitly listed in that report.
+
+**Interpretation:** this is isolated CI evidence only. It does not prove that the open PRs are merged, that production has changed, or that live domains, webhook service, real notification providers, Google Cloud billing/restrictions, or mobile PWA installation/update have been verified. The recorded PR state at handoff time was open/unmerged; always check current GitHub status.
+
+### Immediate next actions
+
+1. Review current PR heads, diffs, comments and CI before making further changes.
+2. Implement booking-creation idempotency only after tracing the live route/schema and defining safe duplicate-request semantics.
+3. Investigate per-notification provider refresh cost and add tested TTL/invalidation if confirmed.
+4. Re-check admin error/accessibility/authorization gaps and the customer/admin PWA behavior.
+5. Keep all work in branches/PRs. No merge, deployment or production mutation is authorized by this audit.
