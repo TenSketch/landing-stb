@@ -118,7 +118,7 @@ function renderAuth() {
       await loadPermissions();
       renderApp();
     } catch (err) {
-      // error shown by api
+      showToast(err.message, 'error');
     }
   });
 
