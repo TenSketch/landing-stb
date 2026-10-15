@@ -39,10 +39,12 @@ async function api(path, options = {}) {
     const err = data?.error || `Request failed (${res.status})`;
     if (res.status === 401 && !path.includes('/auth/')) {
       renderAuth();
-    } else {
-      showToast(err, 'error');
     }
-    throw new Error(err);
+    // Callers own their feedback: catch handlers show one toast, while page
+    // loaders render an inline error state. Avoid duplicate global + local toasts.
+    const error = new Error(err);
+    error.status = res.status;
+    throw error;
   }
   return data;
 }
