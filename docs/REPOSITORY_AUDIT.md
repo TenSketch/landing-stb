@@ -60,7 +60,7 @@ Severity reflects potential impact, not a claim that exploitation or failure was
 
 ### P0 — release-blocking until verified
 
-- **HTML injection / XSS on driver assignment page:** Technical-debt documentation flags unescaped user-supplied values in `lib/handlers.js` assignment-page rendering. Inspect the current lines and add context-appropriate escaping plus regression tests before release.
+- **Driver assignment HTML / XSS verification:** The current `renderAssignPage()` source uses an escaping helper for dynamic text and attributes, so the older technical-debt claim of plainly unescaped passenger fields is not confirmed by this inspection. Keep a regression test for hostile input and separately validate URL schemes for configurable image URLs before closing the finding.
 - **Booking data integrity:** `lib/bookingStatus.js` uses transaction statements through the shared `query()` helper, which delegates to the pool. Unless a single database client is held for the full transaction, statements may execute on different connections. Audit and implement a client-scoped transaction across all writes and audit history.
 - **Booking duplicate/retry behavior:** No idempotency-key implementation was found by the initial repository search. Verify current routes and DB constraints, then implement safe idempotency before relying on retries/timeouts.
 - **Secrets and environment separation:** Verify production secrets are not returned by public configuration endpoints, logged, or placed in source. Never commit API keys or real customer data.
