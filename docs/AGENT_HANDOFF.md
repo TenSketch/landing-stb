@@ -30,7 +30,7 @@ Then independently inspect the current default branch, open PRs, branch heads, c
 | [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | Transactional idempotency key storage, same-key replay, mismatched-payload conflict, customer key reuse and E2E concurrency tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38702778525): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; unit/database/transaction/Maps suites all passed | Review idempotency failure/notification semantics and keep stacked on PR #5 until its base changes are integrated. PR #6 is stacked on PR #5's branch and should be retargeted to main only after its base changes are integrated.
 | [#7 Notification provider cache](https://github.com/TenSketch/landing-stb/pull/7) | Configurable 30-second TTL cache, single-flight refresh, invalidation on integration mutations and cache utility tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703088482): 9 cache assertions passed, 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; all workflow steps green | Review cache invalidation/failure behavior and keep stacked on PR #6 until its base changes are integrated |
 | [#8 Accessible driver assignment dialog](https://github.com/TenSketch/landing-stb/pull/8) | Dialog semantics, labels, focus entry/trap/restore, Escape close | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703397239): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped | Manual keyboard/screen-reader/device checks remain blocked until a browser/device pass is recorded; PR #8 is stacked on PR #7 |
-| [#9 Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9) | Active-driver-only API, dispatch-scoped safe choices, driver ID validation, E2E tests for active/malformed/inactive records | [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38703786164) was in progress at last check | Verify CI and review authorization/data contract; stacked on PR #8 |
+| [#9 Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9) | Active-driver-only API, dispatch-scoped safe choices, driver ID validation, E2E tests for active/malformed/inactive records | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703786164): 98 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; all workflow steps green | Review authorization/data contract; stacked on PR #8 |
 
 All four PRs were recorded as open and unmerged when this handoff was written. Re-check status before reporting. A passing CI run is not approval to merge or deploy.
 
@@ -74,10 +74,10 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 - Test missing/invalid configuration and graceful booking fallback without real credentials.
 - Do not ask the owner to paste secrets into chat. Request only configuration action after the code and exact API requirements are verified.
 
-### P1 — Admin usability and authorization (PR #8/#9 in progress)
+### P1 — Admin usability and authorization (PR #8/#9 CI passed)
 - PR #8 adds keyboard/screen-reader dialog semantics; CI passed, but manual browser/device verification is still required.
-- PR #9 makes assignment use a database-backed active driver ID and restricts the assignment-choice endpoint by dispatch permission; CI is pending.
-- Continue auditing silent catch blocks, error-state duplication, loading/empty states and API authorization after the latest PR head is verified.
+- PR #9 validates the driver ID against active database records and restricts the assignment-choice endpoint by dispatch permission; isolated CI passed.
+- Next: audit silent catch blocks, duplicate error toasts, loading/empty states and remaining API authorization boundaries. Then move to PWA behavior.
 
 ### P1/P2 — PWA and operational checks
 - Verify customer service-worker cache/update behavior, and determine whether admin PWA service-worker registration is an explicit requirement.
