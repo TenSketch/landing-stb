@@ -27,6 +27,7 @@ Then independently inspect the current default branch, open PRs, branch heads, c
 | [#3 Audit and QA documentation](https://github.com/TenSketch/landing-stb/pull/3) | Repository audit, Agile QA method, docs index and this handoff | Open PR; documentation changes only | Check all claims against the current source and keep this handoff updated as work progresses |
 | [#4 Portable QA and isolated CI](https://github.com/TenSketch/landing-stb/pull/4) | Removes hard-coded VPS paths from QA scripts; configurable local target/DB; opt-in public probes; PostgreSQL-backed CI workflow | Prior workflow passed; see [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38690638384) | Review workflow safety, cleanup and skipped checks; verify latest run rather than relying on this historical link |
 | [#5 Booking transaction safety and Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | Client-scoped DB transactions for booking status/driver assignment, audit writes in transaction, concurrency/rollback regression tests, browser/server Maps key separation | Latest recorded combined run: [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38691010883) | Inspect the latest PR head and diff; verify transaction boundaries and all key paths before considering complete |
+| [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | Transactional idempotency key storage, same-key replay, mismatched-payload conflict, customer key reuse and E2E concurrency tests | CI started: [run 38702778525](https://github.com/TenSketch/landing-stb/actions/runs/38702778525); pending at handoff update | Wait for CI result, fix failures, review edge cases and only then mark verified. PR #6 is stacked on PR #5's branch and should be retargeted to main only after its base changes are integrated.
 
 All four PRs were recorded as open and unmerged when this handoff was written. Re-check status before reporting. A passing CI run is not approval to merge or deploy.
 
@@ -52,14 +53,14 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 - Review complete diffs, especially transaction safety, webhook signature verification, test environment isolation and public config secret exposure.
 - Fix test failures or defects in focused commits/PRs. Never merge or deploy without explicit owner approval.
 
-### P0/P1 — Booking idempotency
-- Trace the actual booking creation API, request schema, persistence model and migrations before designing the contract.
-- Check existing unique constraints and voucher/reference generation.
-- Implement server-side idempotency only after defining key scope, expiry/retention, duplicate-request response semantics, transaction/unique-constraint behavior and safe backward compatibility.
-- Add tests for same-key retries, concurrent requests, mismatched payload with same key, failures/rollback and key reuse policy.
-- Do not assume a frontend double-click guard alone is sufficient.
+### P0/P1 — Booking idempotency (implementation in PR #6; pending CI)
+- Traced `POST /api/bookings`, customer submit code, voucher generation, `saveBooking`, and migration strategy.
+- Added an optional `Idempotency-Key` header, payload fingerprinting, hashed key storage, 24-hour expiry, transaction-scoped booking persistence and replay response.
+- Customer form reuses a key for retries of the same payload and generates a new key when payload changes.
+- E2E now checks same-key replay, payload mismatch, malformed key, single-row persistence and concurrent same-key requests.
+- Verify latest CI and review failure/notification semantics before marking complete. See [PR #6](https://github.com/TenSketch/landing-stb/pull/6) and [idempotency contract](BOOKING_IDEMPOTENCY.md).
 
-### P1 — Notifications provider refresh
+### P1 — Notifications provider refresh (next engineering task after PR #6 checks)
 - Inspect `lib/notifications.js` and every mutation path in `lib/integrations.js`.
 - If provider settings are reloaded for every notification, introduce a bounded TTL cache with explicit invalidation after integration setting changes.
 - Add tests for cache expiry, invalidation, concurrent refresh and provider failure. Do not cache credentials in logs or expose them in test output.
