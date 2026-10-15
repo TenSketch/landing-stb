@@ -84,15 +84,26 @@ function findVoucher(obj) {
   const badBook = await req('POST', '/api/bookings', { body: { passengerName: 'X' } });
   check('4-booking', 'missing fields -> 400', badBook.status === 400, `status=${badBook.status}`);
   const XSS = '<img src=x onerror=alert(1)>';
-  const book = await req('POST', '/api/bookings', { body: {
+  const bookingKey = 'e2e-idem-' + crypto.randomBytes(8).toString('hex');
+  const bookingPayload = {
     passengerName: 'E2E-TEST ' + XSS, passengerEmail: 'e2e-test@example.com', passengerPhone: '+650000000',
     vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
     dateTime: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16), currency: 'SGD', paymentMethod: 'Cash', pax: 2,
     bookingType: 'One Way', distanceKm: 20, notes: 'E2E automated test booking - safe to delete',
-  } });
+  };
+  const book = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': bookingKey }, body: bookingPayload });
   check('4-booking', 'valid guest booking -> 2xx + voucher', book.status >= 200 && book.status < 300, `status=${book.status} body=${JSON.stringify(book.json).slice(0, 150)}`);
   const voucher = findVoucher(book.json) || findVoucher(book.text);
   check('4-booking', 'voucher code returned', !!voucher, `voucher=${voucher}`);
+  const replay = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': bookingKey }, body: bookingPayload });
+  const replayVoucher = findVoucher(replay.json) || findVoucher(replay.text);
+  check('4-booking', 'same idempotency key replays original voucher', replay.status === book.status && replayVoucher === voucher, `status=${replay.status} voucherMatches=${replayVoucher === voucher}`);
+  const keyReuse = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': bookingKey }, body: { ...bookingPayload, pickup: 'Different pickup' } });
+  check('4-booking', 'same key with different payload returns 409', keyReuse.status === 409, `status=${keyReuse.status}`);
+  if (voucher) {
+    const count = await db.query('SELECT COUNT(*)::int AS count FROM bookings WHERE voucher_code = $1', [voucher]);
+    check('4-booking', 'idempotent replay creates exactly one booking row', count.rows[0].count === 1, `rows=${count.rows[0].count}`);
+  }
   if (voucher) {
     const assign = await req('GET', `/assign/${voucher}`);
     const rawXss = assign.text.includes('<img src=x');
