@@ -171,7 +171,9 @@ Read [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for PR links and the latest recorded i
 
 **Booking idempotency is now implemented in stacked PR #6** ([review PR](https://github.com/TenSketch/landing-stb/pull/6), [contract](BOOKING_IDEMPOTENCY.md)); CI was running when this plan was updated. The next agent must inspect the latest PR head/checks, fix any failure, and review transaction/notification semantics before considering this item verified. PR #6 currently targets the PR #5 branch, not main, to avoid duplicating PR #5 changes; retarget it only after the base work is integrated.
 
-**Next engineering task after PR #6 passes review:** inspect notification provider refresh performance in `lib/notifications.js` and all integration mutation paths. Add a bounded TTL cache with explicit invalidation if the four settings reads per notification are confirmed, and cover expiry/invalidation/concurrency/failure behavior with tests. Then continue admin error/accessibility/authorization, PWA behavior, and customer UX. Update this plan and the handoff after each material phase.
+**Notification provider refresh is now implemented in stacked PR #7** ([review PR](https://github.com/TenSketch/landing-stb/pull/7)); CI was in progress at the last check. It adds a configurable 30-second TTL cache, single-flight loading, invalidation after integration mutations and tests for expiry, concurrent refresh, invalidation during load and failure recovery. Verify the latest CI and review the diff before marking it complete.
+
+**Next after PR #7 passes:** admin error handling/accessibility/authorization; then PWA behavior and customer UX. Continue independently and update this plan/handoff after each material phase.
 
 ## 11. Decision log
 
