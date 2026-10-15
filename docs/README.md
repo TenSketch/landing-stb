@@ -6,9 +6,9 @@ Start here before changing code:
 
 1. [Design-to-development master plan](DESIGN_TO_DEVELOPMENT_MASTER_PLAN.md) — end-to-end product, design, implementation, QA, release gates and autonomous working rules.
 2. [Agent handoff](AGENT_HANDOFF.md) — current PR inventory, verified CI baseline, next priorities and safety rules for the next agent.
-2. [Repository audit](REPOSITORY_AUDIT.md) — current architecture, documentation drift, risks and recommended sequence.
-3. [Agile development and QA method](AGILE_DEVELOPMENT_QA_METHOD.md) — epics, acceptance criteria, workflow, test matrix and release gates.
-3. [Architecture](ARCHITECTURE.md) — request flow and deployment topology.
+3. [Repository audit](REPOSITORY_AUDIT.md) — current architecture, documentation drift, risks and recommended sequence.
+4. [Agile development and QA method](AGILE_DEVELOPMENT_QA_METHOD.md) — epics, acceptance criteria, workflow, test matrix and release gates.
+5. [Architecture](ARCHITECTURE.md) — request flow and deployment topology.
 4. [API reference](API_REFERENCE.md) — endpoint surface and expected behavior.
 5. [Database](DATABASE.md) — tables, relationships and migrations.
 6. [Booking flow](BOOKING_FLOW.md) — trip modes, pricing and booking lifecycle.
