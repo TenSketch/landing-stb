@@ -352,19 +352,20 @@ function statusBadge(status) {
 }
 
 function showDriverAssignModal(voucher, drivers) {
+  const previouslyFocused = document.activeElement;
   const existing = (drivers || []).find(d => d.is_active);
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:440px;">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="dam-title" aria-describedby="dam-description" tabindex="-1" style="max-width:440px;">
       <div class="modal-header">
-        <h3>Assign Driver</h3>
-        <button class="btn-ghost btn-sm modal-close">&times;</button>
+        <h3 id="dam-title">Assign Driver</h3>
+        <button type="button" class="btn-ghost btn-sm modal-close" aria-label="Close driver assignment dialog">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="margin:0 0 16px;font-size:0.85rem;color:#6B6B6B;">Booking: <strong>${escapeHtml(voucher)}</strong></p>
+        <p id="dam-description" style="margin:0 0 16px;font-size:0.85rem;color:#6B6B6B;">Booking: <strong>${escapeHtml(voucher)}</strong></p>
         <div class="form-group">
-          <label class="form-label">Select Active Driver</label>
+          <label class="form-label" for="dam-driver">Select Active Driver</label>
           <select id="dam-driver" class="form-select">
             <option value="">— Enter manually —</option>
             ${(drivers || []).filter(d => d.is_active).map(d =>
@@ -373,24 +374,57 @@ function showDriverAssignModal(voucher, drivers) {
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Driver Name</label>
+          <label class="form-label" for="dam-name">Driver Name</label>
           <input type="text" id="dam-name" class="form-input" placeholder="e.g. Chandran Raj" value="${escapeHtml(existing?.name || '')}">
         </div>
         <div class="form-group">
-          <label class="form-label">Driver Phone</label>
+          <label class="form-label" for="dam-phone">Driver Phone</label>
           <input type="tel" id="dam-phone" class="form-input" placeholder="+65 9123 4567" value="${escapeHtml(existing?.phone || '')}">
         </div>
         <div class="form-group">
-          <label class="form-label">Vehicle Plate</label>
+          <label class="form-label" for="dam-plate">Vehicle Plate</label>
           <input type="text" id="dam-plate" class="form-input" placeholder="SGX 1234 A" style="text-transform:uppercase;" value="${escapeHtml(existing?.plate_number || '')}">
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary modal-close">Cancel</button>
-        <button class="btn-primary" id="dam-submit">Assign Driver</button>
+        <button type="button" class="btn-secondary modal-close">Cancel</button>
+        <button type="button" class="btn-primary" id="dam-submit">Assign Driver</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+
+  const dialog = $('.modal-box', overlay);
+  const focusableSelector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const closeModal = () => {
+    overlay.remove();
+    if (previouslyFocused && typeof previouslyFocused.focus === 'function') previouslyFocused.focus();
+  };
+  dialog?.focus();
+  $('#dam-driver')?.focus();
+
+  overlay.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModal();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = $(focusableSelector, dialog).filter(el => el.offsetParent !== null);
+    if (!focusable.length) {
+      event.preventDefault();
+      dialog?.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
 
   $('#dam-driver').addEventListener('change', () => {
     const parts = $('#dam-driver').value.split('|||');
@@ -401,8 +435,8 @@ function showDriverAssignModal(voucher, drivers) {
     }
   });
 
-  $$('.modal-close', overlay).forEach(btn => btn.addEventListener('click', () => overlay.remove()));
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  $('.modal-close', overlay).forEach(btn => btn.addEventListener('click', closeModal));
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
   $('#dam-submit').addEventListener('click', async () => {
     const driverName = $('#dam-name').value.trim();
@@ -415,7 +449,7 @@ function showDriverAssignModal(voucher, drivers) {
         body: JSON.stringify({ driverName, driverPhone, driverPlate })
       });
       showToast('Driver assigned', 'success');
-      overlay.remove();
+      closeModal();
       navigate('bookings');
     } catch (err) { showToast(err.message, 'error'); }
   });
