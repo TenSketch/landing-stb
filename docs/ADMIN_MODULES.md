@@ -35,7 +35,9 @@ Current `app.js` topbar has hamburger + brand + user avatar + sign-out button.
 - Driver assignment: `PUT /api/admin/bookings/:voucherCode/assign-driver` with JSON body `{ driverName, driverPhone }`
 - Driver assignment uses a modal with active-driver selection and manual fields.
 - The dialog has an accessible name/description, labelled controls, Escape-to-close, focus trapping, and focus restoration.
-- **Remaining**: verify server-side driver eligibility/authorization against active driver records; UI selection alone is not a security boundary.
+- The admin API resolves the submitted driver ID against the database and rejects missing, malformed or inactive drivers; it ignores client-supplied driver details.
+- The assignment-choice endpoint is scoped to the dispatch permission and returns only fields needed by the modal.
+- Regression coverage checks active-driver assignment, malformed IDs and inactive-driver rejection.
 
 ### Customers
 - Nav link exists but no route handler or UI component
