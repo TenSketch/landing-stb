@@ -227,7 +227,7 @@ app.post("/api/bookings", optionalCustomerAuth, async (req, res) => {
   if (req.customer && !payload.customerId) {
     payload.customerId = req.customer.id;
   }
-  const r = await handleCreateBooking(payload, baseUrl);
+  const r = await handleCreateBooking(payload, baseUrl, req.get('Idempotency-Key') || null);
   res.status(r.status).json(r.body);
 });
 
