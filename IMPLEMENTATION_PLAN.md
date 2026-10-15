@@ -1,5 +1,7 @@
 # STB Platform Hardening + Self-Configurable Admin + Customer Auth — Implementation Plan
 
+> **Historical plan; superseded for current execution.** Reconcile its assumptions against [`docs/REPOSITORY_AUDIT.md`](docs/REPOSITORY_AUDIT.md) and use [`docs/AGILE_DEVELOPMENT_QA_METHOD.md`](docs/AGILE_DEVELOPMENT_QA_METHOD.md) as the current workflow/backlog framework. The original repository-local-work/no-push instructions below describe an earlier phase and are not current project governance.
+
 > Work locally only. No git commit/push/pull. No VPS/production access. No deployment.
 > Preserve all unrelated existing changes. Leave everything uncommitted.
 > Do not invent commercial rates or credentials.
