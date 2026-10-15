@@ -1,6 +1,13 @@
 # Database Schema
 
-> Verified against migrations 001-010 as of commit `15e4184`.
+> **Legacy schema narrative:** Reconcile table descriptions against migrations 001-010 before using this document to write queries or migrations. The current source-based baseline is [`REPOSITORY_AUDIT.md`](REPOSITORY_AUDIT.md); the fresh isolated QA run is in [`QA-REPORT-2026-10-15.md`](QA-REPORT-2026-10-15.md).
+
+## Revalidated data-integrity notes (2026-10-15)
+
+- The legacy claim that `updateBooking` cannot clear driver fields is not confirmed by the current implementation: explicit patch fields are written as values, including `null`. Verify the full API path before closing it.
+- The legacy OTP race-condition claim is stale relative to the current single-statement `UPDATE ... RETURNING` attempt check.
+- The audited `main` booking status read model omits the `status` property from `getBooking()` even though the database has it. PR #5 adds the field and tests status/dispatch consistency; the tested commit passed isolated CI, but is not merged.
+- The original booking/driver assignment transaction uses pooled queries instead of a single client; PR #5 adds client-scoped transactions and regression coverage. Keep the finding open until merged/released.
 
 ## Entity Relationships
 
