@@ -41,12 +41,12 @@ The source snapshot identified for this audit is main commit `57c967767dcb6b3765
 | Pricing | `lib/pricing.js` and DB-backed rules/overrides/surcharges | Customer-visible estimates must be server-calculated and reproducible |
 | Auth | Admin and customer authentication modules, cookie sessions and RBAC | Test every privileged route independently of UI visibility |
 | Notifications | Central notification layer and provider abstractions | Provider setup and actual delivery must be distinguished from placeholders |
-| PWA | `public/manifest.json` and `public/sw.js` exist | Presence alone does not prove registration, installability, offline UX or update correctness |
+| PWA | Customer root page links `/manifest.json` and registers `/sw.js`; admin has `public/admin/manifest.json` | Customer registration is present in source; admin-origin service-worker registration is not present in `public/admin/index.html` and requires a dedicated install/offline verification |
 | Tests | `npm test`, `tests/e2e-suite.cjs`, `tests/audit.cjs` | Existing test scripts must be run in a controlled test environment; prior reports are not current runs |
 
 ## 4. Documentation drift and conflicts
 
-1. **Status vs source:** `STATUS.md` contains older claims that the manifest is empty and service worker is never registered. The current repository has a populated `public/manifest.json` and `public/sw.js` v3. Registration and installability still require a source/runtime check; do not carry the old statement forward as fact.
+1. **Status vs source:** `STATUS.md` contains older claims that the manifest is empty and service worker is never registered. The current repository has a populated `public/manifest.json`, `public/sw.js` v3, a customer registration block in `public/index.html`, and a separate admin manifest. The admin page links `/admin/manifest.json` but has no visible service-worker registration in its entry HTML; admin-origin offline/update behavior remains an open gap.
 2. **Technical-debt entries need revalidation:** `docs/TECHNICAL_DEBT.md` lists both important risks and items whose status may have changed. Keep each item open until verified fixed by code and tests, then close it with evidence.
 3. **Implementation plan has obsolete assumptions:** `IMPLEMENTATION_PLAN.md` describes earlier auth/RBAC and PWA gaps that do not fully match the later code/docs. Use it as history, not the authoritative implementation plan.
 4. **Google Maps docs are stale in places:** `docs/GOOGLE_MAPS.md` refers to older initialization names and commit references. Current customer code calls `initGoogleMapsAndPlaces()`, loads configuration from `/api/config`, and has a local landmark fallback. Re-map actual key names, API usage, and server-side routing before requesting credentials.
@@ -76,7 +76,8 @@ Severity reflects potential impact, not a claim that exploitation or failure was
 
 ### P2 — product quality
 
-- Verify service-worker registration, update behavior, stale cache prevention, offline fallback and install prompts on iOS Safari and Android Chrome.
+- Verify customer service-worker registration, update behavior, stale cache prevention, offline fallback and install prompts on iOS Safari and Android Chrome.
+- Add/verify service-worker registration for the admin origin if admin PWA offline/update support is required; the current admin entry page only links its manifest.
 - Improve mobile admin navigation, form ergonomics, keyboard access, contrast and accessible labels.
 - Replace hardcoded business settings (including WhatsApp/contact values and currency exchange assumptions) with validated dynamic configuration where appropriate.
 - Consolidate duplicate or legacy admin entry points only after checking references and deployment routes.
