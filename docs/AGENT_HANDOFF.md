@@ -29,6 +29,8 @@ Then independently inspect the current default branch, open PRs, branch heads, c
 | [#5 Booking transaction safety and Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | Client-scoped DB transactions for booking status/driver assignment, audit writes in transaction, concurrency/rollback regression tests, browser/server Maps key separation | Latest recorded combined run: [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38691010883) | Inspect the latest PR head and diff; verify transaction boundaries and all key paths before considering complete |
 | [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | Transactional idempotency key storage, same-key replay, mismatched-payload conflict, customer key reuse and E2E concurrency tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38702778525): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; unit/database/transaction/Maps suites all passed | Review idempotency failure/notification semantics and keep stacked on PR #5 until its base changes are integrated. PR #6 is stacked on PR #5's branch and should be retargeted to main only after its base changes are integrated.
 | [#7 Notification provider cache](https://github.com/TenSketch/landing-stb/pull/7) | Configurable 30-second TTL cache, single-flight refresh, invalidation on integration mutations and cache utility tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703088482): 9 cache assertions passed, 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; all workflow steps green | Review cache invalidation/failure behavior and keep stacked on PR #6 until its base changes are integrated |
+| [#8 Accessible driver assignment dialog](https://github.com/TenSketch/landing-stb/pull/8) | Dialog semantics, labels, focus entry/trap/restore, Escape close | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703397239): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped | Manual keyboard/screen-reader/device checks remain blocked until a browser/device pass is recorded; PR #8 is stacked on PR #7 |
+| [#9 Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9) | Active-driver-only API, dispatch-scoped safe choices, driver ID validation, E2E tests for active/malformed/inactive records | [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38703786164) was in progress at last check | Verify CI and review authorization/data contract; stacked on PR #8 |
 
 All four PRs were recorded as open and unmerged when this handoff was written. Re-check status before reporting. A passing CI run is not approval to merge or deploy.
 
@@ -61,10 +63,10 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 - E2E now checks same-key replay, payload mismatch, malformed key, single-row persistence and concurrent same-key requests.
 - Verify latest CI and review failure/notification semantics before marking complete. See [PR #6](https://github.com/TenSketch/landing-stb/pull/6) and [idempotency contract](https://github.com/TenSketch/landing-stb/blob/fix/booking-idempotency/docs/BOOKING_IDEMPOTENCY.md).
 
-### P1 — Notifications provider refresh (implementation in PR #7; CI pending)
+### P1 — Notifications provider refresh (PR #7 CI passed)
 - Confirm CI and review `lib/asyncTtlCache.js`, `lib/notifications.js`, and all mutation paths in `lib/integrations.js`.
 - Provider settings are cached for 30 seconds by default (`STB_PROVIDER_CACHE_TTL_MS`); integration changes invalidate the cache.
-- Tests cover TTL expiry, shared in-flight loads, invalidation during refresh and failure recovery. Ensure no secret values are emitted in logs.
+- Tests cover TTL expiry, shared in-flight loads, invalidation during refresh and failure recovery. Ensure no secret values are emitted in logs. CI evidence is in [QA-REPORT-2026-10-15-PROVIDER-CACHE.md](QA-REPORT-2026-10-15-PROVIDER-CACHE.md).
 
 ### P1 — Google Maps configuration
 - Re-check `lib/googleMapsConfig.js`, `lib/handlers.js`, `server.js`, `/api/config`, and frontend loader on the current PR head.
@@ -72,10 +74,10 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 - Test missing/invalid configuration and graceful booking fallback without real credentials.
 - Do not ask the owner to paste secrets into chat. Request only configuration action after the code and exact API requirements are verified.
 
-### P1 — Admin usability and authorization
-- Inspect `public/admin/app.js` for silent catch blocks, unsafe prompt-based assignment, missing loading/error/empty states, keyboard access and API authorization.
-- Trace every proposed UI fix to its actual API/data contract. Do not rely on frontend hiding as an authorization control.
-- Add focused tests where feasible and document anything requiring browser/device verification.
+### P1 — Admin usability and authorization (PR #8/#9 in progress)
+- PR #8 adds keyboard/screen-reader dialog semantics; CI passed, but manual browser/device verification is still required.
+- PR #9 makes assignment use a database-backed active driver ID and restricts the assignment-choice endpoint by dispatch permission; CI is pending.
+- Continue auditing silent catch blocks, error-state duplication, loading/empty states and API authorization after the latest PR head is verified.
 
 ### P1/P2 — PWA and operational checks
 - Verify customer service-worker cache/update behavior, and determine whether admin PWA service-worker registration is an explicit requirement.
