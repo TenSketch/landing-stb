@@ -181,7 +181,7 @@ function findVoucher(obj) {
   check('6-admin', 'seeded session valid (GET auth/session)', sess.status === 200, `status=${sess.status} body=${JSON.stringify(sess.json).slice(0, 120)}`);
   const fakeTok = await req('GET', '/api/admin/auth/session', { token: 'a'.repeat(64) });
   check('6-admin', 'garbage token -> 401', fakeTok.status === 401, `status=${fakeTok.status}`);
-  for (const p of ['/api/admin/dashboard', '/api/admin/bookings', '/api/admin/settings', '/api/admin/users', '/api/admin/vehicles', '/api/admin/pricing', '/api/admin/audit-logs', '/api/admin/customers', '/api/admin/drivers', '/api/admin/roles', '/api/admin/content', '/api/admin/integrations']) {
+  for (const p of ['/api/admin/dashboard', '/api/admin/bookings', '/api/admin/settings', '/api/admin/users', '/api/admin/vehicles', '/api/admin/pricing', '/api/admin/audit-logs', '/api/admin/customers', '/api/admin/drivers', '/api/admin/drivers/assignable', '/api/admin/roles', '/api/admin/content', '/api/admin/integrations']) {
     const r = await req('GET', p, { token: adminToken });
     check('6-admin', `GET ${p}`, r.status === 200, `status=${r.status}`);
     const rNo = await req('GET', p);
