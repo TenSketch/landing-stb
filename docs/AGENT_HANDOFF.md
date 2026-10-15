@@ -27,7 +27,8 @@ Then independently inspect the current default branch, open PRs, branch heads, c
 | [#3 Audit and QA documentation](https://github.com/TenSketch/landing-stb/pull/3) | Repository audit, Agile QA method, docs index and this handoff | Open PR; documentation changes only | Check all claims against the current source and keep this handoff updated as work progresses |
 | [#4 Portable QA and isolated CI](https://github.com/TenSketch/landing-stb/pull/4) | Removes hard-coded VPS paths from QA scripts; configurable local target/DB; opt-in public probes; PostgreSQL-backed CI workflow | Prior workflow passed; see [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38690638384) | Review workflow safety, cleanup and skipped checks; verify latest run rather than relying on this historical link |
 | [#5 Booking transaction safety and Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | Client-scoped DB transactions for booking status/driver assignment, audit writes in transaction, concurrency/rollback regression tests, browser/server Maps key separation | Latest recorded combined run: [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38691010883) | Inspect the latest PR head and diff; verify transaction boundaries and all key paths before considering complete |
-| [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | Transactional idempotency key storage, same-key replay, mismatched-payload conflict, customer key reuse and E2E concurrency tests | CI started: [run 38702778525](https://github.com/TenSketch/landing-stb/actions/runs/38702778525); pending at handoff update | Wait for CI result, fix failures, review edge cases and only then mark verified. PR #6 is stacked on PR #5's branch and should be retargeted to main only after its base changes are integrated.
+| [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | Transactional idempotency key storage, same-key replay, mismatched-payload conflict, customer key reuse and E2E concurrency tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38702778525): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; unit/database/transaction/Maps suites all passed | Review idempotency failure/notification semantics and keep stacked on PR #5 until its base changes are integrated. PR #6 is stacked on PR #5's branch and should be retargeted to main only after its base changes are integrated.
+| [#7 Notification provider cache](https://github.com/TenSketch/landing-stb/pull/7) | Configurable 30-second TTL cache, single-flight refresh, invalidation on integration mutations and cache utility tests | [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38703088482) was in progress at last check | Verify CI and review cache invalidation/failure behavior; stacked on PR #6 |
 
 All four PRs were recorded as open and unmerged when this handoff was written. Re-check status before reporting. A passing CI run is not approval to merge or deploy.
 
@@ -58,12 +59,12 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 - Added an optional `Idempotency-Key` header, payload fingerprinting, hashed key storage, 24-hour expiry, transaction-scoped booking persistence and replay response.
 - Customer form reuses a key for retries of the same payload and generates a new key when payload changes.
 - E2E now checks same-key replay, payload mismatch, malformed key, single-row persistence and concurrent same-key requests.
-- Verify latest CI and review failure/notification semantics before marking complete. See [PR #6](https://github.com/TenSketch/landing-stb/pull/6) and [idempotency contract](BOOKING_IDEMPOTENCY.md).
+- Verify latest CI and review failure/notification semantics before marking complete. See [PR #6](https://github.com/TenSketch/landing-stb/pull/6) and [idempotency contract](https://github.com/TenSketch/landing-stb/blob/fix/booking-idempotency/docs/BOOKING_IDEMPOTENCY.md).
 
-### P1 — Notifications provider refresh (next engineering task)
-- Inspect `lib/notifications.js` and every mutation path in `lib/integrations.js`.
-- If provider settings are reloaded for every notification, introduce a bounded TTL cache with explicit invalidation after integration setting changes.
-- Add tests for cache expiry, invalidation, concurrent refresh and provider failure. Do not cache credentials in logs or expose them in test output.
+### P1 — Notifications provider refresh (implementation in PR #7; CI pending)
+- Confirm CI and review `lib/asyncTtlCache.js`, `lib/notifications.js`, and all mutation paths in `lib/integrations.js`.
+- Provider settings are cached for 30 seconds by default (`STB_PROVIDER_CACHE_TTL_MS`); integration changes invalidate the cache.
+- Tests cover TTL expiry, shared in-flight loads, invalidation during refresh and failure recovery. Ensure no secret values are emitted in logs.
 
 ### P1 — Google Maps configuration
 - Re-check `lib/googleMapsConfig.js`, `lib/handlers.js`, `server.js`, `/api/config`, and frontend loader on the current PR head.
