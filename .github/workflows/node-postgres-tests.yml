@@ -51,3 +51,63 @@ jobs:
           done
       - name: Run unit and database integration tests
         run: npm test
+      - name: Start isolated test server
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/stb_test
+          PORT: "3003"
+        run: |
+          nohup npm start > /tmp/stb-server.log 2>&1 &
+          echo $! > /tmp/stb-server.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3003/api/health > /tmp/stb-health.json; then
+              cat /tmp/stb-health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/stb-server.log
+          exit 1
+      - name: Run full local E2E suite
+        id: e2e
+        continue-on-error: true
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/stb_test
+          STB_E2E_BASE_URL: http://127.0.0.1:3003
+          STB_E2E_RESULTS_PATH: /tmp/stb-e2e-results.json
+          STB_SECRET_KEY: "test-only-secret-key-32-bytes-minimum!!"
+        run: node tests/e2e-suite.cjs
+      - name: Run local security audit
+        id: audit
+        continue-on-error: true
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/stb_test
+          STB_E2E_BASE_URL: http://127.0.0.1:3003
+          STB_AUDIT_RESULTS_PATH: /tmp/stb-audit-results.json
+          STB_SECRET_KEY: "test-only-secret-key-32-bytes-minimum!!"
+          RUN_PUBLIC_DOMAIN_AUDIT: "false"
+        run: node tests/audit.cjs
+      - name: Stop isolated test server
+        if: always()
+        run: |
+          if [ -f /tmp/stb-server.pid ]; then
+            kill "$(cat /tmp/stb-server.pid)" 2>/dev/null || true
+          fi
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stb-qa-evidence
+          path: |
+            /tmp/stb-e2e-results.json
+            /tmp/stb-audit-results.json
+            /tmp/stb-server.log
+            /tmp/stb-health.json
+          if-no-files-found: warn
+      - name: Enforce E2E and audit results
+        if: always()
+        env:
+          E2E_OUTCOME: ${{ steps.e2e.outcome }}
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+        run: |
+          test "$E2E_OUTCOME" = "success"
+          test "$AUDIT_OUTCOME" = "success"
