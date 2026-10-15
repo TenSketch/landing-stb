@@ -111,7 +111,7 @@ try {
   );
   test('assignment audit events are committed', audit.rows[0].count >= 3);
 
-  console.log(`\nBooking transaction tests: ${passed}/7 passed`);
+  console.log(`\nBooking transaction tests: ${passed} passed`);
 } finally {
   await query('DELETE FROM booking_status_history WHERE booking_id = $1', [voucherCode]).catch(() => {});
   await query('DELETE FROM audit_logs WHERE record_id = $1', [voucherCode]).catch(() => {});
