@@ -7,8 +7,9 @@
 const crypto = require('crypto');
 const { URL } = require('url');
 
-const DIRECT = 'http://127.0.0.1:3003';
-const LIVE = ['https://singaporetourbooking.com', 'https://admin.singaporetourbooking.com', 'https://api.singaporetourbooking.com'];
+const DIRECT = process.env.STB_E2E_BASE_URL || 'http://127.0.0.1:3003';
+const LIVE = (process.env.STB_PUBLIC_AUDIT_URLS || 'https://singaporetourbooking.com,https://admin.singaporetourbooking.com,https://api.singaporetourbooking.com').split(',').map(s => s.trim()).filter(Boolean);
+const RUN_PUBLIC = process.env.RUN_PUBLIC_DOMAIN_AUDIT === 'true';
 
 const results = [];
 function check(phase, name, cond, detail = '') {
@@ -32,7 +33,8 @@ async function req(url, opts = {}) {
   const files = ['/.env', '/.env.backup-3', '/.git/HEAD', '/package.json', '/server.js',
     '/webhook-server.cjs', '/webhook-server.js', '/ecosystem.config.cjs', '/stb-webhook-start.sh',
     '/lib/api.js', '/.env.example', '/proc/self/environ', '/pm2.pid', '/yarn.lock'];
-  for (const base of [DIRECT, 'https://api.singaporetourbooking.com']) {
+  const sensitiveFileBases = RUN_PUBLIC ? [DIRECT, ...LIVE.filter(u => u.includes('api.'))] : [DIRECT];
+  for (const base of sensitiveFileBases) {
     for (const f of files) {
       const r = await req(base + f);
       const leaked = secrets.filter(s => r.text.includes(s));
@@ -54,9 +56,9 @@ async function req(url, opts = {}) {
   /* ---------- C: cookie flags on customer session (public HTTPS) ---------- */
   const email = 'audit-test-' + Date.now() + '@example.com';
   const pw = 'Audit-Test!123';
-  const reg = await req('https://api.singaporetourbooking.com/api/auth/register',
+  const reg = await req(DIRECT + '/api/auth/register',
     { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password: pw, name: 'AUDIT-TEST', phone: '+650****0009' }) });
-  const login = await req('https://api.singaporetourbooking.com/api/auth/login',
+  const login = await req(DIRECT + '/api/auth/login',
     { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password: pw }) });
   const sc = login.headers['set-cookie'] || '';
   check('C-cookies', 'register+login -> 200', reg.status < 300 && login.status < 300, `reg=${reg.status} login=${login.status}`);
@@ -95,8 +97,8 @@ async function req(url, opts = {}) {
   const hh = await req(DIRECT + '/api/health', { headers: { Host: 'evil.example' } });
   check('G-host', 'unknown Host /api/health -> no data leak beyond health', hh.status === 404 || hh.status === 200, `status=${hh.status} body=${hh.text.slice(0, 80)}`);
 
-  /* ---------- H: live headers + redirects ---------- */
-  for (const base of LIVE) {
+  /* ---------- H: public domain headers + redirects (explicit opt-in) ---------- */
+  for (const base of (RUN_PUBLIC ? LIVE : [])) {
     const h = await req(base + '/');
     const csp = String(h.headers['content-security-policy'] || '');
     check('H-live', `${base} HTTP->HTTPS redirect`, base.startsWith('https://') ? true : h.status, `status=${h.status} loc=${h.headers['location'] || '-'}`);
@@ -106,12 +108,15 @@ async function req(url, opts = {}) {
     check('H-live', `${base} HSTS present`, !!h.headers['strict-transport-security'], String(h.headers['strict-transport-security'] || '<absent>'));
     check('H-live', `${base} X-Frame-Options=${h.headers['x-frame-options']}`, !!h.headers['x-frame-options'], String(h.headers['x-frame-options'] || '<absent>'));
   }
-  // http:// apex should redirect
-  const httpRed = await req('http://singaporetourbooking.com/');
-  const loc = httpRed.headers['location'] || '';
-  check('H-live', 'http://apex redirects to https', httpRed.status >= 300 && httpRed.status < 400 && loc.includes('https'), `status=${httpRed.status} loc=${loc}`);
-  const httpApi = await req('http://api.singaporetourbooking.com/api/health');
-  check('H-live', 'http://api redirects (or serves harmless health)', httpApi.status === 301 || httpApi.status === 308 || (httpApi.status === 200 && !httpApi.text.includes('DATABASE_URL')), `status=${httpApi.status} loc=${httpApi.headers['location'] || '-'}`);
+  if (RUN_PUBLIC) {
+    const httpRed = await req('http://singaporetourbooking.com/');
+    const loc = httpRed.headers['location'] || '';
+    check('H-live', 'http://apex redirects to https', httpRed.status >= 300 && httpRed.status < 400 && loc.includes('https'), `status=${httpRed.status} loc=${loc}`);
+    const httpApi = await req('http://api.singaporetourbooking.com/api/health');
+    check('H-live', 'http://api redirects (or serves harmless health)', httpApi.status === 301 || httpApi.status === 308 || (httpApi.status === 200 && !httpApi.text.includes('DATABASE_URL')), `status=${httpApi.status} loc=${httpApi.headers['location'] || '-'}`);
+  } else {
+    results.push({ phase: 'H-live', name: 'public domain probes', pass: true, skipped: true, detail: 'Set RUN_PUBLIC_DOMAIN_AUDIT=true only for an explicitly approved read-only live audit' });
+  }
 
   /* ---------- I: secret scan on public JSON ---------- */
   const scanTargets = ['/api/config', '/api/content', '/api/vehicles', '/api/health', '/api/auth/session', '/api/customer/profile'];
@@ -129,9 +134,10 @@ async function req(url, opts = {}) {
 
   /* ---------- K: test-data lifecycle (purge customers this audit created) ---------- */
   try {
-    require('/root/landing-stb/node_modules/dotenv').config({ path: '/root/landing-stb/.env' });
-    const { Client } = require('/root/landing-stb/node_modules/pg');
-    const db = new Client({ connectionString: process.env.DATABASE_URL });
+    require('dotenv').config({ path: process.env.STB_ENV_FILE || '.env' });
+    if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for audit cleanup');
+    const { Client } = require('pg');
+    const db = new Client({ connectionString: process.env.DATABASE_URL, ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false });
     await db.connect();
     const marker = "email ILIKE 'audit-test-%' OR email ILIKE 'livecheck-%'";
     await db.query(`DELETE FROM customer_sessions WHERE customer_id IN (SELECT id FROM customers WHERE ${marker})`);
@@ -144,18 +150,23 @@ async function req(url, opts = {}) {
   }
 
   /* ---------- summary + save ---------- */
-  const fail = results.filter(r => !r.pass);
+  const fail = results.filter(r => !r.pass && !r.skipped);
+  const skipped = results.filter(r => r.skipped);
   const byPhase = {};
   for (const r of results) {
-    byPhase[r.phase] = byPhase[r.phase] || { pass: 0, fail: 0 };
-    byPhase[r.phase][r.pass ? 'pass' : 'fail']++;
+    byPhase[r.phase] = byPhase[r.phase] || { pass: 0, fail: 0, skipped: 0 };
+    if (r.skipped) byPhase[r.phase].skipped++;
+    else if (r.pass) byPhase[r.phase].pass++;
+    else byPhase[r.phase].fail++;
   }
   console.log('\n===== AUDIT SUMMARY =====');
-  for (const [ph, v] of Object.entries(byPhase)) console.log(`  ${ph}: ${v.pass} pass / ${v.fail} fail`);
-  console.log(`TOTAL: ${results.length - fail.length}/${results.length}`);
+  for (const [ph, v] of Object.entries(byPhase)) console.log(`  ${ph}: ${v.pass} pass / ${v.fail} fail / ${v.skipped} skipped`);
+  console.log(`TOTAL: ${results.length - fail.length - skipped.length} passed / ${results.length - skipped.length} executed / ${skipped.length} skipped / ${fail.length} failed`);
   console.log('--- FAILURES ---');
   for (const f of fail) console.log(`  [FAIL][${f.phase}] ${f.name} :: ${f.detail}`);
-  require('fs').mkdirSync('/tmp/stb-audit', { recursive: true });
-  require('fs').writeFileSync('/tmp/stb-audit-results.json', JSON.stringify({ when: new Date().toISOString(), results }, null, 1));
-  console.log('results: /tmp/stb-audit-results.json');
+  const resultsPath = process.env.STB_AUDIT_RESULTS_PATH || '/tmp/stb-audit-results.json';
+  require('fs').mkdirSync(require('path').dirname(resultsPath), { recursive: true });
+  require('fs').writeFileSync(resultsPath, JSON.stringify({ when: new Date().toISOString(), total: results.length, passed: results.filter(r => r.pass && !r.skipped).length, failed: fail.length, skipped: results.filter(r => r.skipped).length, results }, null, 1));
+  console.log('results: ' + resultsPath);
+  process.exitCode = fail.length ? 1 : 0;
 })().catch(e => { console.error('AUDIT CRASH:', e); process.exit(1); });

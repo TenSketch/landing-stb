@@ -1,13 +1,17 @@
-/* STB E2E test suite — runs against live server on :3003 + public domains */
+/* STB E2E suite — targets an explicitly configured local/staging server by default. */
 const crypto = require('crypto');
 const fs = require('fs');
-const pg = require('/root/landing-stb/node_modules/pg');
+const pg = require('pg');
+const pathModule = require('path');
 const { Client } = pg;
 
-const BASE = 'http://127.0.0.1:3003';
+const BASE = process.env.STB_E2E_BASE_URL || 'http://127.0.0.1:3003';
 const results = [];
 function check(phase, name, cond, detail = '') {
   results.push({ phase, name, pass: !!cond, detail: String(detail).slice(0, 200) });
+}
+function skip(phase, name, detail = 'not enabled for this run') {
+  results.push({ phase, name, pass: true, skipped: true, detail: String(detail).slice(0, 200) });
 }
 async function req(method, path, opts = {}) {
   const url = path.startsWith('http') ? path : BASE + path;
@@ -32,12 +36,13 @@ function findVoucher(obj) {
 }
 
 (async () => {
-  const errLogPath = '/root/.pm2/logs/stb-server-error.log';
-  const errLogSizeBefore = fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
+  const errLogPath = process.env.STB_E2E_ERROR_LOG || '';
+  const errLogSizeBefore = errLogPath && fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
 
-  // DB handle
-  require('/root/landing-stb/node_modules/dotenv').config({ path: '/root/landing-stb/.env' });
-  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  // Optional dotenv loading; CI/staging should inject DATABASE_URL explicitly.
+  require('dotenv').config({ path: process.env.STB_ENV_FILE || '.env' });
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for E2E cleanup and fixtures');
+  const db = new Client({ connectionString: process.env.DATABASE_URL, ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false });
   await db.connect();
 
   /* ---------- Phase 1: public pages & static ---------- */
@@ -82,7 +87,7 @@ function findVoucher(obj) {
   const book = await req('POST', '/api/bookings', { body: {
     passengerName: 'E2E-TEST ' + XSS, passengerEmail: 'e2e-test@example.com', passengerPhone: '+650000000',
     vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
-    dateTime: '2026-10-15T10:00', currency: 'SGD', paymentMethod: 'Cash', pax: 2,
+    dateTime: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16), currency: 'SGD', paymentMethod: 'Cash', pax: 2,
     bookingType: 'One Way', distanceKm: 20, notes: 'E2E automated test booking - safe to delete',
   } });
   check('4-booking', 'valid guest booking -> 2xx + voucher', book.status >= 200 && book.status < 300, `status=${book.status} body=${JSON.stringify(book.json).slice(0, 150)}`);
@@ -209,13 +214,23 @@ function findVoucher(obj) {
   check('8-security', 'unauth settings write -> 401', adminNoTok.status === 401, `status=${adminNoTok.status}`);
 
   /* ---------- Phase 9: webhook + public domain ---------- */
-  const wh1 = await req('POST', 'http://127.0.0.1:9003/webhook', { body: { test: 1 } });
-  check('9-edge', 'webhook without secret rejected', wh1.status >= 400, `status=${wh1.status}`);
-  const wh2 = await req('POST', 'http://127.0.0.1:9003/webhook', { headers: { 'x-webhook-secret': 'wrong' }, body: { test: 1 } });
-  check('9-edge', 'webhook with wrong secret rejected', wh2.status >= 400, `status=${wh2.status}`);
-  for (const u of ['https://singaporetourbooking.com/', 'https://admin.singaporetourbooking.com/', 'https://api.singaporetourbooking.com/api/health']) {
-    const r = await req('GET', u);
-    check('9-edge', `public ${u} -> 200`, r.status === 200, `status=${r.status}`);
+  if (process.env.STB_WEBHOOK_BASE_URL) {
+    const webhookBase = process.env.STB_WEBHOOK_BASE_URL.replace(/\/$/, '');
+    const wh1 = await req('POST', `${webhookBase}/webhook`, { body: { test: 1 } });
+    check('9-edge', 'webhook without secret rejected', wh1.status >= 400, `status=${wh1.status}`);
+    const wh2 = await req('POST', `${webhookBase}/webhook`, { headers: { 'x-webhook-secret': 'wrong' }, body: { test: 1 } });
+    check('9-edge', 'webhook with wrong secret rejected', wh2.status >= 400, `status=${wh2.status}`);
+  } else {
+    skip('9-edge', 'webhook probes', 'Set STB_WEBHOOK_BASE_URL to test a separately running test webhook');
+  }
+  if (process.env.RUN_PUBLIC_DOMAIN_SMOKE === 'true') {
+    const publicUrls = (process.env.STB_PUBLIC_SMOKE_URLS || 'https://singaporetourbooking.com/,https://admin.singaporetourbooking.com/,https://api.singaporetourbooking.com/api/health').split(',').map(s => s.trim()).filter(Boolean);
+    for (const u of publicUrls) {
+      const r = await req('GET', u);
+      check('9-edge', `public ${u} -> 200`, r.status === 200, `status=${r.status}`);
+    }
+  } else {
+    skip('9-edge', 'public-domain smoke tests', 'Set RUN_PUBLIC_DOMAIN_SMOKE=true only for an explicitly approved read-only run');
   }
 
   /* ---------- Phase 10: cleanup + log diff ---------- */
@@ -229,9 +244,9 @@ function findVoucher(obj) {
   await db.query("DELETE FROM otp_sessions WHERE email LIKE '%e2e%'");
   check('10-cleanup', 'test data removed from DB', true, 'customers/bookings/drivers/content/sessions purged');
 
-  const errLogSizeAfter = fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
+  const errLogSizeAfter = errLogPath && fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
   let newErrors = '';
-  if (errLogSizeAfter > errLogSizeBefore) {
+  if (errLogPath && errLogSizeAfter > errLogSizeBefore) {
     const fd = fs.openSync(errLogPath, 'r');
     const buf = Buffer.alloc(errLogSizeAfter - errLogSizeBefore);
     fs.readSync(fd, buf, 0, buf.length, errLogSizeBefore);
@@ -239,24 +254,32 @@ function findVoucher(obj) {
     newErrors = buf.toString();
   }
   const realErrors = newErrors.split('\n').filter(l => l.trim() && !l.includes('[AdminAuth] 401') && !l.includes('SyntaxError') && !l.includes('body-parser') && !/^\s+at /.test(l) && !l.includes('code: ') && !l.includes('statusCode:'));
-  check('10-cleanup', 'no new server errors during E2E', realErrors.length === 0, realErrors.slice(0, 5).join(' | ').slice(0, 200));
+  if (errLogPath) check('10-cleanup', 'no new server errors during E2E', realErrors.length === 0, realErrors.slice(0, 5).join(' | ').slice(0, 200));
+  else skip('10-cleanup', 'server error-log diff', 'Set STB_E2E_ERROR_LOG to an accessible test-server log path');
 
   await db.end();
 
   /* ---------- report ---------- */
-  const pass = results.filter(r => r.pass).length;
-  const fail = results.filter(r => !r.pass);
-  const out = { total: results.length, pass, fail: fail.length, results };
-  fs.mkdirSync('/tmp/stb-e2e', { recursive: true });
-  fs.writeFileSync('/tmp/stb-e2e-results.json', JSON.stringify(out, null, 2));
+  const pass = results.filter(r => r.pass && !r.skipped).length;
+  const fail = results.filter(r => !r.pass && !r.skipped);
+  const skipped = results.filter(r => r.skipped).length;
+  const out = { total: results.length, pass, fail: fail.length, skipped, results };
+  const resultsPath = process.env.STB_E2E_RESULTS_PATH || '/tmp/stb-e2e-results.json';
+  fs.mkdirSync(pathModule.dirname(resultsPath), { recursive: true });
+  fs.writeFileSync(resultsPath, JSON.stringify(out, null, 2));
 
-  console.log(`\n===== STB E2E SUMMARY: ${pass}/${results.length} passed, ${fail.length} failed =====`);
+  console.log(`\n===== STB E2E SUMMARY: ${pass} passed, ${fail.length} failed, ${skipped} skipped (${results.length} checks) =====`);
   const byPhase = {};
-  for (const r of results) { byPhase[r.phase] = byPhase[r.phase] || { p: 0, f: 0 }; r.pass ? byPhase[r.phase].p++ : byPhase[r.phase].f++; }
-  for (const [ph, c] of Object.entries(byPhase)) console.log(`  ${ph}: ${c.p} pass / ${c.f} fail`);
+  for (const r of results) {
+    byPhase[r.phase] = byPhase[r.phase] || { p: 0, f: 0, s: 0 };
+    if (r.skipped) byPhase[r.phase].s++;
+    else if (r.pass) byPhase[r.phase].p++;
+    else byPhase[r.phase].f++;
+  }
+  for (const [ph, counts] of Object.entries(byPhase)) console.log(`  ${ph}: ${counts.p} pass / ${counts.f} fail / ${counts.s} skipped`);
   if (fail.length) {
     console.log('\n--- FAILURES ---');
     for (const f of fail) console.log(`  [FAIL][${f.phase}] ${f.name} :: ${f.detail}`);
   }
-  process.exit(0);
+  process.exitCode = fail.length ? 1 : 0;
 })().catch(e => { console.error('SUITE CRASH:', e); process.exit(1); });
