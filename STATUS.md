@@ -1,5 +1,7 @@
 # STB Singapore Tour Booking — Platform Status
 
+> **Historical snapshot:** This status page was last updated 2026-09-27 and contains stale claims. For the current source-based baseline, read [`docs/REPOSITORY_AUDIT.md`](docs/REPOSITORY_AUDIT.md); for delivery rules and current backlog, read [`docs/AGILE_DEVELOPMENT_QA_METHOD.md`](docs/AGILE_DEVELOPMENT_QA_METHOD.md). Do not treat old checkmarks as current runtime verification.
+
 > Last updated: 2026-09-27 (commit `15e4184`)
 > Repository: https://github.com/TenSketch/landing-stb
 > Production: Node.js + Express on Hetzner VPS, PostgreSQL
