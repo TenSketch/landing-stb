@@ -365,7 +365,7 @@ function showDriverAssignModal(voucher, drivers) {
         <p id="dam-description" style="margin:0 0 16px;font-size:0.85rem;color:#6B6B6B;">Booking: <strong>${escapeHtml(voucher)}</strong></p>
         <div class="form-group">
           <label class="form-label" for="dam-driver">Select Active Driver</label>
-          <select id="dam-driver" class="form-select">
+          <select id="dam-driver" class="form-select" required>
             <option value="">Choose a driver…</option>
             ${(drivers || []).filter(d => d.is_active).map(d =>
               `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)} ${d.phone ? `(${escapeHtml(d.phone)})` : ''}</option>`
