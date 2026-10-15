@@ -6,13 +6,16 @@
 
 ## Instructions to the next agent
 
-Read these documents before editing code:
+Read these documents before editing code, in this order:
 
-1. [Repository audit](REPOSITORY_AUDIT.md)
-2. [Agile development and QA method](AGILE_DEVELOPMENT_QA_METHOD.md)
-3. [Latest isolated QA report](QA-REPORT-2026-10-15.md)
-4. [Technical debt inventory](TECHNICAL_DEBT.md)
-5. [Google Maps configuration](GOOGLE_MAPS.md)
+1. [Design-to-development master plan](DESIGN_TO_DEVELOPMENT_MASTER_PLAN.md) — execution contract, phases, design principles and release gates.
+2. [Repository audit](REPOSITORY_AUDIT.md)
+3. [Agile development and QA method](AGILE_DEVELOPMENT_QA_METHOD.md)
+4. [Latest isolated QA report](QA-REPORT-2026-10-15.md)
+5. [Technical debt inventory](TECHNICAL_DEBT.md)
+6. [Google Maps configuration](GOOGLE_MAPS.md)
+
+**Autonomy rule:** Continue source inspection, documentation, branch-based fixes, tests, CI and PR updates without asking for routine approval. Pause only for production merge/deploy, destructive production operations, real provider side effects, secrets, breaking contract choices or unresolved business policy. If one item is blocked, record it and continue independent work.
 
 Then independently inspect the current default branch, open PRs, branch heads, changed files, and CI status. Do not assume this handoff is newer than the repository state; reconcile it with GitHub before acting.
 
