@@ -26,6 +26,8 @@ Start here before changing code:
 20. [UX review (2026-10-04)](UX-REVIEW-2026-10-04.md) — dated review, not a substitute for fresh device testing.
 21. [QA report (2026-10-15)](QA-REPORT-2026-10-15.md) — isolated CI run and explicit skipped checks.
 22. [QA report (2026-09-30)](QA-REPORT-2026-09-30.md) — historical 160-check report; not a current run.
+23. [Idempotency QA report](https://github.com/TenSketch/landing-stb/blob/fix/booking-idempotency/docs/QA-REPORT-2026-10-15-IDEMPOTENCY.md) — isolated CI evidence for PR #6.
+24. [Provider-cache QA report](QA-REPORT-2026-10-15-PROVIDER-CACHE.md) — isolated CI evidence for PR #7.
 
 ## Source-of-truth rules
 
