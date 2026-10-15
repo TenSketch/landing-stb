@@ -22,7 +22,8 @@ Start here before changing code:
 16. [Performance and caching](PERFORMANCE_AND_CACHING.md) — caching and performance notes.
 17. [Deployment](DEPLOYMENT.md) and [live runbook](LIVE-RUNBOOK.md) — deployment operations; verify the intended environment before use.
 18. [UX review (2026-10-04)](UX-REVIEW-2026-10-04.md) — dated review, not a substitute for fresh device testing.
-19. [QA report (2026-09-30)](QA-REPORT-2026-09-30.md) — historical 160-check report; not a current run.
+19. [QA report (2026-10-15)](QA-REPORT-2026-10-15.md) — fresh isolated CI run and explicit skipped checks.
+20. [QA report (2026-09-30)](QA-REPORT-2026-09-30.md) — historical 160-check report; not a current run.
 
 ## Source-of-truth rules
 
