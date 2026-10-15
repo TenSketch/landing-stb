@@ -173,7 +173,9 @@ Read [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for PR links and the latest recorded i
 
 **Notification provider refresh is implemented in stacked PR #7** ([review PR](https://github.com/TenSketch/landing-stb/pull/7)) and its isolated CI passed: [run 38703088482](https://github.com/TenSketch/landing-stb/actions/runs/38703088482). It adds a configurable 30-second TTL cache, single-flight loading, invalidation after integration mutations and tests for expiry, concurrent refresh, invalidation during load and failure recovery. The PR remains open and must receive code review before merge.
 
-**Next engineering task: admin error handling/accessibility/authorization.** Inspect actual admin UI catch blocks and dispatch flow, verify API authorization independently, and select the highest-impact reproducible issue. Fix it in a focused PR with regression tests and updated docs. Then continue PWA behavior and customer UX. Continue independently and update this plan/handoff after each material phase.
+**Admin dispatch/accessibility work is underway in PRs #8 and #9** ([#8](https://github.com/TenSketch/landing-stb/pull/8), [#9](https://github.com/TenSketch/landing-stb/pull/9)). PR #8 CI passed, while manual browser/device accessibility verification remains outstanding; PR #9 adds active-driver server validation and was awaiting CI at last update.
+
+After PR #9 passes and is reviewed, continue auditing admin error handling and permission boundaries. Then move to PWA cache/update/offline behavior, followed by customer UX and design-system refinement. Continue independently and update this plan/handoff after each material phase.
 
 ## 11. Decision log
 
