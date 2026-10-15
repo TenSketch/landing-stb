@@ -1,5 +1,7 @@
 # Implementation Roadmap
 
+> **Legacy backlog:** priorities below originated in an earlier audit and some items may be stale or already implemented. Validate each item against [`REPOSITORY_AUDIT.md`](REPOSITORY_AUDIT.md) and the current source before execution. The current Agile workflow, acceptance criteria and release gates are in [`AGILE_DEVELOPMENT_QA_METHOD.md`](AGILE_DEVELOPMENT_QA_METHOD.md).
+
 > Based on Phase 1 audit findings. Ordered by severity and dependency.
 
 ## Phase 2 — Architecture & Code Quality
