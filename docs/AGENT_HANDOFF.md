@@ -1,6 +1,6 @@
 # STB Agent Handoff — Current Work & Next Actions
 
-**Updated:** 2026-10-15  
+**Updated:** 2026-10-15 (reconciliation pass R0, verified against GitHub API and local source)  
 **Repository:** `TenSketch/landing-stb`  
 **Mode:** Test/PR work only. Production must remain untouched.
 
@@ -17,74 +17,81 @@ Read these documents before editing code, in this order:
 
 **Autonomy rule:** Continue source inspection, documentation, branch-based fixes, tests, CI and PR updates without asking for routine approval. Pause only for production merge/deploy, destructive production operations, real provider side effects, secrets, breaking contract choices or unresolved business policy. If one item is blocked, record it and continue independent work.
 
-Then independently inspect the current default branch, open PRs, branch heads, changed files, and CI status. Do not assume this handoff is newer than the repository state; reconcile it with GitHub before acting.
+## Reconciled PR and CI state (GitHub API, 2026-10-15)
 
-## Work completed in open PRs (not merged)
+All nine PRs below were re-checked directly against GitHub. Heads and checks are exact as of this update.
 
-| PR | Scope | Current evidence | Required next step |
+| PR | Base | Head | Head SHA | CI on head |
+|---|---|---|---|---|
+| [#2 Webhook hardening](https://github.com/TenSketch/landing-stb/pull/2) | main | fix/webhook-body-limit-and-routing | `e66158f9e968` | **No run** — workflow file does not exist on this branch (added later by PR #4/#5) |
+| [#3 Audit & QA docs](https://github.com/TenSketch/landing-stb/pull/3) | main | docs/full-audit-agile-development-plan | `7e04566efdbe` | **No run** — docs-only branch without workflow file |
+| [#4 Portable QA & isolated CI](https://github.com/TenSketch/landing-stb/pull/4) | main | test/portable-ci-baseline | `35eb114b3ff5` | success — [run 38690638384](https://github.com/TenSketch/landing-stb/actions/runs/38690638384) |
+| [#5 Booking transactions & Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | main | fix/booking-transaction-ci | `a10637088b1f` | success — [run 38691010883](https://github.com/TenSketch/landing-stb/actions/runs/38691010883) |
+| [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | #5 branch | fix/booking-idempotency | `121ed72d453a` | success — [run 38702778525](https://github.com/TenSketch/landing-stb/actions/runs/38702778525) |
+| [#7 Provider cache](https://github.com/TenSketch/landing-stb/pull/7) | #6 branch | perf/notification-provider-cache | `5376845fbbfc` | success — [run 38703088482](https://github.com/TenSketch/landing-stb/actions/runs/38703088482) |
+| [#8 Admin dialog accessibility](https://github.com/TenSketch/landing-stb/pull/8) | #7 branch | fix/admin-dialog-accessibility | `326790f53731` | success — [run 38703397239](https://github.com/TenSketch/landing-stb/actions/runs/38703397239) |
+| [#9 Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9) | #8 branch | fix/validate-driver-assignment | `5cb83e75b0a2` | success — [run 38703786164](https://github.com/TenSketch/landing-stb/actions/runs/38703786164) |
+| [#10 Admin error feedback](https://github.com/TenSketch/landing-stb/pull/10) | #9 branch | fix/admin-error-feedback | `8e3c837d1d2f` | success — [run 38704232283](https://github.com/TenSketch/landing-stb/actions/runs/38704232283) |
+
+A passing CI run is not approval to merge or deploy. Pull requests #6–#10 form a stack on PR #5; each `base` is the previous PR's branch.
+
+### Branch topology notes
+
+- **PR #4 vs PR #5 duplication:** `fix/booking-transaction-ci` contains its own cherry-picked copies of PR #4's CI/test commits (same messages, different SHAs; `origin/test/portable-ci-baseline` is *not* an ancestor). Merging both #4 and #5 into main will produce duplicate file additions (`.github/workflows/node-postgres-tests.yml`, `tests/audit.cjs`, `tests/e2e-suite.cjs`) and require conflict resolution. Merge order is an owner decision — do not merge either without explicit authorization.
+- **Stale branch:** `origin/fix/booking-transaction-safety` has no PR and is superseded by `fix/booking-transaction-ci`. Candidate for deletion after owner confirmation.
+- **Local unpushed branch** `fix/booking-ux-data-audit` (worktree at `/home/balaadmin/stb-qa`, 3 commits from a prior session, not pushed):
+  - `ac6f82d` From/To input jumping fix + suggestion styling → unique, Phase 6 material.
+  - `fb2617b` `docs/VEHICLE_PRICING_DATA-FLOW.md` → unique doc.
+  - `6e9f989` optional `GOOGLE_MAPS_API_KEY_SERVER` in `lib/handlers.js` → **superseded by PR #5's key separation** (`GOOGLE_MAPS_BROWSER_API_KEY`/`GOOGLE_MAPS_SERVER_API_KEY`); must not be merged as-is.
+  - Plan: re-land the two unique commits on a fresh branch from main during Phase 6; drop the maps commit.
+
+## Codex review findings triage (verified against current heads)
+
+| PR | Finding | Verification | Disposition |
 |---|---|---|---|
-| [#2 Webhook hardening](https://github.com/TenSketch/landing-stb/pull/2) | Request body cap, timing-safe HMAC comparison, route/method handling, JSON errors and spawn error handling | Open PR; inspect latest checks and review the complete diff | Review webhook signature/body handling and deployment side effects; add targeted tests if gaps remain |
-| [#3 Audit and QA documentation](https://github.com/TenSketch/landing-stb/pull/3) | Repository audit, Agile QA method, docs index and this handoff | Open PR; documentation changes only | Check all claims against the current source and keep this handoff updated as work progresses |
-| [#4 Portable QA and isolated CI](https://github.com/TenSketch/landing-stb/pull/4) | Removes hard-coded VPS paths from QA scripts; configurable local target/DB; opt-in public probes; PostgreSQL-backed CI workflow | Prior workflow passed; see [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38690638384) | Review workflow safety, cleanup and skipped checks; verify latest run rather than relying on this historical link |
-| [#5 Booking transaction safety and Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | Client-scoped DB transactions for booking status/driver assignment, audit writes in transaction, concurrency/rollback regression tests, browser/server Maps key separation | Latest recorded combined run: [CI run](https://github.com/TenSketch/landing-stb/actions/runs/38691010883) | Inspect the latest PR head and diff; verify transaction boundaries and all key paths before considering complete |
-| [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | Transactional idempotency key storage, same-key replay, mismatched-payload conflict, customer key reuse and E2E concurrency tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38702778525): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; unit/database/transaction/Maps suites all passed | Review idempotency failure/notification semantics and keep stacked on PR #5 until its base changes are integrated. PR #6 is stacked on PR #5's branch and should be retargeted to main only after its base changes are integrated.
-| [#7 Notification provider cache](https://github.com/TenSketch/landing-stb/pull/7) | Configurable 30-second TTL cache, single-flight refresh, invalidation on integration mutations and cache utility tests | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703088482): 9 cache assertions passed, 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; all workflow steps green | Review cache invalidation/failure behavior and keep stacked on PR #6 until its base changes are integrated |
-| [#8 Accessible driver assignment dialog](https://github.com/TenSketch/landing-stb/pull/8) | Dialog semantics, labels, focus entry/trap/restore, Escape close | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703397239): 93 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped | Manual keyboard/screen-reader/device checks remain blocked until a browser/device pass is recorded; PR #8 is stacked on PR #7 |
-| [#9 Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9) | Active-driver-only API, dispatch-scoped safe choices, driver ID validation, E2E tests for active/malformed/inactive records | [CI passed](https://github.com/TenSketch/landing-stb/actions/runs/38703786164): 98 E2E passed, 0 failed, 3 skipped; 43 security checks passed, 1 skipped; all workflow steps green | Review authorization/data contract; stacked on PR #8 |
-| [#10 Admin error feedback](https://github.com/TenSketch/landing-stb/pull/10) | Removes global toast duplication; action handlers show one toast and page loaders show inline errors | CI pending at handoff update | Verify the latest CI and check expired-session behavior; stacked on PR #9 |
+| #7 | **P1** `invalidateProviderCache()` called in `lib/integrations.js` but never imported/defined | **CONFIRMED** — head `5376845f`: 4 call sites, only `db.js` and `security.js` imported; `invalidateProviderCache` is exported from `notifications.js`. Every integration mutation throws `ReferenceError` after persisting (400 to client, cache never invalidated). CI passed because no suite exercises integration mutations. | Fix commit on `perf/notification-provider-cache` + regression test |
+| #8 | **P1** focus trap collects focusables with `$()` (single `querySelector`) then `.filter()` | To verify on head `326790f5` during fix pass | Fix on `fix/admin-dialog-accessibility` if reproduced |
+| #6 | **P1** Vercel route `api/bookings.js` omits the `Idempotency-Key` argument to `handleCreateBooking` | To verify on head `121ed72d` | Fix on `fix/booking-idempotency` + handler test |
+| #6 | **P2** Vercel `api/config.js` ignores `GOOGLE_MAPS_BROWSER_API_KEY` selector | To verify on head `121ed72d` | Fix on `fix/booking-idempotency` |
+| #9 | **P2** driver-active check runs outside the assignment transaction (deactivation race) | To verify on head `5cb83e75` | Fix on `fix/validate-driver-assignment` + transaction test |
+| #9 | **P2** `docs/ADMIN_MODULES.md` still documents `{ driverName, driverPhone }` request body | To verify | Docs fix on same branch |
+| #10 | **P2** login catch swallows API errors after global toast removal (silent failed sign-in) | To verify on head `8e3c837d` | Fix on `fix/admin-error-feedback` |
+| #4 | **P2** `npm install --no-package-lock` makes CI nondeterministic; `package-lock.json` exists on main | **CONFIRMED** in workflow on #4/#5 heads | Fix on `test/portable-ci-baseline` (and mirror if #5 carries its own copy) |
+| #3 | **P2** `docs/REPOSITORY_AUDIT.md` keeps the revalidated-no-longer-confirmed XSS item under "P0 — release-blocking" | **CONFIRMED** — item text already says the claim "is not confirmed by this inspection" yet stays in the P0 release-blocking list | Reclassify on `docs/full-audit-agile-development-plan` |
+| #2 | **P2** spawn `error` handler plus `close` handler can send duplicate deployment-failure alerts | To verify on head `e66158f9` | Fix on `fix/webhook-body-limit-and-routing` |
+| #5 | Codex **code review status "failed"** at `31f450f` with unresolved findings | Findings were never published — Codex usage quota hit immediately after (comment on PR #5) | **BLOCKED — external dependency** (Codex quota); re-trigger when quota resets |
 
-All four PRs were recorded as open and unmerged when this handoff was written. Re-check status before reporting. A passing CI run is not approval to merge or deploy.
+## Local verification baseline (VPS, 2026-10-15)
 
-## Latest recorded isolated CI result
+- `main` `57c9677`: `npm test` **green** — pricing 8/8, auth/session 3/3, platform hardening 10/10 (21 total) against a disposable `stb_test` database (PostgreSQL 18, port 5433), Node v24.19.0.
+- **How to run tests on this VPS:** `sudo sh -c 'cd /root/landing-stb && env NODE_ENV=test INITIAL_ADMIN_EMAIL=admin@example.com SUPER_ADMIN_OTP_REQUIRED=false PG_SSL=false STB_SECRET_KEY="test-only-secret-key-32-bytes-minimum!!" SMTP_HOST="" SMTP_USER="" SMTP_PASSWORD="" EMAIL_FROM="" /usr/local/bin/node <test-file>'`.
+  - Let dotenv load `.env` for `DATABASE_URL`. **Never pass a hand-built `DATABASE_URL`** — the real password contains shell/URL-sensitive characters and a mangled override fails scram auth with a misleading `28P01`.
+  - `SMTP_*` must be forced empty in every test run so no real email can reach the client mailbox (2026-09 incident: STB test mail landed in Theesma's inbox).
+  - `platform_hardening.test.js` drops and recreates `stb_test` itself; other suites are read-only or use `stb_test`.
+- CI parity: GitHub workflow uses Node 20 + ephemeral PostgreSQL 16 on Ubuntu; local runs use Node 24 + PostgreSQL 18 — record this difference in QA reports.
 
-The dated report records the tested PR #5 head `a10637088b1f42494fdbf73479c5607ab75b92ac` on GitHub-hosted Ubuntu, Node.js 20 and ephemeral PostgreSQL 16:
+## Blockers (external — record and continue independent work)
 
-- Pricing unit tests: 8 passed
-- Auth/session helper tests: 3 passed
-- Backend/database integration tests: 10 passed
-- Booking transaction/dispatch tests: 8 passed
-- Google Maps browser/server separation tests: 5 passed
-- Local E2E: 87 passed, 0 failed, 3 skipped
-- Local security audit: 43 passed, 0 failed, 1 skipped
-- Total recorded: 164 passed, 0 failed, 4 skipped
+1. **Codex review quota exhausted** — PR #5's unresolved findings were never published; re-run `@codex review` when quota resets.
+2. **No CI on main / PR #2 / PR #3** — the workflow file ships inside PRs #4 and #5; until one merges (owner decision), those refs get no checks.
+3. **Vercel preview quota** — preview deployments on PRs hit the free-tier daily limit; this affects previews only, never production. Not agent-actionable.
+4. **Browser/device/manual accessibility checks** — no browser tooling on this VPS; headless attempts will be recorded, otherwise marked BLOCKED (never passed).
+5. **Live-domain probes, real provider sends, Google Maps billing/restrictions** — opt-in and owner-authorized only.
+6. **Owner-pending decisions (do not touch):** brand tagline, reply-to `bala@tensketch.com`, audit report filters, new GCP Maps key rotation.
 
-Skipped checks were webhook service probes, public-domain smoke checks, explicit server error-log diff, and public-domain security audit. This evidence does **not** verify production, real provider delivery, live Google restrictions/billing, or mobile PWA behavior. See the full dated report for details.
+## Execution plan for this session (one phase = one commit = one PR update)
 
-## Continue autonomously — priority order
+| Phase | Scope | Status |
+|---|---|---|
+| R0 | Reconcile branches/PRs/CI/reviews; update this handoff | **this commit** |
+| R1 | Fix confirmed review defects on their owning PR branches (#7, #8, #6, #9, #10, #4, #3, #2), each with tests | NOT STARTED |
+| R2 | Reconcile local `fix/booking-ux-data-audit`: re-land unique commits on a fresh branch, drop superseded maps commit | NOT STARTED |
+| R3 | Phase 5 remainder — API authorization boundary audit; extend tests for any gap found | NOT STARTED |
+| R4 | Phase 6 — customer UX/design system: design-token inventory, guided-flow vertical slice, validation/keyboard checks | NOT STARTED |
+| R5 | Phase 7 — PWA cache/update/offline verification + performance notes; automated service-worker safety checks | NOT STARTED |
+| R6 | Phase 8 — full regression on a candidate SHA, migration rehearsal, secrets/dependency review, dated QA report, release dossier | NOT STARTED |
 
-### P0 — Reconcile and validate the open PRs
-- Fetch current PR state, latest head SHAs, review comments and required checks.
-- Review complete diffs, especially transaction safety, webhook signature verification, test environment isolation and public config secret exposure.
-- Fix test failures or defects in focused commits/PRs. Never merge or deploy without explicit owner approval.
-
-### P0/P1 — Booking idempotency (implementation in PR #6; pending CI)
-- Traced `POST /api/bookings`, customer submit code, voucher generation, `saveBooking`, and migration strategy.
-- Added an optional `Idempotency-Key` header, payload fingerprinting, hashed key storage, 24-hour expiry, transaction-scoped booking persistence and replay response.
-- Customer form reuses a key for retries of the same payload and generates a new key when payload changes.
-- E2E now checks same-key replay, payload mismatch, malformed key, single-row persistence and concurrent same-key requests.
-- Verify latest CI and review failure/notification semantics before marking complete. See [PR #6](https://github.com/TenSketch/landing-stb/pull/6) and [idempotency contract](https://github.com/TenSketch/landing-stb/blob/fix/booking-idempotency/docs/BOOKING_IDEMPOTENCY.md).
-
-### P1 — Notifications provider refresh (PR #7 CI passed)
-- Confirm CI and review `lib/asyncTtlCache.js`, `lib/notifications.js`, and all mutation paths in `lib/integrations.js`.
-- Provider settings are cached for 30 seconds by default (`STB_PROVIDER_CACHE_TTL_MS`); integration changes invalidate the cache.
-- Tests cover TTL expiry, shared in-flight loads, invalidation during refresh and failure recovery. Ensure no secret values are emitted in logs. CI evidence is in [QA-REPORT-2026-10-15-PROVIDER-CACHE.md](QA-REPORT-2026-10-15-PROVIDER-CACHE.md).
-
-### P1 — Google Maps configuration
-- Re-check `lib/googleMapsConfig.js`, `lib/handlers.js`, `server.js`, `/api/config`, and frontend loader on the current PR head.
-- Confirm browser key is the only Maps key returned publicly; server Routes key and legacy fallback remain server-only.
-- Test missing/invalid configuration and graceful booking fallback without real credentials.
-- Do not ask the owner to paste secrets into chat. Request only configuration action after the code and exact API requirements are verified.
-
-### P1 — Admin usability and authorization (PR #8/#9 CI passed)
-- PR #8 adds keyboard/screen-reader dialog semantics; CI passed, but manual browser/device verification is still required.
-- PR #9 validates the driver ID against active database records and restricts the assignment-choice endpoint by dispatch permission; isolated CI passed.
-- PR #10 addresses duplicate error toasts; verify its CI. Then audit remaining loading/empty states and API authorization boundaries, followed by PWA behavior.
-
-### P1/P2 — PWA and operational checks
-- Verify customer service-worker cache/update behavior, and determine whether admin PWA service-worker registration is an explicit requirement.
-- Test that API calls and booking mutations are not served from stale cache or falsely marked successful offline.
-- Keep live-domain probes read-only and opt-in; use disposable fixtures and guarantee cleanup.
-- Mark unexecuted mobile, provider, live-domain and billing tests as skipped/blocked, never passed.
+Phase status vocabulary follows the master plan: `NOT STARTED`, `IN PROGRESS`, `PASS — PR OPEN`, `FAIL — FIX REQUIRED`, `BLOCKED — EXTERNAL DEPENDENCY`, `OWNER DECISION REQUIRED`, `COMPLETE — MERGED`.
 
 ## Required working rules
 
@@ -98,4 +105,4 @@ Skipped checks were webhook service probes, public-domain smoke checks, explicit
 
 ## Definition of next useful update
 
-When reporting back, provide: current PR status; latest CI link and counts; changes made; new defects found/fixed; skipped/blocked verification; next priority. Avoid saying “production verified” unless a separately authorized production check actually occurred.
+When reporting back, provide: current PR status; latest CI link and counts; changes made; new defects found/fixed; skipped/blocked verification; next priority. Avoid saying "production verified" unless a separately authorized production check actually occurred.
