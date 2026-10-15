@@ -1,6 +1,14 @@
 # Security
 
-> Verified against code as of commit `15e4184`. Does not include penetration test.
+> **Legacy inventory:** The vulnerability table below reflects an older source snapshot and is not a current confirmed vulnerability list. See [`REPOSITORY_AUDIT.md`](REPOSITORY_AUDIT.md) and [`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) for revalidated dispositions. The 2026-10-15 isolated security probes passed, but no full penetration test or live-domain audit was performed.
+
+## Revalidated on 2026-10-15
+
+- Driver assignment page currently escapes dynamic text/attributes; the historical XSS claim is not confirmed, though URL-scheme validation and regression coverage remain appropriate.
+- OTP verification increments attempts and evaluates the OTP hash in a single SQL `UPDATE ... RETURNING`; the historical check-then-increment claim is stale unless a concurrent regression test demonstrates otherwise.
+- The Routes API `Referer` value is an outbound request header, not an HTTP redirect by itself; do not label it an open redirect without a redirect sink.
+- The driver assignment/status transaction issue is confirmed on the audited `main` snapshot. PR #5 adds a client-scoped transaction and passed isolated CI on commit `cdb645af4b35a1d81542e2a3516909108c349c9c`; keep open until merged/released.
+- In-memory rate limiting remains a single-process limitation. Other rows below require current-source verification before being called confirmed.
 
 ## Authentication
 
