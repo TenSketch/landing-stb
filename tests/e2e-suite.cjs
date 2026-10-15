@@ -215,7 +215,7 @@ function findVoucher(obj) {
 
   /* ---------- Phase 9: webhook + public domain ---------- */
   if (process.env.STB_WEBHOOK_BASE_URL) {
-    const webhookBase = process.env.STB_WEBHOOK_BASE_URL.replace(/\\/$/, '');
+    const webhookBase = process.env.STB_WEBHOOK_BASE_URL.replace(/\/$/, '');
     const wh1 = await req('POST', `${webhookBase}/webhook`, { body: { test: 1 } });
     check('9-edge', 'webhook without secret rejected', wh1.status >= 400, `status=${wh1.status}`);
     const wh2 = await req('POST', `${webhookBase}/webhook`, { headers: { 'x-webhook-secret': 'wrong' }, body: { test: 1 } });
