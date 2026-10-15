@@ -173,9 +173,9 @@ Read [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for PR links and the latest recorded i
 
 **Notification provider refresh is implemented in stacked PR #7** ([review PR](https://github.com/TenSketch/landing-stb/pull/7)) and its isolated CI passed: [run 38703088482](https://github.com/TenSketch/landing-stb/actions/runs/38703088482). It adds a configurable 30-second TTL cache, single-flight loading, invalidation after integration mutations and tests for expiry, concurrent refresh, invalidation during load and failure recovery. The PR remains open and must receive code review before merge.
 
-**Admin dispatch/accessibility work is underway in PRs #8 and #9** ([#8](https://github.com/TenSketch/landing-stb/pull/8), [#9](https://github.com/TenSketch/landing-stb/pull/9)). PR #8 CI passed, while manual browser/device accessibility verification remains outstanding; PR #9 adds active-driver server validation and was awaiting CI at last update.
+**Admin dispatch/accessibility work is in PRs #8 and #9** ([#8](https://github.com/TenSketch/landing-stb/pull/8), [#9](https://github.com/TenSketch/landing-stb/pull/9)); both isolated CI runs passed. PR #8 still requires manual browser/device accessibility verification. PR #9 adds active-driver server validation and dispatch-scoped driver choices.
 
-After PR #9 passes and is reviewed, continue auditing admin error handling and permission boundaries. Then move to PWA cache/update/offline behavior, followed by customer UX and design-system refinement. Continue independently and update this plan/handoff after each material phase.
+**Next engineering task:** audit admin error handling and remaining API authorization boundaries. Check duplicate error toasts, loading/empty/error states and route-level permission enforcement. Fix the highest-impact reproducible issue with focused tests. Then move to PWA cache/update/offline behavior, followed by customer UX and design-system refinement. Continue independently and update this plan/handoff after each material phase.
 
 ## 11. Decision log
 
