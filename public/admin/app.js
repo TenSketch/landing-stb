@@ -409,7 +409,7 @@ function showDriverAssignModal(voucher, drivers) {
       return;
     }
     if (event.key !== 'Tab') return;
-    const focusable = $(focusableSelector, dialog).filter(el => el.offsetParent !== null);
+    const focusable = $$(focusableSelector, dialog).filter(el => el.offsetParent !== null);
     if (!focusable.length) {
       event.preventDefault();
       dialog?.focus();
@@ -435,7 +435,7 @@ function showDriverAssignModal(voucher, drivers) {
     }
   });
 
-  $('.modal-close', overlay).forEach(btn => btn.addEventListener('click', closeModal));
+  $$('.modal-close', overlay).forEach(btn => btn.addEventListener('click', closeModal));
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
   $('#dam-submit').addEventListener('click', async () => {
