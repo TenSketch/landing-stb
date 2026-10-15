@@ -70,6 +70,7 @@ Severity reflects potential impact, not a claim that exploitation or failure was
 - **Driver assignment validation:** Replace free-text/prompt-style assignment with server-validated driver selection, authorization checks and clear failure feedback.
 - **Pricing/date-time correctness:** Confirm actual date/time element IDs, timezone interpretation, hourly/daily durations, route fallback behavior, and server-side fare calculation.
 - **Notification provider cost and freshness:** The current notification path calls `refreshProviders()` for every event, which reloads four integration settings. Add a safe invalidation/TTL strategy and verify changes take effect predictably.
+- **Google Maps key conflation:** On the audited `main` snapshot, `/api/config` returns `GOOGLE_MAPS_API_KEY` while `lib/handlers.js` also uses that same variable for server-side Routes API calls. Separate browser and server keys before requesting credentials; a server-restricted key must never be exposed to the browser.
 - **Admin operational feedback:** Audit silent catch blocks, loading states, empty states, validation and retry behavior across CRUD modules.
 - **Dashboard/list scalability:** Verify that dashboard and list endpoints are paginated/aggregated in SQL instead of loading all bookings into memory.
 - **Integration truthfulness:** Mark each integration as configured, testable, and actually delivering; do not present log-only placeholders as live delivery.
