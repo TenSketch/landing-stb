@@ -1,0 +1,193 @@
+# STB Repository & Documentation Audit
+
+**Audit date:** 2026-10-15  
+**Repository:** `TenSketch/landing-stb`  
+**Branch inspected:** `main`  
+**Base commit inspected:** `57c967767dcb6b376514c84b9ad3aa30ffa3f19b`  
+**Purpose:** Establish an evidence-based baseline before product redesign or further implementation.
+
+> This is a source/documentation audit, not a claim that the live service or full E2E suite was executed on the audit date. Findings are classified as confirmed from source, documented historical evidence, or requiring runtime verification. No production change is authorized by this document.
+
+## 1. Executive summary
+
+STB is an existing transport-booking platform, not a greenfield application. The repository contains a Node.js/Express API and server, PostgreSQL persistence and migrations, a customer-facing web application, a separate admin SPA, a pricing engine, authentication/RBAC, integrations, a PWA manifest/service worker, and existing test scripts.
+
+The immediate priority is to reconcile the documentation with the current implementation, verify the core booking path end-to-end, close security and data-integrity defects, and only then refine the customer/admin experience. Replacing the stack or rebuilding working modules is not justified without further evidence.
+
+## 2. Evidence reviewed
+
+The audit reviewed the current `main` reference and the following files/directories:
+
+- `package.json`, `server.js`, `lib/api.js`, `lib/handlers.js`
+- `lib/pricing.js`, `lib/store.js`, `lib/db.js`, `lib/bookingStatus.js`
+- `lib/auth.js`, `lib/customerAuth.js`, `lib/rbac.js`, `lib/settings.js`
+- `lib/notifications.js`, `lib/integrations.js`
+- `public/index.html`, `public/src/main.js`, `public/admin/app.js`
+- `public/manifest.json`, `public/sw.js`
+- Existing docs: architecture, API reference, database, deployment, booking flow, admin modules, Google Maps, technical debt, implementation roadmap, QA phases, and the 2026-09-30 QA report
+- Existing tests: `tests/e2e-suite.cjs`, `tests/audit.cjs`, and `npm test` scripts
+
+The source snapshot identified for this audit is main commit `57c967767dcb6b376514c84b9ad3aa30ffa3f19b`. Branches and pull requests can change independently; implementation work must re-check the target branch before changing code.
+
+## 3. Current architecture — observed
+
+| Area | Current implementation | Audit implication |
+|---|---|---|
+| Runtime | Node.js (>=20), Express 4, ES modules | Preserve the current server model unless a measured constraint requires change |
+| Persistence | PostgreSQL through `lib/db.js`; migration scripts under `migrations/` | Verify schema and migration behavior against a clean test database |
+| Customer app | Static HTML + JavaScript under `public/` | Current experience can be simplified incrementally without a framework rewrite |
+| Admin app | Separate SPA under `public/admin/` | Keep it operationally focused and mobile responsive |
+| API | Express routes in `lib/api.js`, mounted by `server.js` | Use API as the authoritative boundary for business rules |
+| Pricing | `lib/pricing.js` and DB-backed rules/overrides/surcharges | Customer-visible estimates must be server-calculated and reproducible |
+| Auth | Admin and customer authentication modules, cookie sessions and RBAC | Test every privileged route independently of UI visibility |
+| Notifications | Central notification layer and provider abstractions | Provider setup and actual delivery must be distinguished from placeholders |
+| PWA | `public/manifest.json` and `public/sw.js` exist | Presence alone does not prove registration, installability, offline UX or update correctness |
+| Tests | `npm test`, `tests/e2e-suite.cjs`, `tests/audit.cjs` | Existing test scripts must be run in a controlled test environment; prior reports are not current runs |
+
+## 4. Documentation drift and conflicts
+
+1. **Status vs source:** `STATUS.md` contains older claims that the manifest is empty and service worker is never registered. The current repository has a populated `public/manifest.json` and `public/sw.js` v3. Registration and installability still require a source/runtime check; do not carry the old statement forward as fact.
+2. **Technical-debt entries need revalidation:** `docs/TECHNICAL_DEBT.md` lists both important risks and items whose status may have changed. Keep each item open until verified fixed by code and tests, then close it with evidence.
+3. **Implementation plan has obsolete assumptions:** `IMPLEMENTATION_PLAN.md` describes earlier auth/RBAC and PWA gaps that do not fully match the later code/docs. Use it as history, not the authoritative implementation plan.
+4. **Google Maps docs are stale in places:** `docs/GOOGLE_MAPS.md` refers to older initialization names and commit references. Current customer code calls `initGoogleMapsAndPlaces()`, loads configuration from `/api/config`, and has a local landmark fallback. Re-map actual key names, API usage, and server-side routing before requesting credentials.
+5. **QA results are historical:** `docs/QA-REPORT-2026-09-30.md` records 160/160 checks from 2026-09-30. That result is useful history only; it is not evidence of current health.
+6. **Vercel and VPS documentation conflict:** `README-DEPLOY.md` describes a Vercel serverless/KV path while `docs/ARCHITECTURE.md` and `STATUS.md` describe the Express/PostgreSQL VPS architecture. Confirm the intended authoritative production/test topology before changing deployment.
+7. **Test harness is environment-coupled:** `tests/e2e-suite.cjs` references absolute VPS paths such as `/root/landing-stb/node_modules/pg`, `/root/landing-stb/.env`, and PM2 logs. This is not portable CI and must not be run against production casually.
+
+## 5. Findings requiring immediate validation
+
+Severity reflects potential impact, not a claim that exploitation or failure was observed during this documentation-only pass.
+
+### P0 — release-blocking until verified
+
+- **HTML injection / XSS on driver assignment page:** Technical-debt documentation flags unescaped user-supplied values in `lib/handlers.js` assignment-page rendering. Inspect the current lines and add context-appropriate escaping plus regression tests before release.
+- **Booking data integrity:** `lib/bookingStatus.js` uses transaction statements through the shared `query()` helper, which delegates to the pool. Unless a single database client is held for the full transaction, statements may execute on different connections. Audit and implement a client-scoped transaction across all writes and audit history.
+- **Booking duplicate/retry behavior:** No idempotency-key implementation was found by the initial repository search. Verify current routes and DB constraints, then implement safe idempotency before relying on retries/timeouts.
+- **Secrets and environment separation:** Verify production secrets are not returned by public configuration endpoints, logged, or placed in source. Never commit API keys or real customer data.
+
+### P1 — high priority
+
+- **Driver assignment validation:** Replace free-text/prompt-style assignment with server-validated driver selection, authorization checks and clear failure feedback.
+- **Pricing/date-time correctness:** Confirm actual date/time element IDs, timezone interpretation, hourly/daily durations, route fallback behavior, and server-side fare calculation.
+- **Notification provider cost and freshness:** The current notification path calls `refreshProviders()` for every event, which reloads four integration settings. Add a safe invalidation/TTL strategy and verify changes take effect predictably.
+- **Admin operational feedback:** Audit silent catch blocks, loading states, empty states, validation and retry behavior across CRUD modules.
+- **Dashboard/list scalability:** Verify that dashboard and list endpoints are paginated/aggregated in SQL instead of loading all bookings into memory.
+- **Integration truthfulness:** Mark each integration as configured, testable, and actually delivering; do not present log-only placeholders as live delivery.
+
+### P2 — product quality
+
+- Verify service-worker registration, update behavior, stale cache prevention, offline fallback and install prompts on iOS Safari and Android Chrome.
+- Improve mobile admin navigation, form ergonomics, keyboard access, contrast and accessible labels.
+- Replace hardcoded business settings (including WhatsApp/contact values and currency exchange assumptions) with validated dynamic configuration where appropriate.
+- Consolidate duplicate or legacy admin entry points only after checking references and deployment routes.
+- Improve migration version tracking and safe re-runs before introducing new schema changes.
+
+## 6. Product direction
+
+### Customer booking PWA
+
+The main job is **book a trip quickly**. The customer path should be a short, guided flow:
+
+1. Enter pickup and destination; select suggested places or a clearly labeled fallback.
+2. Select trip type, date/time and duration where relevant.
+3. Select a vehicle using clear capacity/features and a server-calculated price.
+4. Enter passenger/contact details and review the full booking summary.
+5. Submit once, receive a stable booking reference and confirmation, and view next steps.
+
+Keep the homepage focused on the booking action. Secondary content (fleet details, trust information, FAQs and destination inspiration) should not compete with the primary task. Do not remove required information or accessibility support simply to reduce visual clutter.
+
+### Admin PWA
+
+The admin experience should optimize daily operations:
+
+- **Overview:** actionable counts and recent bookings, loaded through bounded server queries.
+- **Bookings/dispatch:** search/filter, status history, validated driver assignment, clear next action.
+- **Vehicles and pricing:** CRUD with validation, preview and audit trail.
+- **Drivers/customers:** operational records and appropriate privacy boundaries.
+- **Content/settings:** dynamic public content and business configuration.
+- **Notifications/integrations:** configuration status, safe test action, last result and useful errors.
+- **Users/roles/audit:** least privilege and traceability.
+
+Use one coherent mobile-first design system shared where practical, but keep customer navigation and admin operations distinct.
+
+## 7. Dynamic-data contract
+
+For every customer-visible value, document its source of truth:
+
+| Data | Authoritative source | Required behavior |
+|---|---|---|
+| Brand/contact/config | validated settings API + server defaults | safe public fields only; no secrets |
+| Vehicles/features/capacity | database-backed vehicle API | admin updates appear in customer app after refresh/cache policy |
+| Pricing/rules/surcharges | database + pricing service | server-calculated, auditable, consistent in estimate and final booking |
+| Pickup/destination | Places result or explicit fallback choice | store stable place/coordinate metadata when available |
+| Booking status/driver | database and authorized API | state transitions validated on server |
+| Content/FAQ/services | content API/database | empty/error states do not silently show misleading data |
+| Currency | explicit supported rate source or clearly stated SGD-only policy | never silently rely on stale hardcoded exchange rates |
+| Notification/integration status | provider configuration and delivery result | configured is not the same as successfully delivered |
+
+No frontend value should be treated as authoritative for fare, permissions, booking state or provider secrets.
+
+## 8. QA baseline and execution rules
+
+### Existing test entry points
+
+- `npm test`: pricing, auth/audit and platform-hardening tests (as declared in `package.json`).
+- `node tests/e2e-suite.cjs`: current E2E harness; currently tied to absolute paths and environment-specific assumptions.
+- `node tests/audit.cjs`: security/operations probes; inspect target/base URLs before execution.
+
+**Current run status:** Not executed as part of this source/documentation inspection. The 2026-09-30 report is historical. Do not report green until commands are executed against a disposable/staging environment with captured output.
+
+### Mandatory end-to-end journeys
+
+1. Anonymous customer loads homepage and all critical assets.
+2. Customer config, content and vehicles load; safe configuration contains no secrets.
+3. Pickup/destination autocomplete works; no-key fallback is understandable and does not misrepresent route precision.
+4. One-way, hourly and daily fare estimates validate inputs and produce expected values.
+5. Customer submits a booking once; duplicate retry does not create duplicate trips.
+6. Booking persists with correct price, timezone/date/time, passenger data and stable voucher.
+7. Customer confirmation and admin notification behave correctly, with delivery failures visible.
+8. Admin login, logout, session expiry and role/permission denial work.
+9. Admin updates vehicle/pricing/content/settings and customer app reflects the authoritative values.
+10. Dispatcher assigns a valid driver; invalid IDs and concurrent assignment attempts are rejected safely.
+11. Booking state transitions and audit history stay consistent under errors/concurrency.
+12. PWA install, update, offline fallback and cache invalidation behave correctly on target browsers.
+13. Security probes cover auth boundaries, CSRF, XSS, injection, rate limits, secret leakage, headers, path traversal and error responses.
+14. Test data is isolated, labeled and cleaned up; never create uncontrolled real notifications or mutate production data.
+
+### Evidence required per run
+
+Record commit SHA, environment (staging/local), Node version, database/migration state, command, start/end time, passed/failed/skipped counts, failure output, artifacts, test data cleanup, and open defects. A blocked test is **blocked**, not passed.
+
+## 9. Recommended sequence
+
+1. Freeze and reconcile the source-of-truth docs.
+2. Build a portable, safe test environment and make current test commands reproducible.
+3. Run baseline unit/integration/E2E/security suites and classify findings.
+4. Fix P0 security/data-integrity issues with focused regression tests.
+5. Fix booking/date-time/pricing and dispatch correctness.
+6. Improve admin error feedback and complete high-value operational modules.
+7. Simplify customer booking UX and verify responsive/accessibility behavior.
+8. Complete PWA behavior and dynamic-data contract.
+9. Configure and verify Google Maps only after confirming required APIs, key types and domain/server restrictions.
+10. Run full regression and release-gate review; create a deployment plan separately.
+
+## 10. Google Maps decision and credential gate
+
+Do not ask for or paste a key into chat or source code. First confirm the actual configuration variables and which API calls are needed.
+
+Expected separation:
+
+- **Browser key:** Maps JavaScript API and Places Autocomplete, restricted by HTTP referrer to the intended STB domains and only the required APIs.
+- **Server key:** Routes API (if used server-side), restricted by server/IP and only the required APIs.
+- Enable billing and quota alerts deliberately. Use separate keys for staging and production where feasible.
+- Keep server credentials in the deployment secret store. A browser key is visible to users by design; its protection is restriction, not secrecy.
+- Test no-key behavior, invalid-key errors, quota errors and network failure without blocking the core booking form.
+
+Only request configuration values from the owner when the implementation is ready and the exact required setup is known. Never request a raw server key in this chat.
+
+## 11. Audit limitations
+
+- No local checkout, database connection, browser session, live VPS shell or full runtime execution was available through this source audit.
+- Source findings require runtime confirmation where stated.
+- No production files, secrets, database records or deployments were changed.
+- This audit supersedes stale claims only for the specific facts it explicitly rechecks; it does not mark old debt as fixed without evidence.
