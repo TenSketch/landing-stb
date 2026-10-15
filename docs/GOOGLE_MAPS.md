@@ -1,62 +1,50 @@
-# Google Maps Integration
+# Google Maps, Places & Routes Integration
 
-> Verified against `public/src/main.js`, `lib/api.js` as of commit `15e4184`.
+**Revalidated:** 2026-10-15  
+**Source files:** `public/src/main.js`, `server.js`, `lib/handlers.js`, `lib/googleMapsConfig.js`
 
-## What's Used
+## Current flow
 
-| API | Used For | Key Source |
-|-----|----------|------------|
-| Maps JavaScript API | Map display on confirmation page | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` |
-| Places Autocomplete | Pickup/destination inputs | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` |
-| Routes API | Distance + duration for fare calc | `GOOGLE_SERVER_API_KEY` (server-side) |
+1. Customer UI calls `GET /api/config`.
+2. The response's `googleMapsApiKey` is the browser key only.
+3. `public/src/main.js` loads Maps JavaScript + Places Autocomplete if a browser key is present.
+4. If no browser key is present, the customer form uses local Singapore landmark presets.
+5. Fare estimation calls the server's `handleEstimateFare()`.
+6. The server uses Routes API when a server key is configured; without it, coordinate-based requests use a clearly approximate distance fallback. Place-ID-only requests cannot be resolved without Google and should receive a clear validation error.
 
-## Flow
+## Key separation — required configuration
 
-```
-main.js loads Google Maps JS API
-  → initMap() creates map
-  → initAutocomplete() attaches to #pickup-input, #destination-input
+Use two different keys:
 
-Customer types → Places Autocomplete returns place_id + description
-  → stored in state.pickupPlaceId, state.destinationPlaceId
+| Variable | Used by | Restriction | Public? |
+|---|---|---|---|
+| `GOOGLE_MAPS_BROWSER_API_KEY` | Maps JavaScript API + Places API | HTTP referrers limited to approved STB domains and required browser APIs | Yes, by design; returned as `googleMapsApiKey` |
+| `GOOGLE_MAPS_SERVER_API_KEY` | Routes API from server | Server source/IP restriction and Routes API only | **No** |
+| `GOOGLE_MAPS_API_KEY` | Legacy server-only fallback during migration | Treat as server-only; never expose through public config | **No** |
 
-On booking estimate:
-  → POST /api/estimate sends place_ids
-  → server calls Google Routes API (server key)
-  → returns distance/duration
-  → pricing.js calculates fare
-```
+The key-separation helper is `lib/googleMapsConfig.js`. A browser key is not a secret; the safety boundary is restrictions and quotas. A server key must never be returned from `/api/config`, placed in frontend source, or printed in logs.
 
-## Configuration
+## Google Cloud setup checklist
 
-```javascript
-// public/src/main.js
-window.__STB_ENV = {
-  GOOGLE_MAPS_API_KEY: 'AIzaSy...',     // injected by server.js
-  GOOGLE_PLACES_API_KEY: 'AIzaSy...',    // same key, used client-side
-};
-```
+1. Create a staging browser key and server key separately.
+2. Enable billing only for the intended Google Cloud project and set quota/budget alerts.
+3. Enable Maps JavaScript API and Places API for the browser key.
+4. Restrict browser key by HTTP referrer to the exact approved staging/production domains.
+5. Enable Routes API for the server key and restrict it to the server source/IP where supported.
+6. Set `GOOGLE_MAPS_BROWSER_API_KEY` and `GOOGLE_MAPS_SERVER_API_KEY` in the deployment secret/config store. Do not paste server keys into chat or commit them.
+7. Test valid keys, missing keys, invalid restrictions, quota failures and network failures.
+8. Verify autocomplete and route estimate in the browser, and confirm public config does not contain the server key.
 
-## Server-side Routes API Call (lib/api.js)
+## Fallback and pricing safety
 
-```javascript
-Referer: referer || "https://singaporetourbooking.com/"
-```
+- Local presets help users choose common Singapore locations without Google, but are not equivalent to global autocomplete.
+- Coordinate-only fallback is an estimate, not a guaranteed road distance or quote. The UI must make that limitation clear.
+- The server must calculate fare; never trust a client-submitted fare.
+- Route API failures need timeouts and useful errors/fallback behavior. Add bounded caching only after checking route input, freshness and billing implications.
+- Avoid logging API keys or full sensitive request data.
 
-**Issue**: `referer` header used directly — potential open redirect risk if attacker controls the Referer.
+## Test evidence and remaining work
 
-## Known Issues
-
-| Severity | Issue | Impact |
-|----------|-------|--------|
-| High | `referer` header used directly in Routes API call | Indirect open redirect risk |
-| Medium | Google API key hardcoded in `window.__STB_ENV` injected server-side | Key visible in page source — acceptable for client-side key with domain restrictions |
-| Medium | No Places Autocomplete on admin side | Admin must manually enter place IDs for pricing rules |
-| Low | No timeout on server-side Routes API call | Could hang indefinitely |
-| Low | No caching of Routes API responses | Repeated same-route calls hit Google billing |
-
-## Domain Restrictions
-
-Google Maps API keys should be restricted:
-- HTTP referrer: `*.singaporetourbooking.com/*`
-- API key type: Maps JavaScript + Places + Routes
+- Unit regression tests cover browser/server key separation in the tested PR branch.
+- The 2026-10-15 isolated QA report does not use real Google credentials or verify billing/quota restrictions.
+- After the key split is merged, request the required configuration only when ready to enter Google Cloud and apply restrictions. Do not ask for the server key to be pasted into this conversation.
