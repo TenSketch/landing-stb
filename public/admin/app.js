@@ -353,7 +353,6 @@ function statusBadge(status) {
 
 function showDriverAssignModal(voucher, drivers) {
   const previouslyFocused = document.activeElement;
-  const existing = (drivers || []).find(d => d.is_active);
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
@@ -367,23 +366,23 @@ function showDriverAssignModal(voucher, drivers) {
         <div class="form-group">
           <label class="form-label" for="dam-driver">Select Active Driver</label>
           <select id="dam-driver" class="form-select">
-            <option value="">— Enter manually —</option>
+            <option value="">Choose a driver…</option>
             ${(drivers || []).filter(d => d.is_active).map(d =>
-              `<option value="${escapeHtml(d.name)}|||${escapeHtml(d.phone || '')}|||${escapeHtml(d.plate_number || '')}">${escapeHtml(d.name)} ${d.phone ? `(${escapeHtml(d.phone)})` : ''}</option>`
+              `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)} ${d.phone ? `(${escapeHtml(d.phone)})` : ''}</option>`
             ).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label" for="dam-name">Driver Name</label>
-          <input type="text" id="dam-name" class="form-input" placeholder="e.g. Chandran Raj" value="${escapeHtml(existing?.name || '')}">
+          <input type="text" id="dam-name" class="form-input" placeholder="e.g. Chandran Raj" value="" readonly aria-readonly="true">
         </div>
         <div class="form-group">
           <label class="form-label" for="dam-phone">Driver Phone</label>
-          <input type="tel" id="dam-phone" class="form-input" placeholder="+65 9123 4567" value="${escapeHtml(existing?.phone || '')}">
+          <input type="tel" id="dam-phone" class="form-input" placeholder="+65 9123 4567" value="" readonly aria-readonly="true">
         </div>
         <div class="form-group">
           <label class="form-label" for="dam-plate">Vehicle Plate</label>
-          <input type="text" id="dam-plate" class="form-input" placeholder="SGX 1234 A" style="text-transform:uppercase;" value="${escapeHtml(existing?.plate_number || '')}">
+          <input type="text" id="dam-plate" class="form-input" placeholder="SGX 1234 A" style="text-transform:uppercase;" value="" readonly aria-readonly="true">
         </div>
       </div>
       <div class="modal-footer">
@@ -427,26 +426,22 @@ function showDriverAssignModal(voucher, drivers) {
   });
 
   $('#dam-driver').addEventListener('change', () => {
-    const parts = $('#dam-driver').value.split('|||');
-    if (parts.length >= 2) {
-      $('#dam-name').value = parts[0];
-      $('#dam-phone').value = parts[1];
-      if (parts[2]) $('#dam-plate').value = parts[2];
-    }
+    const selected = (drivers || []).find(driver => String(driver.id) === $('#dam-driver').value && driver.is_active);
+    $('#dam-name').value = selected?.name || '';
+    $('#dam-phone').value = selected?.phone || '';
+    $('#dam-plate').value = selected?.plate_number || '';
   });
 
   $('.modal-close', overlay).forEach(btn => btn.addEventListener('click', closeModal));
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
   $('#dam-submit').addEventListener('click', async () => {
-    const driverName = $('#dam-name').value.trim();
-    const driverPhone = $('#dam-phone').value.trim();
-    const driverPlate = $('#dam-plate').value.trim().toUpperCase();
-    if (!driverName) { showToast('Driver name is required.', 'error'); return; }
+    const driverId = $('#dam-driver').value;
+    if (!driverId) { showToast('Select an active driver before assigning.', 'error'); return; }
     try {
       await api(`/bookings/${voucher}/assign-driver`, {
         method: 'PUT',
-        body: JSON.stringify({ driverName, driverPhone, driverPlate })
+        body: JSON.stringify({ driverId })
       });
       showToast('Driver assigned', 'success');
       closeModal();
@@ -458,7 +453,7 @@ function showDriverAssignModal(voucher, drivers) {
 // Bookings
 async function renderBookings() {
   const { bookings = [] } = await api('/bookings');
-  const drivers = hasPerm('drivers.view') ? (await api('/drivers').catch(() => ({ drivers: [] }))).drivers || [] : [];
+  const drivers = hasPerm('bookings.assign_driver') ? (await api('/drivers/assignable').catch(() => ({ drivers: [] }))).drivers || [] : [];
   $('#page-title').textContent = 'Bookings';
   $('#page-content').innerHTML = `
     <div class="admin-card">
