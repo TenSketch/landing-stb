@@ -29,6 +29,7 @@ Start here before changing code:
 23. [Idempotency QA report](https://github.com/TenSketch/landing-stb/blob/fix/booking-idempotency/docs/QA-REPORT-2026-10-15-IDEMPOTENCY.md) — isolated CI evidence for PR #6.
 24. [Provider-cache QA report](QA-REPORT-2026-10-15-PROVIDER-CACHE.md) — isolated CI evidence for PR #7.
 25. [Admin dialog QA report](QA-REPORT-2026-10-15-ADMIN-DIALOG.md) — isolated CI evidence for PR #8.
+26. [Driver validation QA report](QA-REPORT-2026-10-15-DRIVER-VALIDATION.md) — isolated CI evidence for PR #9.
 
 ## Source-of-truth rules
 
