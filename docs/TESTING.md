@@ -36,10 +36,11 @@ For commit `cdb645af4b35a1d81542e2a3516909108c349c9c`:
 | Auth/session helpers | 3 | 0 | 0 |
 | Backend/database integration | 10 | 0 | 0 |
 | Booking transaction regressions | 8 | 0 | 0 |
+| Google Maps browser/server key separation | 5 | 0 | 0 |
 | Local E2E | 87 | 0 | 3 |
 | Local security audit | 43 | 0 | 1 |
 
-The combined isolated workflow passed syntax checks and all executed tests. See [workflow run 38690645197](https://github.com/TenSketch/landing-stb/actions/runs/38690645197).
+The combined isolated workflow passed syntax checks and all executed tests: **164 passed, 0 failed, 4 skipped**. See [workflow run 38691010883](https://github.com/TenSketch/landing-stb/actions/runs/38691010883).
 
 ### Explicitly skipped in this run
 
