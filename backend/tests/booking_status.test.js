@@ -14,7 +14,7 @@ testUrl.pathname = '/stb_test';
 process.env.DATABASE_URL = testUrl.toString();
 process.env.STB_SECRET_KEY ||= 'test-only-secret-key-32-bytes-minimum!!';
 
-const { query } = await import('../../lib/db.js');
+const { query, getPool } = await import('../../lib/db.js');
 const { saveBooking, getBooking } = await import('../../lib/store.js');
 const { assignDriver, updateBookingStatus, getBookingStatusHistory } = await import('../../lib/bookingStatus.js');
 
@@ -116,4 +116,6 @@ try {
   await query('DELETE FROM booking_status_history WHERE booking_id = $1', [voucherCode]).catch(() => {});
   await query('DELETE FROM audit_logs WHERE record_id = $1', [voucherCode]).catch(() => {});
   await query('DELETE FROM bookings WHERE voucher_code = $1', [voucherCode]).catch(() => {});
+  const pool = getPool();
+  if (pool) await pool.end();
 }
