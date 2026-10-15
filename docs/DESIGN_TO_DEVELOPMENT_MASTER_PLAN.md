@@ -185,3 +185,151 @@ Read [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for PR links and the latest recorded i
 - Do not invent fares, cancellation/refund rules, operating hours or legal terms.
 - Continue autonomous work on independent tasks; ask the owner only for genuinely blocking decisions listed in Section 2.
 - When a test environment or device is unavailable, document the limitation and continue with tests that can safely run.
+
+
+## 12. Phase execution contract: one phase, one commit, then continue
+
+This is the required unit of delivery for the autonomous agent. A phase is a coherent, independently reviewable outcome. Do not combine unrelated phases into one commit or one PR. A phase may contain several small commits only when technically necessary, but the default is **one phase = one implementation commit = one PR or a clearly separated PR commit**.
+
+For each phase, the agent must:
+1. Start from the latest safe branch/PR head and confirm upstream dependencies.
+2. Read the relevant source and documentation; record verified current behavior before editing.
+3. Create a focused branch from the correct dependency head. Do not stack a branch on another unmerged branch unless the dependency is required and the PR base is explicitly set to that dependency.
+4. Write/confirm acceptance criteria in the PR description before implementation.
+5. Implement only that phase's scope; update tests and docs in the same phase.
+6. Run targeted checks, then the full isolated CI suite. Record exact commit SHA, commands, pass/fail/skip/block counts and links to artifacts.
+7. Review the complete diff and check secrets, compatibility, concurrency, migration rollback and unintended changes.
+8. Commit with the prescribed message, open/update the PR, and update `AGENT_HANDOFF.md` with status and next phase.
+9. **Immediately continue to the next independent phase** after a phase is committed and its verification result is recorded. Do not wait for the owner to say “continue”. If CI fails, fix the failure within that phase before advancing; if blocked by external access, record the blocker and continue only with independent work.
+10. Never merge or deploy unless explicitly authorized. A commit or green CI is not production approval.
+
+### Commit and PR conventions
+
+Use conventional commit prefixes:
+- `docs:` documentation-only
+- `test:` tests and test harness
+- `fix:` bug/security/data-integrity corrections
+- `feat:` additive user-facing or API capability
+- `perf:` measured performance improvement
+- `refactor:` behavior-preserving structural work
+
+Suggested commit format: `<type>: <phase outcome in imperative language>`.
+
+Each PR body must state: phase ID; problem; scope/non-goals; acceptance criteria; files and migrations; tests with exact outcomes; skipped/blocked checks; compatibility/configuration; rollback/recovery; remaining risk; next phase. If PRs are stacked, clearly state the base PR and dependency. Avoid stale claims about tests that ran on a different SHA.
+
+### Phase status vocabulary
+
+Use exactly one status per phase: `NOT STARTED`, `IN PROGRESS`, `PASS — PR OPEN`, `FAIL — FIX REQUIRED`, `BLOCKED — EXTERNAL DEPENDENCY`, `OWNER DECISION REQUIRED`, or `COMPLETE — MERGED`. Never mark a phase complete just because code was written. In this test-only project, a phase with a green CI and an open PR is still `PASS — PR OPEN`, not merged/complete.
+
+## 13. Phase-by-phase execution backlog
+
+The order below is the default order. Re-evaluate only when code inspection proves a dependency or risk requires it. Do not ask for approval to make ordinary implementation choices that preserve the existing contracts and product intent.
+
+### Phase 0 — Repository truth and delivery baseline
+**Goal:** Establish an accurate map of the app and a reliable isolated test process.
+
+**Work:** Reconcile open PRs, branch bases and CI; identify authoritative server/client entry points; document runtime and deployment topology; make tests portable; ensure CI uses disposable PostgreSQL and synthetic fixtures; classify each external/public-domain probe as opt-in; ensure cleanup runs even on failure.
+
+**Acceptance:** Default branch and each open PR are inventoried with exact heads; CI results are reproducible and attached to a SHA; tests never target production by default; skips are explicit; a failing test makes the workflow fail; architecture/API/database docs match verified source.
+
+**Artifacts:** repository audit, architecture map, test/QA report, current agent handoff.
+
+**Commit:** `docs: establish verified repository baseline` or `test: make isolated QA reproducible` as a single coherent change. Existing baseline PRs may satisfy this phase only after review and current CI verification.
+
+### Phase 1 — Security boundaries and webhook safety
+**Goal:** Prevent unauthorized access, secret exposure and unsafe webhook-triggered side effects.
+
+**Work:** Verify webhook authentication/signature algorithm and raw-body requirements; request size and method/path allowlists; replay protection if the provider supports it; safe process invocation (no shell interpolation); rate limiting; consistent generic errors; admin/customer authorization on every mutation; CSRF/session cookie policy; secret redaction; security headers and input/output encoding.
+
+**Acceptance:** Valid and invalid signature tests; oversized body 413; unknown route/method rejected; replay behavior documented; authorization tests cover unauthenticated, insufficient role and allowed role; no secrets in public config or logs; security tests run in isolated CI.
+
+**Dependencies/guardrails:** Do not invent a provider signature scheme. If provider docs or credentials are needed, implement only what can be verified and mark live validation blocked. Never execute production deploy side effects in tests.
+
+**Commit:** `fix: enforce webhook and authorization boundaries`.
+
+### Phase 2 — Booking data integrity, retry and concurrency
+**Goal:** Ensure a customer submission creates one durable booking and that lifecycle changes cannot race.
+
+**Work:** Trace booking creation from browser through route, validation, pricing, voucher generation, DB schema, audit and notifications. Confirm idempotency behavior, transaction scope and unique constraints. Validate driver assignment and status transitions with row locks. Ensure server-side validation owns authoritative status and fare. Decide notification retry semantics separately from booking persistence.
+
+**Acceptance:** Same idempotency key/payload returns the same voucher; changed payload with same key conflicts; concurrent requests create one row; rollback leaves no partial booking/history/audit; illegal transitions and closed-booking assignment are rejected; duplicate external notifications are not triggered by replay; migration and rollback/recovery instructions are documented.
+
+**Dependencies/guardrails:** Preserve existing clients by keeping the key optional until all clients are confirmed upgraded. Do not silently alter commercial fare/cancellation rules. No production database testing.
+
+**Commit:** `fix: guarantee booking retry and lifecycle integrity`.
+
+### Phase 3 — Booking rules and customer-to-dispatch workflow
+**Goal:** Make the end-to-end booking journey correct, transparent and recoverable.
+
+**Work:** Map all trip modes (one-way/airport, hourly, daily); validate date/time and Singapore timezone; inspect server fare calculation vs displayed estimate; validate vehicle/passenger limits; verify pickup/destination inputs and fallback labeling; confirm guest/customer association; booking reference/confirmation; dispatch, reassignment, cancellation and completion behavior; audit/history consistency.
+
+**Acceptance:** Each supported trip type has success, validation-error and persistence-failure tests; browser estimate is explicitly an estimate unless server-confirmed; date/time values round-trip in Asia/Singapore; client cannot set privileged booking state or trusted fare; admin dispatch sees the persisted booking and valid state; E2E checks the customer submission through admin-visible booking.
+
+**Owner-only decisions:** If commercial pricing, surcharge policy, refund/cancellation policy or customer-facing legal wording is not inferable, record the exact decision needed, use existing documented behavior temporarily, and continue independent work.
+
+**Commit:** `fix: align booking rules and dispatch workflow`.
+
+### Phase 4 — Integration reliability and configuration
+**Goal:** Make Maps, email, messaging and other providers safe to configure, test and recover.
+
+**Work:** Separate browser-restricted Maps key from server key; verify allowed API set, referrer/IP restrictions and environment names; avoid exposing server secrets; implement clear unavailable/fallback states; review notification provider lookup latency and caching; add bounded timeouts and retries only when safe; report configured/tested/delivered/failed states distinctly; test with mocks.
+
+**Acceptance:** Public config contains only intended browser-safe values; missing/denied Maps APIs do not break booking; estimates label fallback precision honestly; provider cache has TTL and mutation invalidation; provider failures do not corrupt a saved booking; logs contain no credentials or sensitive payloads; mocked provider tests pass.
+
+**Dependencies/guardrails:** Real provider credentials and live sends are not required for isolated CI and must not be fabricated. Live-provider checks are opt-in and separately authorized.
+
+**Commit:** `fix: harden provider configuration and failure handling` or `perf: reduce repeated provider configuration queries` for a distinct measured change.
+
+### Phase 5 — Admin usability, accessibility and operational correctness
+**Goal:** Let authorized staff manage bookings and dispatch without ambiguous or inaccessible controls.
+
+**Work:** Inventory admin screens and roles; replace prompt/alert-based workflows with dialogs and forms; validate driver assignment against active driver/fleet records; provide loading/empty/error/success/retry states; prevent duplicate error toasts; improve filtering/search/pagination; check audit views and destructive confirmations; enforce permissions on the server.
+
+**Acceptance:** Core booking/dispatch tasks are keyboard operable; dialogs have labels, focus management and escape/close behavior; no driver is assignable unless eligible; error messages are actionable and not duplicated; server denies unauthorized mutations even if UI controls are bypassed; responsive/mobile checks are documented.
+
+**Commit:** `fix: make admin dispatch safe and accessible`. Split only if the source shows independent PR-sized changes, each with its own phase ID and commit.
+
+### Phase 6 — Customer experience and design system
+**Goal:** Align the interface to the established STB product direction: book quickly, with clear guidance and minimal clutter.
+
+**Work:** Audit the existing page before redesigning; document current logo/brand constraints, typography, color tokens, spacing, component patterns and breakpoints; keep homepage focused on search/booking with no unnecessary navigation; use a short guided flow; improve form validation, route/vehicle/fare clarity, confirmation and recovery; add a first-use guided tour only if it helps without blocking booking; avoid competing tabs and unnecessary sections.
+
+**Acceptance:** A first-time user can identify how to begin booking; one primary action is visually clear; no more than 3–4 purposeful homepage sections unless evidence justifies more; design uses a small consistent palette; all steps work on mobile and keyboard; validation is adjacent to fields and announced accessibly; screenshots or reproducible browser notes compare before/after; existing functionality is not silently removed.
+
+**Design workflow:** Write the screen/state specification first; establish tokens and reusable components; implement one vertical slice; verify it; then apply patterns consistently. Do not perform a broad aesthetic rewrite before recording the current state and test coverage.
+
+**Commit:** `feat: simplify and standardize the customer booking journey`.
+
+### Phase 7 — PWA, caching, performance and resilience
+**Goal:** Ensure installation/update behavior is predictable and stale assets do not mislead users.
+
+**Work:** Check customer/admin manifests, icons, scope, service-worker registration and update lifecycle; use versioned cache names and cleanup; avoid cache-first behavior for mutable APIs, booking responses, auth or provider data; add safe offline messaging and retry; inspect large assets and slow DB/API paths; set budgets from measurement rather than guesswork.
+
+**Acceptance:** Customer and admin install paths are verified separately; updates replace old assets; cache invalidation is tested; booking mutations are never replayed from cache; offline mode clearly says booking requires connection; key pages remain usable when optional fonts/maps fail; performance improvements include measured before/after evidence; target-device checks are passed or explicitly blocked.
+
+**Commit:** `fix: make PWA cache and update behavior safe`, with performance optimizations separated if unrelated.
+
+### Phase 8 — Full regression, accessibility/security review and release evidence
+**Goal:** Produce a truthful release candidate dossier without deploying.
+
+**Work:** Run migrations against a disposable database; full backend, API, E2E, security and accessibility checks; verify key user journeys; inspect dependencies and secrets; confirm observability, backups and rollback procedures; update all documentation; prepare staging smoke steps and residual-risk list.
+
+**Acceptance:** Every check is marked pass/fail/skipped/blocked; failures are fixed or explicitly unresolved; exact candidate SHA and artifacts are recorded; migration rollback/recovery is documented; no production mutation or deployment occurred; outstanding business decisions are listed plainly.
+
+**Commit:** `test: record release candidate verification` plus documentation updates in the same phase commit where possible.
+
+**Release gate:** Production merge/deploy remains a separate owner-authorized action. No agent may infer deployment permission from a green build or a completed phase.
+
+## 14. Documentation maintenance contract
+
+- Update the relevant source-of-truth doc in the same phase commit as code changes.
+- When behavior changes, update API reference, booking flow, database/migration notes, security, integration or PWA docs as applicable.
+- Keep `README.md`, `docs/README.md`, `AGENT_HANDOFF.md` and the master plan aligned.
+- Mark historical audit/technical-debt findings as fixed only when a source diff and passing regression prove it.
+- Do not claim visual/device testing unless performed on that browser/device.
+- Each QA report must name exact SHA, environment, commands, counts, skipped/blocked checks, artifacts and cleanup.
+- Keep business assumptions separate from verified behavior.
+
+## 15. Start instruction for a fresh agent
+
+Start at `docs/DESIGN_TO_DEVELOPMENT_MASTER_PLAN.md`, then follow `docs/README.md` and `docs/AGENT_HANDOFF.md`. Reconcile current GitHub state before editing. Review open PRs and dependencies; do not duplicate work that already exists in an open PR. Complete or update Phase 0 first, then follow the phase order. For each phase, create one focused branch/commit/PR, run tests, document evidence, update the handoff, and continue automatically to the next phase. Do not ask for routine approval. Do not merge or deploy. If a phase is blocked, record the precise blocker and continue independent work.
