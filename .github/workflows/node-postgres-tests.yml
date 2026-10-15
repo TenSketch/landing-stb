@@ -1,0 +1,53 @@
+name: STB Node and PostgreSQL tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-db-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+      INITIAL_ADMIN_EMAIL: admin@example.com
+      PG_SSL: "false"
+      STB_SECRET_KEY: "test-only-secret-key-32-bytes-minimum!!"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install --no-package-lock
+      - name: Syntax check server and browser bundles
+        run: |
+          node --check server.js
+          node --check webhook-server.cjs
+          for file in lib/*.js public/src/*.js public/admin/*.js; do
+            [ -f "$file" ] && node --check "$file"
+          done
+      - name: Run unit and database integration tests
+        run: npm test
