@@ -2,7 +2,7 @@
 
 **Run date:** 2026-10-15  
 **PR:** [#9 — Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9)  
-**Tested commit:** `d824e35cfa4e9c7a64f7a9bbf682d2720df2b04f`  
+**Tested commit:** `5cb83e75b0a2f96a543b3ff74b3e8bcaaafa0051`  
 **Workflow:** [GitHub Actions run 38703786164](https://github.com/TenSketch/landing-stb/actions/runs/38703786164)  
 **Environment:** GitHub-hosted Ubuntu, Node.js 20, ephemeral PostgreSQL 16, local Express test server  
 **Production touched:** No  
