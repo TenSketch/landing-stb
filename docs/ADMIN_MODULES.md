@@ -7,7 +7,7 @@
 | Module | Route | Status | Notes |
 |--------|-------|--------|-------|
 | Dashboard | `/admin` | ✅ Working | Stats cards, recent bookings |
-| Bookings | `/admin/bookings` | ⚠️ Partial | List + status change + driver assign (prompt-based) |
+| Bookings | `/admin/bookings` | ⚠️ Partial | List + status change + accessible driver assignment dialog; server-side driver eligibility remains to verify |
 | Customers | `/admin/customers` | ❌ Not implemented | Listed in nav but no UI |
 | Vehicles | `/admin/vehicles` | ✅ Working | Full CRUD with extended fields |
 | Pricing | `/admin/pricing` | ⚠️ Partial | Rules list, add form, add/edit modal |
@@ -33,7 +33,9 @@ Current `app.js` topbar has hamburger + brand + user avatar + sign-out button.
 - List: `GET /api/admin/bookings` with optional `?status=&date=&assigned=`
 - Status update: `PUT /api/admin/bookings/:voucherCode/status`
 - Driver assignment: `PUT /api/admin/bookings/:voucherCode/assign-driver` with JSON body `{ driverName, driverPhone }`
-- **Issue**: Driver assign uses `window.prompt()` — no server-side driver validation
+- Driver assignment uses a modal with active-driver selection and manual fields.
+- The dialog has an accessible name/description, labelled controls, Escape-to-close, focus trapping, and focus restoration.
+- **Remaining**: verify server-side driver eligibility/authorization against active driver records; UI selection alone is not a security boundary.
 
 ### Customers
 - Nav link exists but no route handler or UI component
@@ -85,3 +87,9 @@ To add a new module:
 | Driver tab | — | Not implemented |
 | Notification templates | — | Not implemented |
 | Payment management | — | Not implemented |
+
+## Accessibility follow-up — driver assignment dialog
+
+The driver assignment dialog in `public/admin/app.js` is keyboard-operable: focus moves into the dialog, Tab/Shift+Tab stays within it, Escape and close/cancel controls close it, and focus is restored to the invoking control. The dialog exposes `role="dialog"`, `aria-modal="true"`, a labelled heading and description, and explicit labels for its form controls.
+
+Manual browser verification is still required for keyboard-only use, screen-reader announcements, narrow viewport behavior and focus restoration after the booking list refresh. Automated syntax/CI success is not a substitute for this manual check.
