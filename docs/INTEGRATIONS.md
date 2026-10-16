@@ -97,7 +97,11 @@ SELECT * FROM integration_settings;
 - `notify(eventName, payload)` — routes to all enabled channels for event
 - Event names: `booking_created`, `booking_confirmed`, `driver_assigned`, `booking_completed`, `booking_cancelled`
 - Templates stored in `notification_templates` table with channel + event as key
-- **Performance issue**: `refreshProviders()` called on every notification — DB round-trip per send
+- Provider settings are cached with a 30-second TTL by default (`STB_PROVIDER_CACHE_TTL_MS` can tune the TTL; minimum is 1 second).
+- Concurrent cache misses share one in-flight refresh; failed loads are not cached.
+- Integration create/update/default/delete operations invalidate the provider cache so the next notification refreshes configuration.
+- `refreshProviders({ force: true })` forces a refresh when explicitly needed.
+- This reduces four integration-settings queries per notification to one refresh per TTL window per process. Each application process maintains its own cache.
 
 ## Missing Integration: Customer Device Tokens
 
