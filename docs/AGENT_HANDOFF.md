@@ -22,7 +22,7 @@ Read these documents before editing code, in this order:
 | PR | Base | Head | Head SHA | CI on head |
 |---|---|---|---|---|
 | [#2 Webhook hardening](https://github.com/TenSketch/landing-stb/pull/2) | main | fix/webhook-body-limit-and-routing | `55c039b61062` | **No run** — workflow file is not on this branch; local `npm test` 35/35 PASS |
-| [#3 Audit & QA docs](https://github.com/TenSketch/landing-stb/pull/3) | main | docs/full-audit-agile-development-plan | tip of this branch | **No run** — docs-only branch without workflow file |
+| [#3 Audit & QA docs](https://github.com/TenSketch/landing-stb/pull/3) | main | docs/full-audit-agile-development-plan | `9c8544a81b4f` (advanced again by the commit carrying this file) | **No run** — docs-only branch without workflow file |
 | [#4 Portable QA & isolated CI](https://github.com/TenSketch/landing-stb/pull/4) | main | test/portable-ci-baseline | `4e74b0f93597` | success — [run 38733592011](https://github.com/TenSketch/landing-stb/actions/runs/38733592011) |
 | [#5 Booking transactions & Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | main | fix/booking-transaction-ci | `84d415b730d7` | success — [run 38733597625](https://github.com/TenSketch/landing-stb/actions/runs/38733597625) |
 | [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | #5 branch | fix/booking-idempotency | `f24f24a09dd9` | success — [run 38733600659](https://github.com/TenSketch/landing-stb/actions/runs/38733600659) |
@@ -31,7 +31,7 @@ Read these documents before editing code, in this order:
 | [#9 Server-validated driver assignment](https://github.com/TenSketch/landing-stb/pull/9) | #8 branch | fix/validate-driver-assignment | `408ad700d95f` | success — [run 38841360509](https://github.com/TenSketch/landing-stb/actions/runs/38841360509) |
 | [#10 Admin error feedback](https://github.com/TenSketch/landing-stb/pull/10) | #9 branch | fix/admin-error-feedback | `475b78ec9f8b` | success — [run 38841357324](https://github.com/TenSketch/landing-stb/actions/runs/38841357324) |
 
-A passing CI run is not approval to merge or deploy. Pull requests #6–#10 form a stack on PR #5; each `base` is the previous PR's branch, and each head now contains its base head (`#10 ⊇ #9 ⊇ #8 ⊇ #7 ⊇ #6 ⊇ #5`), verified with `git merge-base --is-ancestor`.
+A passing CI run is not approval to merge or deploy. Pull requests #6–#10 form a stack on PR #5; each `base` is the previous PR's branch, and every head from #6 upward contains its base head (`#10 ⊇ #9 ⊇ #8 ⊇ #7 ⊇ #6`, verified with `git merge-base --is-ancestor`). PRs #6–#10 fork from #5's `a106370`: #5's head `84d415b` changes only the lockfile workflow line those branches already carry with identical content, so `git merge-tree` is clean for every PR against `main` and for every adjacent pair — merge in PR order (#4/#5 decision first, then #6 → #10).
 
 ### Branch topology notes
 
