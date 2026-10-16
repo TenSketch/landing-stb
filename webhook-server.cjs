@@ -99,7 +99,12 @@ const server = http.createServer((req, res) => {
           const deploy = spawn('/bin/bash', ['-c',
             'cd /root/landing-stb && git fetch origin && git reset --hard origin/main && npm install && pm2 restart stb-server'
           ], { stdio: 'inherit' });
+          // Exactly one failure alert per failed deployment (PR #2 review P2):
+          // when spawning fails, Node emits 'error' and then 'close' (code -2);
+          // only the 'error' handler may alert in that case.
+          let spawnFailed = false;
           deploy.on('close', (code) => {
+            if (spawnFailed) return;
             const elapsed = ((Date.now() - start) / 1000).toFixed(1);
             if (code === 0) {
               sendTelegram(`✅ *STB Deploy Complete*\nBranch: \`main\`\nDuration: ${elapsed}s`);
@@ -108,6 +113,7 @@ const server = http.createServer((req, res) => {
             }
           });
           deploy.on('error', (err) => {
+            spawnFailed = true;
             console.error('[Deploy] Failed to start deployment:', err.message);
             sendTelegram(`❌ *STB Deploy Failed*\nCould not start deployment: ${err.message}`);
           });
