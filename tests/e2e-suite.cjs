@@ -181,7 +181,7 @@ function findVoucher(obj) {
   check('6-admin', 'seeded session valid (GET auth/session)', sess.status === 200, `status=${sess.status} body=${JSON.stringify(sess.json).slice(0, 120)}`);
   const fakeTok = await req('GET', '/api/admin/auth/session', { token: 'a'.repeat(64) });
   check('6-admin', 'garbage token -> 401', fakeTok.status === 401, `status=${fakeTok.status}`);
-  for (const p of ['/api/admin/dashboard', '/api/admin/bookings', '/api/admin/settings', '/api/admin/users', '/api/admin/vehicles', '/api/admin/pricing', '/api/admin/audit-logs', '/api/admin/customers', '/api/admin/drivers', '/api/admin/roles', '/api/admin/content', '/api/admin/integrations']) {
+  for (const p of ['/api/admin/dashboard', '/api/admin/bookings', '/api/admin/settings', '/api/admin/users', '/api/admin/vehicles', '/api/admin/pricing', '/api/admin/audit-logs', '/api/admin/customers', '/api/admin/drivers', '/api/admin/drivers/assignable', '/api/admin/roles', '/api/admin/content', '/api/admin/integrations']) {
     const r = await req('GET', p, { token: adminToken });
     check('6-admin', `GET ${p}`, r.status === 200, `status=${r.status}`);
     const rNo = await req('GET', p);
@@ -203,8 +203,8 @@ function findVoucher(obj) {
   check('7-crud', 'POST driver -> 201', dCreate.status === 201, `status=${dCreate.status} body=${JSON.stringify(dCreate.json).slice(0, 100)}`);
   const driverId = dCreate.json?.driver?.id;
   if (driverId) {
-    const dDel = await req('DELETE', `/api/admin/drivers/${driverId}`, { token: adminToken });
-    check('7-crud', 'DELETE driver -> 200', dDel.status === 200, `status=${dDel.status}`);
+    const assignable = await req('GET', '/api/admin/drivers/assignable', { token: adminToken });
+    check('7-crud', 'assignable drivers endpoint returns active driver choices', assignable.status === 200 && assignable.json?.drivers?.some(d => d.id === driverId), `status=${assignable.status}`);
   }
 
   // Booking status lifecycle
@@ -215,12 +215,20 @@ function findVoucher(obj) {
     check('7-crud', 'illegal transition PENDING->COMPLETED rejected', illegal.status >= 400, `status=${illegal.status}`);
     const confirm = await req('PUT', `/api/admin/bookings/${voucher}/status`, { token: adminToken, body: { status: 'CONFIRMED', notes: 'E2E confirm' } });
     check('7-crud', 'PENDING->CONFIRMED accepted', confirm.status === 200, `status=${confirm.status} body=${JSON.stringify(confirm.json).slice(0, 100)}`);
-    const assigned = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverName: 'E2E-TEST Assigned Driver', driverPhone: '+650000099', driverPlate: 'sga9090' } });
-    check('7-crud', 'assign driver commits driver fields and ASSIGNED status', assigned.status === 200 && assigned.json?.booking?.status === 'ASSIGNED' && assigned.json?.booking?.driverName === 'E2E-TEST Assigned Driver', `status=${assigned.status} body=${JSON.stringify(assigned.json).slice(0, 140)}`);
+    const invalidDriver = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverId: 'not-a-uuid' } });
+    check('7-crud', 'invalid driver ID rejected', invalidDriver.status === 400, `status=${invalidDriver.status}`);
+    const assigned = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverId } });
+    check('7-crud', 'active driver record assigns successfully', !!driverId && assigned.status === 200 && assigned.json?.booking?.status === 'ASSIGNED' && assigned.json?.booking?.driverName === 'E2E-TEST Driver', `status=${assigned.status} body=${JSON.stringify(assigned.json).slice(0, 140)}`);
     const hist = await req('GET', `/api/admin/bookings/${voucher}/status-history`, { token: adminToken });
     check('7-crud', 'status-history -> 200 + entries', hist.status === 200 && JSON.stringify(hist.json).includes('CONFIRMED'), `status=${hist.status}`);
     const cancel = await req('PUT', `/api/admin/bookings/${voucher}/status`, { token: adminToken, body: { status: 'CANCELLED', notes: 'E2E cleanup' } });
     check('7-crud', 'CONFIRMED->CANCELLED accepted', cancel.status === 200, `status=${cancel.status}`);
+  }
+  if (driverId) {
+    const dDel = await req('DELETE', `/api/admin/drivers/${driverId}`, { token: adminToken });
+    check('7-crud', 'DELETE driver -> 200', dDel.status === 200, `status=${dDel.status}`);
+    const inactiveAssign = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverId } });
+    check('7-crud', 'inactive driver rejected for assignment', inactiveAssign.status === 400, `status=${inactiveAssign.status}`);
   }
 
   /* ---------- Phase 8: security probes ---------- */

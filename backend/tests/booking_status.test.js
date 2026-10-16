@@ -95,6 +95,45 @@ try {
     (await getBooking(voucherCode)).status === 'ASSIGNED' &&
     (await getBookingStatusHistory(voucherCode)).length === statusBeforeInvalid.length);
 
+  // PR #9 review P2: driver eligibility is re-validated inside the assignment
+  // transaction, so a concurrently deactivated driver can never be assigned.
+  const activeDriverRes = await query(
+    `INSERT INTO drivers (name, phone, email, plate_number, photo_url, notes, is_active, created_at, updated_at)
+     VALUES ('QA-DRIVER-ACTIVE', '+650****0005', 'qa-driver-active@example.com', 'sgq1111', NULL, NULL, TRUE, NOW(), NOW())
+     RETURNING id`
+  );
+  const activeDriverId = activeDriverRes.rows[0].id;
+  const inactiveDriverRes = await query(
+    `INSERT INTO drivers (name, phone, email, plate_number, photo_url, notes, is_active, created_at, updated_at)
+     VALUES ('QA-DRIVER-INACTIVE', '+650****0006', 'qa-driver-inactive@example.com', 'sgq2222', NULL, NULL, FALSE, NOW(), NOW())
+     RETURNING id`
+  );
+  const inactiveDriverId = inactiveDriverRes.rows[0].id;
+
+  const bookingBeforeInactive = await getBooking(voucherCode);
+  const historyBeforeInactive = (await getBookingStatusHistory(voucherCode)).length;
+  await assert.rejects(
+    assignDriver(voucherCode, { driverId: inactiveDriverId, driverName: 'Should Not Be Used', driverPhone: '', driverPlate: '' }, actor),
+    /unavailable/
+  );
+  test('inactive driver id is rejected inside the assignment transaction',
+    (await getBooking(voucherCode)).driverName === bookingBeforeInactive.driverName &&
+    (await getBooking(voucherCode)).driverPhone === bookingBeforeInactive.driverPhone &&
+    (await getBookingStatusHistory(voucherCode)).length === historyBeforeInactive);
+
+  const assignedByRecord = await assignDriver(voucherCode, {
+    driverId: activeDriverId,
+    driverName: 'JUNK CLIENT VALUE',
+    driverPhone: '+650****0099',
+    driverPlate: 'sgx9999'
+  }, actor);
+  test('active driver id assignment uses the authoritative driver record',
+    assignedByRecord.driverName === 'QA-DRIVER-ACTIVE' &&
+    assignedByRecord.driverPhone === '+650****0005' &&
+    assignedByRecord.driverPlate === 'SGQ1111');
+
+  await query('DELETE FROM drivers WHERE id = $1 OR id = $2', [activeDriverId, inactiveDriverId]);
+
   await updateBookingStatus(voucherCode, 'CANCELLED', { ...actor, notes: 'test cleanup' });
   const cancelled = await getBooking(voucherCode);
   await assert.rejects(
