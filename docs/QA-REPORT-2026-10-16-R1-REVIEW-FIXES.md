@@ -56,7 +56,7 @@ Each run passed Node syntax checks, `npm test`, isolated server boot, the E2E su
 
 ## Additional defect found and fixed during this pass
 
-**Stacked PRs #7 and #8 could not run CI at all.** Both reported `mergeable: false / dirty`: each branch appended its own file to the single-line `test` script in `package.json`, so the base/head merge conflicted and GitHub never created a `pull_request` run for those heads (no workflow run exists for `6e61655` or `3017529`). The base branch was merged into each head with the test lists unioned, and the same propagation was applied to #9 and #10 so the stack stays strictly linear (`#10 ⊇ #9 ⊇ #8 ⊇ #7 ⊇ #6 ⊇ #5`). Local `npm test` on the propagated heads passed 63/63, 71/71 and 78/78, and CI is green on all four new heads.
+**Stacked PRs #7 and #8 could not run CI at all.** Both reported `mergeable: false / dirty`: each branch appended its own file to the single-line `test` script in `package.json`, so the base/head merge conflicted and GitHub never created a `pull_request` run for those heads (no workflow run exists for `6e61655` or `3017529`). The base branch was merged into each head with the test lists unioned, and the same propagation was applied to #9 and #10, so every head from #6 upward contains its base head (`#10 ⊇ #9 ⊇ #8 ⊇ #7 ⊇ #6`). PRs #6–#10 fork from #5's `a106370`; #5's head `84d415b` differs only by the identical lockfile workflow line, and `git merge-tree` is clean for every adjacent pair. Local `npm test` on the propagated heads passed 63/63, 71/71 and 78/78, and CI is green on all four new heads.
 
 ## What was not verified
 
