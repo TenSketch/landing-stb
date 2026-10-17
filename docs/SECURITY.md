@@ -1,6 +1,14 @@
 # Security
 
-> Verified against code as of commit `15e4184`. Does not include penetration test.
+> **Legacy inventory:** The vulnerability table below reflects an older source snapshot and is not a current confirmed vulnerability list. See [`REPOSITORY_AUDIT.md`](REPOSITORY_AUDIT.md) and [`TECHNICAL_DEBT.md`](TECHNICAL_DEBT.md) for revalidated dispositions. The 2026-10-15 isolated security probes passed, but no full penetration test or live-domain audit was performed.
+
+## Revalidated on 2026-10-15
+
+- Driver assignment page currently escapes dynamic text/attributes; the historical XSS claim is not confirmed, though URL-scheme validation and regression coverage remain appropriate.
+- OTP verification increments attempts and evaluates the OTP hash in a single SQL `UPDATE ... RETURNING`; the historical check-then-increment claim is stale unless a concurrent regression test demonstrates otherwise.
+- The Routes API `Referer` value is an outbound request header, not an HTTP redirect by itself; do not label it an open redirect without a redirect sink.
+- The driver assignment/status transaction issue is confirmed on the audited `main` snapshot. PR #5 adds a client-scoped transaction and passed isolated CI on commit `cdb645af4b35a1d81542e2a3516909108c349c9c`; keep open until merged/released.
+- In-memory rate limiting remains a single-process limitation. Other rows below require current-source verification before being called confirmed.
 
 ## Authentication
 
@@ -20,7 +28,7 @@
 
 | Severity | Vulnerability | Location | Impact | Fix |
 |----------|---------------|----------|--------|-----|
-| **Critical** | XSS in `renderAssignPage` | `lib/handlers.js:370-451` | Arbitrary JS execution | Escape all user-supplied fields with `escapeHtml()` |
+| **Reclassified** (was Critical — revalidated 2026-10-15, not confirmed in current source) | XSS in `renderAssignPage` | `lib/handlers.js:370-451` | Arbitrary JS execution | Escaping already exists for dynamic text/attributes; retain hostile-input regression coverage and validate allowed URL schemes for configurable image URLs. See [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md) §5 |
 | **Critical** | In-memory rate limiter bypassable in multi-node | `lib/ratelimit.js` | Rate limit bypassed horizontally | Use Redis with shared TTL counters |
 | **Critical** | `updateBooking` cannot NULL driver fields | `lib/store.js:109-119` | GDPR right to erasure violation | Use explicit `UPDATE SET driver_name = NULL` path |
 | **High** | Hardcoded domain fallbacks | `server.js:26` | Cookie domain mismatch / subdomain cookie toss | Fail-fast on missing `ROOT_DOMAIN` |

@@ -1,10 +1,26 @@
 # Technical Debt
 
+> **Revalidation status (2026-10-15):** This inventory contains historical findings and must not be treated as a verified list of current defects. Source re-checks found several stale or overstated entries. The table below supersedes those entries; all other rows remain **unverified** until reproduced or tested. The current source-of-truth audit is [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md).
+
+## Revalidated findings
+
+| Legacy item | Current disposition | Evidence / next action |
+|---|---|---|
+| Critical #1 — XSS in `renderAssignPage` | **Not confirmed in current source** | `lib/handlers.js` uses an escaping helper for dynamic text/attributes. Keep hostile-input regression coverage and validate allowed schemes for configurable image URLs before closing. |
+| Critical #3 — driver fields cannot be cleared | **Likely stale** | `lib/store.js:updateBooking` writes explicit patch fields, including `null`; verify end-to-end API behavior before closing. |
+| Critical #5 — empty manifest | **Resolved in source** | `public/manifest.json` is populated; separately verify icons and browser install behavior. |
+| Critical #6 — service worker never registered | **Partially stale** | Customer root registers `/sw.js` in `public/index.html`. Admin has `public/admin/manifest.json`, but its entry HTML has no visible service-worker registration; verify/implement admin-origin offline/update behavior if required. |
+| High #8 — driver assignment transaction | **Confirmed on audited main; fix proposed** | Original `assignDriver` uses pooled `query('BEGIN')` and subsequent pool queries, so row locks/transaction boundaries are not guaranteed to share one connection. PR #5 adds a client-scoped transaction and regression tests; keep open until merged and verified. |
+| High #10 — OTP attempts race | **Likely stale** | Current `verifyAdminOtpAndCreateSession` increments attempts and sets verification in one SQL `UPDATE ... RETURNING`. Add/retain concurrent-attempt tests. |
+| Google Maps key conflation | **Confirmed on audited main; fix proposed** | `/api/config` exposes `GOOGLE_MAPS_API_KEY` while `lib/handlers.js` uses it for Routes API. PR #5 introduces separate browser/server variables and unit tests; keep open until merged and configured. |
+| High #14 — Referer as open redirect | **Misclassified in legacy note** | `lib/handlers.js` forwards the Referer value as an outbound Routes API request header; this is not itself an HTTP redirect. Validate origin/key restrictions and remove the open-redirect label unless a redirect sink is demonstrated. |
+| Medium #35 — content block SQL interpolation | **Not confirmed in current source** | Current content category filtering uses a parameterized `$1` value. Re-open only if an untrusted value reaches SQL syntax rather than a bound parameter. |
+
 ## Critical Debt
 
 | # | Item | Location | Impact | Fix Effort |
 |---|------|----------|--------|------------|
-| 1 | XSS in `renderAssignPage` | `lib/handlers.js:370-451` | Arbitrary JS execution | Low — add escapeHtml() calls |
+| 1 | XSS in `renderAssignPage` — **revalidated 2026-10-15: not confirmed in current source** | `lib/handlers.js:370-451` | Arbitrary JS execution | Retain hostile-input regression coverage; validate URL schemes for configurable image URLs (see revalidated findings above) |
 | 2 | In-memory rate limiter | `lib/ratelimit.js` | Multi-node bypass | Medium — add Redis or middleware |
 | 3 | Cannot clear driver fields | `lib/store.js:updateBooking` | GDPR violation | Low — fix COALESCE logic |
 | 4 | Provider placeholders (SMS/WhatsApp/Payment/FCM) | `lib/providers/*.js` | Notifications don't work | High — needs real provider impl |
