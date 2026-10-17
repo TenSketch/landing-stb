@@ -28,7 +28,7 @@
 
 | Severity | Vulnerability | Location | Impact | Fix |
 |----------|---------------|----------|--------|-----|
-| **Critical** | XSS in `renderAssignPage` | `lib/handlers.js:370-451` | Arbitrary JS execution | Escape all user-supplied fields with `escapeHtml()` |
+| **Reclassified** (was Critical — revalidated 2026-10-15, not confirmed in current source) | XSS in `renderAssignPage` | `lib/handlers.js:370-451` | Arbitrary JS execution | Escaping already exists for dynamic text/attributes; retain hostile-input regression coverage and validate allowed URL schemes for configurable image URLs. See [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md) §5 |
 | **Critical** | In-memory rate limiter bypassable in multi-node | `lib/ratelimit.js` | Rate limit bypassed horizontally | Use Redis with shared TTL counters |
 | **Critical** | `updateBooking` cannot NULL driver fields | `lib/store.js:109-119` | GDPR right to erasure violation | Use explicit `UPDATE SET driver_name = NULL` path |
 | **High** | Hardcoded domain fallbacks | `server.js:26` | Cookie domain mismatch / subdomain cookie toss | Fail-fast on missing `ROOT_DOMAIN` |

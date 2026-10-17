@@ -1,6 +1,6 @@
 # STB Agent Handoff — Current Work & Next Actions
 
-**Updated:** 2026-10-16 (phase R1 complete — all confirmed review findings fixed on their owning branches)  
+**Updated:** 2026-10-17 (phase R1 verified end-to-end — PR #2 fix reproduced RED→GREEN, stack head re-run 78/78, all PR head SHAs and CI states re-checked against the GitHub API)  
 **Repository:** `TenSketch/landing-stb`  
 **Mode:** Test/PR work only. Production must remain untouched.
 
@@ -22,7 +22,7 @@ Read these documents before editing code, in this order:
 | PR | Base | Head | Head SHA | CI on head |
 |---|---|---|---|---|
 | [#2 Webhook hardening](https://github.com/TenSketch/landing-stb/pull/2) | main | fix/webhook-body-limit-and-routing | `55c039b61062` | **No run** — workflow file is not on this branch; local `npm test` 35/35 PASS |
-| [#3 Audit & QA docs](https://github.com/TenSketch/landing-stb/pull/3) | main | docs/full-audit-agile-development-plan | `9c8544a81b4f` (advanced again by the commit carrying this file) | **No run** — docs-only branch without workflow file |
+| [#3 Audit & QA docs](https://github.com/TenSketch/landing-stb/pull/3) | main | docs/full-audit-agile-development-plan | branch tip — this file records itself, so resolve it with `git rev-parse origin/docs/full-audit-agile-development-plan` | **No run** — docs-only branch without workflow file |
 | [#4 Portable QA & isolated CI](https://github.com/TenSketch/landing-stb/pull/4) | main | test/portable-ci-baseline | `4e74b0f93597` | success — [run 38733592011](https://github.com/TenSketch/landing-stb/actions/runs/38733592011) |
 | [#5 Booking transactions & Maps key split](https://github.com/TenSketch/landing-stb/pull/5) | main | fix/booking-transaction-ci | `84d415b730d7` | success — [run 38733597625](https://github.com/TenSketch/landing-stb/actions/runs/38733597625) |
 | [#6 Booking idempotency](https://github.com/TenSketch/landing-stb/pull/6) | #5 branch | fix/booking-idempotency | `f24f24a09dd9` | success — [run 38733600659](https://github.com/TenSketch/landing-stb/actions/runs/38733600659) |
@@ -64,7 +64,8 @@ Dated evidence: `docs/QA-REPORT-2026-10-16-R1-REVIEW-FIXES.md` (local 35/63/71/7
 
 ## Local verification baseline (VPS, 2026-10-16)
 
-- Suites pass on the fully propagated stack head `475b78e`: pricing 8/8, auth 3/3, platform hardening 10/10, booking transactions 10/10, Maps key separation 5/5, async TTL cache 9/9, integration cache invalidation 6/6, Vercel routes 14/14, admin UI static 8/8, admin error feedback static 5/5 — **78 assertions, 0 failures**, against the disposable `stb_test` database (PostgreSQL 18, port 5433), Node v24.19.0.
+- **Independent re-verification (2026-10-17, VPS):** PR #2 was re-checked from scratch rather than trusting the fix commit. The guard was reverted in the worktree (`git show e66158f:webhook-server.cjs` → `webhook-server.cjs`) and `backend/tests/webhook_hardening.test.js` **failed** at the close-handler guard assertion (RED); restoring the committed blob (`git checkout --`) gave 14/14 (GREEN) and the full PR #2 chain 35/35, exit 0. The stack head `475b78e` full chain was re-run for 78 assertions, exit 0. All nine open PR head SHAs and their CI conclusions were re-checked against `api.github.com` (#4–#10 `success` on the exact head SHA; #2/#3 have no workflow file, so **NO RUN**, not pending). Evidence: `docs/QA-REPORT-2026-10-17-R1-VERIFICATION.md`.
+- Suites pass on the fully propagated stack head `475b78e` (“2026-10-16 run”): pricing 8/8, auth 3/3, platform hardening 10/10, booking transactions 10/10, Maps key separation 5/5, async TTL cache 9/9, integration cache invalidation 6/6, Vercel routes 14/14, admin UI static 8/8, admin error feedback static 5/5 — **78 assertions, 0 failures**, against the disposable `stb_test` database (PostgreSQL 18, port 5433), Node v24.19.0.
 - **How to run tests on this VPS** (worktree `/root/stb-work`; run as root):
 
   ```sh

@@ -20,7 +20,7 @@
 
 | # | Item | Location | Impact | Fix Effort |
 |---|------|----------|--------|------------|
-| 1 | XSS in `renderAssignPage` | `lib/handlers.js:370-451` | Arbitrary JS execution | Low — add escapeHtml() calls |
+| 1 | XSS in `renderAssignPage` — **revalidated 2026-10-15: not confirmed in current source** | `lib/handlers.js:370-451` | Arbitrary JS execution | Retain hostile-input regression coverage; validate URL schemes for configurable image URLs (see revalidated findings above) |
 | 2 | In-memory rate limiter | `lib/ratelimit.js` | Multi-node bypass | Medium — add Redis or middleware |
 | 3 | Cannot clear driver fields | `lib/store.js:updateBooking` | GDPR violation | Low — fix COALESCE logic |
 | 4 | Provider placeholders (SMS/WhatsApp/Payment/FCM) | `lib/providers/*.js` | Notifications don't work | High — needs real provider impl |
