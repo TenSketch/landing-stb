@@ -218,6 +218,215 @@ function findVoucher(obj) {
     check('9-edge', `public ${u} -> 200`, r.status === 200, `status=${r.status}`);
   }
 
+  
+  // Pre-clean any artifacts from previous crashed runs
+  await db.query("DELETE FROM admin_users WHERE email LIKE 'e2e-admin-user-%@example.com'").catch(() => {});
+  await db.query("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE slug LIKE 'e2e-role-%')").catch(() => {});
+  await db.query("DELETE FROM roles WHERE slug LIKE 'e2e-role-%'").catch(() => {});
+  await db.query("DELETE FROM vehicle_types WHERE name LIKE 'E2E-TEST Vehicle%'").catch(() => {});
+  await db.query("DELETE FROM integration_settings WHERE provider_key LIKE 'e2e-test-integration-%'").catch(() => {});
+  await db.query("DELETE FROM notification_templates WHERE name LIKE 'E2E-TEST Template%'").catch(() => {});
+
+  /* ---------- Phase 11: admin auth lifecycle ---------- */
+  const setupRefused = await req('POST', '/api/admin/auth/setup', { body: { email: 'e2e-admin-setup@example.com', password: 'SetupPass123!' } });
+  check('11-admin-auth', 'setup refuses unauthorized email', setupRefused.status >= 400, `status=${setupRefused.status}`);
+  const verifyNoSession = await req('POST', '/api/admin/auth/verify-otp', { body: { email: 'e2e-admin-otp@example.com', otp: '123456' } });
+  check('11-admin-auth', 'verify-otp without login -> 4xx', verifyNoSession.status >= 400 && verifyNoSession.status < 500, `status=${verifyNoSession.status}`);
+  const forgotFake = await req('POST', '/api/admin/auth/forgot-password', { body: { email: 'e2e-admin-forgot-' + Date.now() + '@example.com' } });
+  check('11-admin-auth', 'forgot-password fake email -> success (no leak)', forgotFake.status === 200, `status=${forgotFake.status}`);
+  const resetBad = await req('POST', '/api/admin/auth/reset-password', { body: { token: 'invalid-token', password: 'NewPass123!' } });
+  check('11-admin-auth', 'reset-password invalid token -> 400', resetBad.status >= 400, `status=${resetBad.status}`);
+  const changeMissing = await req('POST', '/api/admin/auth/change-password', { token: adminToken, body: {} });
+  check('11-admin-auth', 'change-password missing fields -> 400', changeMissing.status >= 400, `status=${changeMissing.status}`);
+
+  /* ---------- Phase 12: additional admin CRUD ---------- */
+  // Vehicles
+  const vCreate = await req('POST', '/api/admin/vehicles', { token: adminToken, body: { name: 'E2E-TEST Vehicle ' + Date.now(), description: 'QA', paxMax: 4, luggageCapacity: 2, sortOrder: 99 } });
+  check('12-admin-crud', 'POST vehicle -> 201', vCreate.status === 201, `status=${vCreate.status}`);
+  const vehicleId = vCreate.json?.vehicle?.id;
+  if (vehicleId) {
+    const vUpd = await req('PUT', `/api/admin/vehicles/${vehicleId}`, { token: adminToken, body: { name: 'E2E-TEST Vehicle Updated ' + Date.now(), paxMax: 5 } });
+    check('12-admin-crud', 'PUT vehicle -> 200', vUpd.status === 200, `status=${vUpd.status}`);
+    const vExt = await req('PUT', `/api/admin/vehicles/${vehicleId}/extended`, { token: adminToken, body: { baseFareSgd: 50, perKmSgd: 2.5, minFareSgd: 50, hourlySgd: 70 } });
+    check('12-admin-crud', 'PUT vehicle extended -> 200', vExt.status === 200, `status=${vExt.status}`);
+    const vDel = await req('DELETE', `/api/admin/vehicles/${vehicleId}`, { token: adminToken });
+    check('12-admin-crud', 'DELETE vehicle -> 200', vDel.status === 200, `status=${vDel.status}`);
+  }
+
+  // Roles + Users
+  const roleSlug = 'e2e-role-' + Date.now();
+  const rCreate = await req('POST', '/api/admin/roles', { token: adminToken, body: { name: 'E2E-TEST Role ' + Date.now(), slug: roleSlug, description: 'test', permissionKeys: ['vehicles.view'] } });
+  check('12-admin-crud', 'POST role -> 201', rCreate.status === 201, `status=${rCreate.status}`);
+  const roleId = rCreate.json?.role?.id;
+  if (roleId) {
+    const rGet = await req('GET', `/api/admin/roles/${roleId}`, { token: adminToken });
+    check('12-admin-crud', 'GET role by id -> 200', rGet.status === 200, `status=${rGet.status}`);
+    const rUpd = await req('PUT', `/api/admin/roles/${roleId}`, { token: adminToken, body: { permissionKeys: ['bookings.view'] } });
+    check('12-admin-crud', 'PUT role -> 200', rUpd.status === 200, `status=${rUpd.status}`);
+    const adminUserEmail = 'e2e-admin-user-' + Date.now() + '@example.com';
+    const uCreate = await req('POST', '/api/admin/users', { token: adminToken, body: { email: adminUserEmail, name: 'E2E-TEST Admin', roleId, password: 'TestPass123!', isActive: true } });
+    check('12-admin-crud', 'POST admin user -> 201', uCreate.status === 201, `status=${uCreate.status}`);
+    const userId = uCreate.json?.user?.id;
+    if (userId) {
+      const uGet = await req('GET', `/api/admin/users/${userId}`, { token: adminToken });
+      check('12-admin-crud', 'GET admin user by id -> 200', uGet.status === 200, `status=${uGet.status}`);
+      const uUpd = await req('PUT', `/api/admin/users/${userId}`, { token: adminToken, body: { name: 'E2E-TEST Admin Updated' } });
+      check('12-admin-crud', 'PUT admin user -> 200', uUpd.status === 200, `status=${uUpd.status}`);
+      const uDel = await req('DELETE', `/api/admin/users/${userId}`, { token: adminToken });
+      check('12-admin-crud', 'DELETE admin user -> 200', uDel.status === 200, `status=${uDel.status}`);
+    }
+    const rDel = await req('DELETE', `/api/admin/roles/${roleId}`, { token: adminToken });
+    check('12-admin-crud', 'DELETE role -> 200', rDel.status === 200, `status=${rDel.status}`);
+  }
+
+  // Notifications
+  const notifSettings = await req('PUT', '/api/admin/notifications/settings', { token: adminToken, body: { email: { enabled: true, config: {} } } });
+  check('12-admin-crud', 'PUT notifications settings -> 200', notifSettings.status === 200, `status=${notifSettings.status}`);
+  const notifGet = await req('GET', '/api/admin/notifications/settings', { token: adminToken });
+  check('12-admin-crud', 'GET notifications settings -> 200', notifGet.status === 200, `status=${notifGet.status}`);
+  const tmplCreate = await req('PUT', '/api/admin/notifications/templates/0', { token: adminToken, body: { channel: 'email', event: 'booking_created', name: 'E2E-TEST Template ' + Date.now(), subject: 'Hi', body: 'Hello', isActive: true } });
+  check('12-admin-crud', 'PUT notification template -> 200', tmplCreate.status === 200, `status=${tmplCreate.status}`);
+  const tmplList = await req('GET', '/api/admin/notifications/templates', { token: adminToken });
+  check('12-admin-crud', 'GET notification templates -> 200', tmplList.status === 200, `status=${tmplList.status}`);
+  if (tmplList.json?.templates?.length) {
+    const firstTmpl = tmplList.json.templates[0];
+    const tmplUpd = await req('PUT', `/api/admin/notifications/templates/${firstTmpl.id}`, { token: adminToken, body: { channel: firstTmpl.channel, event: firstTmpl.event, name: firstTmpl.name, subject: firstTmpl.subject, body: firstTmpl.body, isActive: firstTmpl.is_active } });
+    check('12-admin-crud', 'PUT notification template by id -> 200', tmplUpd.status === 200, `status=${tmplUpd.status}`);
+  }
+
+  // Integrations
+  const intKey = 'e2e-test-integration-' + Date.now();
+  const intCreate = await req('POST', '/api/admin/integrations', { token: adminToken, body: { providerType: 'PAYMENT', providerKey: intKey, displayName: 'E2E-TEST Payment', enabled: true, mode: 'test', config: { currency: 'SGD' }, secrets: null, isDefault: false } });
+  check('12-admin-crud', 'POST integration -> 201', intCreate.status === 201, `status=${intCreate.status}`);
+  const intId = intCreate.json?.integration?.id;
+  if (intId) {
+    const intGet = await req('GET', `/api/admin/integrations/${intId}`, { token: adminToken });
+    check('12-admin-crud', 'GET integration by id -> 200', intGet.status === 200, `status=${intGet.status}`);
+    const intUpd = await req('PUT', `/api/admin/integrations/${intId}`, { token: adminToken, body: { providerType: 'PAYMENT', providerKey: intKey, displayName: 'E2E-TEST Payment Updated', enabled: true, mode: 'test', config: { currency: 'SGD' }, isDefault: false } });
+    check('12-admin-crud', 'PUT integration -> 200', intUpd.status === 200, `status=${intUpd.status}`);
+    const intDefault = await req('PUT', `/api/admin/integrations/${intId}/default`, { token: adminToken });
+    check('12-admin-crud', 'PUT integration default -> 200', intDefault.status === 200, `status=${intDefault.status}`);
+    const intTest = await req('POST', `/api/admin/integrations/${intId}/test`, { token: adminToken, body: {} });
+    check('12-admin-crud', 'POST integration test -> 200', intTest.status === 200, `status=${intTest.status}`);
+    const intDel = await req('DELETE', `/api/admin/integrations/${intId}`, { token: adminToken });
+    check('12-admin-crud', 'DELETE integration -> 200', intDel.status === 200, `status=${intDel.status}`);
+  }
+
+  // Driver + assign-driver lifecycle (use a fresh booking so status is PENDING)
+  const freshBooking = await req('POST', '/api/bookings', { body: {
+    passengerName: 'E2E-TEST Assign', passengerEmail: 'e2e-test-assign@example.com', passengerPhone: '+650****0000',
+    vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
+    dateTime: '2026-10-20T10:00', currency: 'SGD', paymentMethod: 'Cash', pax: 2,
+    bookingType: 'One Way', distanceKm: 20, notes: 'E2E assign-driver test'
+  } });
+  check('12-admin-crud', 'fresh booking for assign -> 2xx', freshBooking.status >= 200 && freshBooking.status < 300, `status=${freshBooking.status}`);
+  const freshVoucher = findVoucher(freshBooking.json) || findVoucher(freshBooking.text);
+  check('12-admin-crud', 'fresh voucher returned', !!freshVoucher, `voucher=${freshVoucher}`);
+  const assignDCreate = await req('POST', '/api/admin/drivers', { token: adminToken, body: { name: 'E2E-TEST Assign Driver', phone: '+650****4444', plateNumber: 'SGA4444A' } });
+  check('12-admin-crud', 'POST driver -> 201', assignDCreate.status === 201, `status=${assignDCreate.status}`);
+  const assignDriverId = assignDCreate.json?.driver?.id;
+  if (freshVoucher) {
+    const assign = await req('PUT', `/api/admin/bookings/${freshVoucher}/assign-driver`, { token: adminToken, body: { driverName: 'E2E-TEST Assign Driver', driverPhone: '+650****4444', driverPlate: 'SGA4444A' } });
+    check('12-admin-crud', 'PUT assign-driver -> 200', assign.status === 200, `status=${assign.status} body=${JSON.stringify(assign.json).slice(0, 100)}`);
+  }
+  if (assignDriverId) {
+    const dDel = await req('DELETE', `/api/admin/drivers/${assignDriverId}`, { token: adminToken });
+    check('12-admin-crud', 'DELETE driver -> 200', dDel.status === 200, `status=${dDel.status}`);
+  }
+
+  /* ---------- Phase 13: customer auth depth ---------- */
+  const reLogin = await req('POST', '/api/auth/login', { body: { email, password: pw } });
+  const phase13Token = (reLogin.headers['set-cookie'] || '').match(/stb_customer_session=([^;]+)/)?.[1] || null;
+  check('13-customer', 're-login for phase 13 -> 200 + cookie', reLogin.status === 200 && !!phase13Token, `status=${reLogin.status} cookie=${phase13Token ? 'yes' : 'no'}`);
+  const changePw = await req('POST', '/api/auth/change-password', { token: phase13Token, body: { currentPassword: pw, newPassword: 'Changed-Pass!123' } });
+  check('13-customer', 'change-password with session -> 2xx', changePw.status >= 200 && changePw.status < 300, `status=${changePw.status}`);
+  const forgotCust = await req('POST', '/api/auth/forgot-password', { body: { email: 'e2e-customer-forgot-' + Date.now() + '@example.com' } });
+  check('13-customer', 'customer forgot-password fake email -> 2xx', forgotCust.status >= 200 && forgotCust.status < 300, `status=${forgotCust.status}`);
+  const resetCustBad = await req('POST', '/api/auth/reset-password', { body: { token: 'bad-token', password: 'NewPass123!' } });
+  check('13-customer', 'customer reset-password invalid token -> 4xx', resetCustBad.status >= 400, `status=${resetCustBad.status}`);
+  const deviceTokenStr = 'e2e-device-token-' + Date.now();
+  const devToken = await req('POST', '/api/customer/device-token', { token: phase13Token, body: { token: deviceTokenStr, provider: 'fcm' } });
+  check('13-customer', 'POST device-token -> 2xx', devToken.status >= 200 && devToken.status < 300, `status=${devToken.status}`);
+  const delDevToken = await req('DELETE', '/api/customer/device-token', { token: phase13Token, body: { token: deviceTokenStr } });
+  check('13-customer', 'DELETE device-token -> 2xx', delDevToken.status >= 200 && delDevToken.status < 300, `status=${delDevToken.status}`);
+
+  const prof3 = await req('GET', '/api/customer/profile', { token: phase13Token });
+  const customerId = prof3.json?.customer?.id;
+  const custBook = await req('POST', '/api/bookings', { token: phase13Token, body: {
+    passengerName: 'E2E-TEST Customer Booking', passengerEmail: email, passengerPhone: '+650****0000',
+    vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
+    dateTime: '2026-10-20T11:00', currency: 'SGD', paymentMethod: 'Cash', pax: 2,
+    bookingType: 'One Way', distanceKm: 20, notes: 'E2E authenticated customer booking'
+  } });
+  check('13-customer', 'authenticated booking -> 2xx', custBook.status >= 200 && custBook.status < 300, `status=${custBook.status}`);
+  const custVoucher = findVoucher(custBook.json) || findVoucher(custBook.text);
+  if (customerId && custVoucher) {
+    await db.query('UPDATE bookings SET customer_id = $1 WHERE voucher_code = $2', [customerId, custVoucher]);
+    const specificBooking = await req('GET', `/api/customer/bookings/${custVoucher}`, { token: phase13Token });
+    check('13-customer', 'GET specific customer booking -> 200', specificBooking.status === 200, `status=${specificBooking.status}`);
+  }
+
+  /* ---------- Phase 14: assign page endpoints ---------- */
+  const assignIndex = await req('GET', '/assign');
+  check('14-assign', 'GET /assign -> 200', assignIndex.status === 200, `status=${assignIndex.status}`);
+  if (freshVoucher) {
+    const assignPost = await req('POST', `/assign/${freshVoucher}`, { body: { driverName: 'E2E-TEST HTML Driver', driverPhone: '+650****5555', driverPlate: 'SGA5555A' } });
+    check('14-assign', 'POST /assign/:voucher -> 200 HTML', assignPost.status === 200 && (assignPost.headers['content-type'] || '').includes('text/html'), `status=${assignPost.status} ct=${assignPost.headers['content-type']}`);
+    const assignApiPost = await req('POST', `/api/assign/${freshVoucher}`, { body: { driverName: 'E2E-TEST API Driver', driverPhone: '+650****6666', driverPlate: 'SGA6666A' } });
+    check('14-assign', 'POST /api/assign/:voucher -> 200 JSON', assignApiPost.status === 200 && (assignApiPost.headers['content-type'] || '').includes('application/json'), `status=${assignApiPost.status} ct=${assignApiPost.headers['content-type']}`);
+  }
+
+  /* ---------- Phase 16: pricing endpoints (read + safe no-op updates) ---------- */
+  const pricingGet = await req('GET', '/api/admin/pricing', { token: adminToken });
+  check('16-pricing', 'GET /admin/pricing -> 200', pricingGet.status === 200, `status=${pricingGet.status}`);
+  const pricingData = pricingGet.json?.pricing;
+  if (pricingData?.rules?.length) {
+    const rulePayload = pricingData.rules.map(r => ({
+      vehicle_id: r.vehicle_id, base_fare: r.base_fare, per_km_rate: r.per_km_rate,
+      minimum_fare: r.minimum_fare, hourly_rate: r.hourly_rate, daily_rate: r.daily_rate, is_active: r.is_active
+    }));
+    const rulesUpd = await req('PUT', '/api/admin/pricing/rules', { token: adminToken, body: { rules: rulePayload } });
+    check('16-pricing', 'PUT /admin/pricing/rules -> 200', rulesUpd.status === 200, `status=${rulesUpd.status}`);
+  }
+  if (pricingData?.surcharges?.length) {
+    const scPayload = pricingData.surcharges.map(sc => ({ id: sc.id, value: sc.value, is_active: sc.is_active }));
+    const scUpd = await req('PUT', '/api/admin/pricing/surcharges', { token: adminToken, body: { surcharges: scPayload } });
+    check('16-pricing', 'PUT /admin/pricing/surcharges -> 200', scUpd.status === 200, `status=${scUpd.status}`);
+  }
+  const configGet = await req('GET', '/api/config');
+  const bookingConfig = configGet.json?.booking;
+  if (bookingConfig) {
+    const bookingSettingsUpd = await req('PUT', '/api/admin/settings/booking', { token: adminToken, body: bookingConfig });
+    check('16-pricing', 'PUT /admin/settings/booking -> 200', bookingSettingsUpd.status === 200, `status=${bookingSettingsUpd.status}`);
+  }
+  if (pricingData?.vehicles?.length) {
+    const vehicleId = pricingData.vehicles[0].id;
+    const overrideInsert = await db.query(
+      `INSERT INTO route_overrides (vehicle_id, origin_place_id, destination_place_id, origin_display_name, destination_display_name, fixed_price, is_active, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id`,
+      [vehicleId, 'E2E_ORIGIN_' + Date.now(), 'E2E_DEST_' + Date.now(), 'E2E Origin', 'E2E Dest', 999.00, false]
+    );
+    const overrideId = overrideInsert.rows[0]?.id;
+    if (overrideId) {
+      const overrideDel = await req('DELETE', `/api/admin/pricing/overrides/${overrideId}`, { token: adminToken });
+      check('16-pricing', 'DELETE /admin/pricing/overrides/:id -> 200', overrideDel.status === 200, `status=${overrideDel.status}`);
+    }
+  }
+
+  /* ---------- Phase 15: logout invalidates admin session ---------- */
+  const logoutAdmin = await req('POST', '/api/admin/auth/logout', { token: adminToken });
+  check('15-logout', 'admin logout -> 2xx', logoutAdmin.status >= 200 && logoutAdmin.status < 300, `status=${logoutAdmin.status}`);
+  const sessionAfterLogout = await req('GET', '/api/admin/auth/session', { token: adminToken });
+  check('15-logout', 'session invalid after logout -> 401', sessionAfterLogout.status === 401, `status=${sessionAfterLogout.status}`);
+
+  // Cleanup new admin artifacts so they don't leak between runs
+  await db.query("DELETE FROM admin_users WHERE email LIKE 'e2e-admin-user-%@example.com'").catch(() => {});
+  await db.query("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE slug LIKE 'e2e-role-%')").catch(() => {});
+  await db.query("DELETE FROM roles WHERE slug LIKE 'e2e-role-%'").catch(() => {});
+  await db.query("DELETE FROM vehicle_types WHERE name LIKE 'E2E-TEST Vehicle%'").catch(() => {});
+  await db.query("DELETE FROM integration_settings WHERE provider_key LIKE 'e2e-test-integration-%'").catch(() => {});
+  await db.query("DELETE FROM notification_templates WHERE name LIKE 'E2E-TEST Template%'").catch(() => {});
+
   /* ---------- Phase 10: cleanup + log diff ---------- */
   await db.query("DELETE FROM customer_sessions WHERE customer_id IN (SELECT id FROM customers WHERE email LIKE 'e2e-test-%@example.com')");
   await db.query("DELETE FROM customer_password_reset_tokens WHERE customer_id IN (SELECT id FROM customers WHERE email LIKE 'e2e-test-%@example.com')");
