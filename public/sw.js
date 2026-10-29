@@ -1,13 +1,11 @@
 // STB Singapore — Service Worker (PWA)
-// v3 (2026-10-05): the old v2 was cache-first for EVERYTHING (including
-// cross-origin Google Fonts) with an unversioned cache — one bad fetch got
-// pinned in Cache Storage forever and clearing the browser cache did not
-// remove it. Now:
+// v4 (2026-10-29): bump cache name to force purge of any stale/poisoned v3
+//   or older caches after the icon-font incident. Rules unchanged:
 //   - cross-origin requests (fonts, GA, CDNs) are NEVER handled/cached here
 //   - HTML + JS + CSS are network-first (fresh content on every load,
 //     cache only as offline fallback)
 //   - bump CACHE_NAME on deploy -> old caches purged on activate
-const CACHE_NAME = 'stb-v3';
+const CACHE_NAME = 'stb-v4';
 const PRECACHE = [
   '/',
   '/index.html',

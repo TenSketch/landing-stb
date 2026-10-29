@@ -208,23 +208,31 @@
       //      (family unregisters -> vacuous true), so inspect face status.
       // NB2: must NOT wait for window 'load': when a Google stylesheet hangs,
       //      load never fires and the fallback would never run.
+      // NB3: also inject on font face error (poisoned cache / blocked woff2).
       (function () {
         var started = false, done = false, tries = 0;
+        function hasIconFace() {
+          try {
+            var loaded = false, error = false;
+            document.fonts.forEach(function (f) {
+              if (String(f.family).indexOf('Material Symbols') !== -1) {
+                if (f.status === 'loaded') loaded = true;
+                if (f.status === 'error') error = true;
+              }
+            });
+            return { loaded: loaded, error: error };
+          } catch (e) { return { loaded: false, error: false }; }
+        }
         function tick() {
           if (done) return;
           tries++;
-          var loaded = false;
-          try {
-            document.fonts.forEach(function (f) {
-              if (String(f.family).indexOf('Material Symbols') !== -1 && f.status === 'loaded') loaded = true;
-            });
-          } catch (e) {}
-          if (loaded) { done = true; return; }
-          if (tries >= 3) { // ~3s after DOM ready with no icon font
+          var state = hasIconFace();
+          if (state.loaded) { done = true; return; }
+          if (tries >= 3 || state.error) { // ~3s after DOM ready or on font error
             done = true;
             var l = document.createElement('link');
             l.rel = 'stylesheet';
-            l.href = 'https://unpkg.com/@material-symbols/font-400@0.28.0/outlined.css';
+            l.href = 'https://unpkg.com/@material-symbols/font-400@0.28.0/outlined.css?v=2';
             document.head.appendChild(l);
             return;
           }
