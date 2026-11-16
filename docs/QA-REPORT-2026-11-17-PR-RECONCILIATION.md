@@ -44,11 +44,11 @@ Specific overlapping files resolved: `lib/store.js` (preserve `customer_id`, sta
 
 - The first integrated head `c949853` passed GitHub Actions unit/database, isolated E2E and audit workflow.
 - Booking server validation was subsequently added and a follow-up CI run at `3bc7f2c` passed.
-- Later UI error-handling improvements require final-head CI verification before readiness can be claimed.
+- The subsequent UI fixes at `6d486c4` passed CI; the audit report commit `b4ca4e2` also passed its final-head GitHub Actions run.
 - Live booking flows, design sign-off, external provider calls and production deployment have **not** been verified.
 
 ## Release criteria
 
 Final branch: green syntax/unit/database/E2E/audit checks; booking success/error/retry flow checked in staging; manual mobile/accessibility checks; safe migration rehearsal; owner approval for merge and production deployment.
 
-This review branch is intended to supersede the overlapping stale-base PRs after review, not to deploy them.
+The superseded PRs #2–#10 were closed with links back to PR #11, preserving their branches and review histories. No PR was merged and nothing was deployed.
