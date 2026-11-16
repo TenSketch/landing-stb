@@ -1,6 +1,6 @@
 # Deployment
 
-> Verified against `deploy/nginx.conf`, `README-DEPLOY.md`, `package.json` as of commit `15e4184`.
+> **Historical runbook — verify before use.** This document describes the VPS/Express/PostgreSQL path, while `README-DEPLOY.md` describes an alternate Vercel/serverless path. Confirm the intended deployment target before following either guide. Environment values here are examples, not verified live settings; `docs/LIVE-RUNBOOK.md` records the current operational SMTP note (Zoho STARTTLS), which conflicts with older Gmail examples below. Do not copy placeholder credentials or switch providers based on this document alone. See [`REPOSITORY_AUDIT.md`](REPOSITORY_AUDIT.md).
 
 ## Current Architecture
 

@@ -1,13 +1,17 @@
-/* STB E2E test suite — runs against live server on :3003 + public domains */
+/* STB E2E suite — targets an explicitly configured local/staging server by default. */
 const crypto = require('crypto');
 const fs = require('fs');
-const pg = require('/root/landing-stb/node_modules/pg');
+const pg = require('pg');
+const pathModule = require('path');
 const { Client } = pg;
 
-const BASE = 'http://127.0.0.1:3003';
+const BASE = process.env.STB_E2E_BASE_URL || 'http://127.0.0.1:3003';
 const results = [];
 function check(phase, name, cond, detail = '') {
   results.push({ phase, name, pass: !!cond, detail: String(detail).slice(0, 200) });
+}
+function skip(phase, name, detail = 'not enabled for this run') {
+  results.push({ phase, name, pass: true, skipped: true, detail: String(detail).slice(0, 200) });
 }
 async function req(method, path, opts = {}) {
   const url = path.startsWith('http') ? path : BASE + path;
@@ -32,12 +36,13 @@ function findVoucher(obj) {
 }
 
 (async () => {
-  const errLogPath = '/root/.pm2/logs/stb-server-error.log';
-  const errLogSizeBefore = fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
+  const errLogPath = process.env.STB_E2E_ERROR_LOG || '';
+  const errLogSizeBefore = errLogPath && fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
 
-  // DB handle
-  require('/root/landing-stb/node_modules/dotenv').config({ path: '/root/landing-stb/.env' });
-  const db = new Client({ connectionString: process.env.DATABASE_URL });
+  // Optional dotenv loading; CI/staging should inject DATABASE_URL explicitly.
+  require('dotenv').config({ path: process.env.STB_ENV_FILE || '.env' });
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for E2E cleanup and fixtures');
+  const db = new Client({ connectionString: process.env.DATABASE_URL, ssl: process.env.PG_SSL === 'true' ? { rejectUnauthorized: false } : false });
   await db.connect();
 
   /* ---------- Phase 1: public pages & static ---------- */
@@ -79,15 +84,40 @@ function findVoucher(obj) {
   const badBook = await req('POST', '/api/bookings', { body: { passengerName: 'X' } });
   check('4-booking', 'missing fields -> 400', badBook.status === 400, `status=${badBook.status}`);
   const XSS = '<img src=x onerror=alert(1)>';
-  const book = await req('POST', '/api/bookings', { body: {
+  const bookingKey = 'e2e-idem-' + crypto.randomBytes(8).toString('hex');
+  const bookingPayload = {
     passengerName: 'E2E-TEST ' + XSS, passengerEmail: 'e2e-test@example.com', passengerPhone: '+650000000',
     vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
-    dateTime: '2026-10-15T10:00', currency: 'SGD', paymentMethod: 'Cash', pax: 2,
+    dateTime: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16), currency: 'SGD', paymentMethod: 'Cash', pax: 2,
     bookingType: 'One Way', distanceKm: 20, notes: 'E2E automated test booking - safe to delete',
-  } });
+  };
+  const book = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': bookingKey }, body: bookingPayload });
   check('4-booking', 'valid guest booking -> 2xx + voucher', book.status >= 200 && book.status < 300, `status=${book.status} body=${JSON.stringify(book.json).slice(0, 150)}`);
   const voucher = findVoucher(book.json) || findVoucher(book.text);
   check('4-booking', 'voucher code returned', !!voucher, `voucher=${voucher}`);
+  const replay = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': bookingKey }, body: bookingPayload });
+  const replayVoucher = findVoucher(replay.json) || findVoucher(replay.text);
+  check('4-booking', 'same idempotency key replays original voucher', replay.status === book.status && replayVoucher === voucher, `status=${replay.status} voucherMatches=${replayVoucher === voucher}`);
+  const keyReuse = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': bookingKey }, body: { ...bookingPayload, pickup: 'Different pickup' } });
+  check('4-booking', 'same key with different payload returns 409', keyReuse.status === 409, `status=${keyReuse.status}`);
+  if (voucher) {
+    const count = await db.query('SELECT COUNT(*)::int AS count FROM bookings WHERE voucher_code = $1', [voucher]);
+    check('4-booking', 'idempotent replay creates exactly one booking row', count.rows[0].count === 1, `rows=${count.rows[0].count}`);
+  }
+  const concurrentKey = 'e2e-concurrent-' + crypto.randomBytes(8).toString('hex');
+  const concurrentPayload = { ...bookingPayload, passengerName: 'E2E-TEST concurrent idempotency' };
+  const concurrentResults = await Promise.all([
+    req('POST', '/api/bookings', { headers: { 'Idempotency-Key': concurrentKey }, body: concurrentPayload }),
+    req('POST', '/api/bookings', { headers: { 'Idempotency-Key': concurrentKey }, body: concurrentPayload })
+  ]);
+  const concurrentVouchers = concurrentResults.map(r => findVoucher(r.json) || findVoucher(r.text));
+  check('4-booking', 'concurrent same-key requests return the same voucher', concurrentResults.every(r => r.status === 200) && concurrentVouchers[0] && concurrentVouchers[0] === concurrentVouchers[1], JSON.stringify({ statuses: concurrentResults.map(r => r.status), vouchersMatch: concurrentVouchers[0] === concurrentVouchers[1] }));
+  if (concurrentVouchers[0]) {
+    const count = await db.query('SELECT COUNT(*)::int AS count FROM bookings WHERE voucher_code = $1', [concurrentVouchers[0]]);
+    check('4-booking', 'concurrent replay creates exactly one booking row', count.rows[0].count === 1, `rows=${count.rows[0].count}`);
+  }
+  const badKey = await req('POST', '/api/bookings', { headers: { 'Idempotency-Key': 'bad' }, body: bookingPayload });
+  check('4-booking', 'malformed idempotency key rejected', badKey.status === 400, `status=${badKey.status}`);
   if (voucher) {
     const assign = await req('GET', `/assign/${voucher}`);
     const rawXss = assign.text.includes('<img src=x');
@@ -151,7 +181,7 @@ function findVoucher(obj) {
   check('6-admin', 'seeded session valid (GET auth/session)', sess.status === 200, `status=${sess.status} body=${JSON.stringify(sess.json).slice(0, 120)}`);
   const fakeTok = await req('GET', '/api/admin/auth/session', { token: 'a'.repeat(64) });
   check('6-admin', 'garbage token -> 401', fakeTok.status === 401, `status=${fakeTok.status}`);
-  for (const p of ['/api/admin/dashboard', '/api/admin/bookings', '/api/admin/settings', '/api/admin/users', '/api/admin/vehicles', '/api/admin/pricing', '/api/admin/audit-logs', '/api/admin/customers', '/api/admin/drivers', '/api/admin/roles', '/api/admin/content', '/api/admin/integrations']) {
+  for (const p of ['/api/admin/dashboard', '/api/admin/bookings', '/api/admin/settings', '/api/admin/users', '/api/admin/vehicles', '/api/admin/pricing', '/api/admin/audit-logs', '/api/admin/customers', '/api/admin/drivers', '/api/admin/drivers/assignable', '/api/admin/roles', '/api/admin/content', '/api/admin/integrations']) {
     const r = await req('GET', p, { token: adminToken });
     check('6-admin', `GET ${p}`, r.status === 200, `status=${r.status}`);
     const rNo = await req('GET', p);
@@ -173,8 +203,8 @@ function findVoucher(obj) {
   check('7-crud', 'POST driver -> 201', dCreate.status === 201, `status=${dCreate.status} body=${JSON.stringify(dCreate.json).slice(0, 100)}`);
   const driverId = dCreate.json?.driver?.id;
   if (driverId) {
-    const dDel = await req('DELETE', `/api/admin/drivers/${driverId}`, { token: adminToken });
-    check('7-crud', 'DELETE driver -> 200', dDel.status === 200, `status=${dDel.status}`);
+    const assignable = await req('GET', '/api/admin/drivers/assignable', { token: adminToken });
+    check('7-crud', 'assignable drivers endpoint returns active driver choices', assignable.status === 200 && assignable.json?.drivers?.some(d => d.id === driverId), `status=${assignable.status}`);
   }
 
   // Booking status lifecycle
@@ -185,10 +215,20 @@ function findVoucher(obj) {
     check('7-crud', 'illegal transition PENDING->COMPLETED rejected', illegal.status >= 400, `status=${illegal.status}`);
     const confirm = await req('PUT', `/api/admin/bookings/${voucher}/status`, { token: adminToken, body: { status: 'CONFIRMED', notes: 'E2E confirm' } });
     check('7-crud', 'PENDING->CONFIRMED accepted', confirm.status === 200, `status=${confirm.status} body=${JSON.stringify(confirm.json).slice(0, 100)}`);
+    const invalidDriver = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverId: 'not-a-uuid' } });
+    check('7-crud', 'invalid driver ID rejected', invalidDriver.status === 400, `status=${invalidDriver.status}`);
+    const assigned = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverId } });
+    check('7-crud', 'active driver record assigns successfully', !!driverId && assigned.status === 200 && assigned.json?.booking?.status === 'ASSIGNED' && assigned.json?.booking?.driverName === 'E2E-TEST Driver', `status=${assigned.status} body=${JSON.stringify(assigned.json).slice(0, 140)}`);
     const hist = await req('GET', `/api/admin/bookings/${voucher}/status-history`, { token: adminToken });
     check('7-crud', 'status-history -> 200 + entries', hist.status === 200 && JSON.stringify(hist.json).includes('CONFIRMED'), `status=${hist.status}`);
     const cancel = await req('PUT', `/api/admin/bookings/${voucher}/status`, { token: adminToken, body: { status: 'CANCELLED', notes: 'E2E cleanup' } });
     check('7-crud', 'CONFIRMED->CANCELLED accepted', cancel.status === 200, `status=${cancel.status}`);
+  }
+  if (driverId) {
+    const dDel = await req('DELETE', `/api/admin/drivers/${driverId}`, { token: adminToken });
+    check('7-crud', 'DELETE driver -> 200', dDel.status === 200, `status=${dDel.status}`);
+    const inactiveAssign = await req('PUT', `/api/admin/bookings/${voucher}/assign-driver`, { token: adminToken, body: { driverId } });
+    check('7-crud', 'inactive driver rejected for assignment', inactiveAssign.status === 400, `status=${inactiveAssign.status}`);
   }
 
   /* ---------- Phase 8: security probes ---------- */
@@ -209,16 +249,25 @@ function findVoucher(obj) {
   check('8-security', 'unauth settings write -> 401', adminNoTok.status === 401, `status=${adminNoTok.status}`);
 
   /* ---------- Phase 9: webhook + public domain ---------- */
-  const wh1 = await req('POST', 'http://127.0.0.1:9003/webhook', { body: { test: 1 } });
-  check('9-edge', 'webhook without secret rejected', wh1.status >= 400, `status=${wh1.status}`);
-  const wh2 = await req('POST', 'http://127.0.0.1:9003/webhook', { headers: { 'x-webhook-secret': 'wrong' }, body: { test: 1 } });
-  check('9-edge', 'webhook with wrong secret rejected', wh2.status >= 400, `status=${wh2.status}`);
-  for (const u of ['https://singaporetourbooking.com/', 'https://admin.singaporetourbooking.com/', 'https://api.singaporetourbooking.com/api/health']) {
-    const r = await req('GET', u);
-    check('9-edge', `public ${u} -> 200`, r.status === 200, `status=${r.status}`);
+  if (process.env.STB_WEBHOOK_BASE_URL) {
+    const webhookBase = process.env.STB_WEBHOOK_BASE_URL.replace(/\/$/, '');
+    const wh1 = await req('POST', `${webhookBase}/webhook`, { body: { test: 1 } });
+    check('9-edge', 'webhook without secret rejected', wh1.status >= 400, `status=${wh1.status}`);
+    const wh2 = await req('POST', `${webhookBase}/webhook`, { headers: { 'x-webhook-secret': 'wrong' }, body: { test: 1 } });
+    check('9-edge', 'webhook with wrong secret rejected', wh2.status >= 400, `status=${wh2.status}`);
+  } else {
+    skip('9-edge', 'webhook probes', 'Set STB_WEBHOOK_BASE_URL to test a separately running test webhook');
+  }
+  if (process.env.RUN_PUBLIC_DOMAIN_SMOKE === 'true') {
+    const publicUrls = (process.env.STB_PUBLIC_SMOKE_URLS || 'https://singaporetourbooking.com/,https://admin.singaporetourbooking.com/,https://api.singaporetourbooking.com/api/health').split(',').map(s => s.trim()).filter(Boolean);
+    for (const u of publicUrls) {
+      const r = await req('GET', u);
+      check('9-edge', `public ${u} -> 200`, r.status === 200, `status=${r.status}`);
+    }
+  } else {
+    skip('9-edge', 'public-domain smoke tests', 'Set RUN_PUBLIC_DOMAIN_SMOKE=true only for an explicitly approved read-only run');
   }
 
-  
   // Pre-clean any artifacts from previous crashed runs
   await db.query("DELETE FROM admin_users WHERE email LIKE 'e2e-admin-user-%@example.com'").catch(() => {});
   await db.query("DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE slug LIKE 'e2e-role-%')").catch(() => {});
@@ -306,8 +355,12 @@ function findVoucher(obj) {
     check('12-admin-crud', 'PUT integration -> 200', intUpd.status === 200, `status=${intUpd.status}`);
     const intDefault = await req('PUT', `/api/admin/integrations/${intId}/default`, { token: adminToken });
     check('12-admin-crud', 'PUT integration default -> 200', intDefault.status === 200, `status=${intDefault.status}`);
-    const intTest = await req('POST', `/api/admin/integrations/${intId}/test`, { token: adminToken, body: {} });
-    check('12-admin-crud', 'POST integration test -> 200', intTest.status === 200, `status=${intTest.status}`);
+    if (process.env.STB_E2E_RUN_PROVIDER_TESTS === 'true') {
+      const intTest = await req('POST', `/api/admin/integrations/${intId}/test`, { token: adminToken, body: {} });
+      check('12-admin-crud', 'POST integration test -> 200', intTest.status === 200, `status=${intTest.status}`);
+    } else {
+      skip('12-admin-crud', 'provider integration probe', 'Set STB_E2E_RUN_PROVIDER_TESTS=true only against isolated test providers');
+    }
     const intDel = await req('DELETE', `/api/admin/integrations/${intId}`, { token: adminToken });
     check('12-admin-crud', 'DELETE integration -> 200', intDel.status === 200, `status=${intDel.status}`);
   }
@@ -316,7 +369,7 @@ function findVoucher(obj) {
   const freshBooking = await req('POST', '/api/bookings', { body: {
     passengerName: 'E2E-TEST Assign', passengerEmail: 'e2e-test-assign@example.com', passengerPhone: '+650****0000',
     vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
-    dateTime: '2026-10-20T10:00', currency: 'SGD', paymentMethod: 'Cash', pax: 2,
+    dateTime: new Date(Date.now() + 8 * 86400000).toISOString().slice(0, 16), currency: 'SGD', paymentMethod: 'Cash', pax: 2,
     bookingType: 'One Way', distanceKm: 20, notes: 'E2E assign-driver test'
   } });
   check('12-admin-crud', 'fresh booking for assign -> 2xx', freshBooking.status >= 200 && freshBooking.status < 300, `status=${freshBooking.status}`);
@@ -325,8 +378,8 @@ function findVoucher(obj) {
   const assignDCreate = await req('POST', '/api/admin/drivers', { token: adminToken, body: { name: 'E2E-TEST Assign Driver', phone: '+650****4444', plateNumber: 'SGA4444A' } });
   check('12-admin-crud', 'POST driver -> 201', assignDCreate.status === 201, `status=${assignDCreate.status}`);
   const assignDriverId = assignDCreate.json?.driver?.id;
-  if (freshVoucher) {
-    const assign = await req('PUT', `/api/admin/bookings/${freshVoucher}/assign-driver`, { token: adminToken, body: { driverName: 'E2E-TEST Assign Driver', driverPhone: '+650****4444', driverPlate: 'SGA4444A' } });
+  if (freshVoucher && assignDriverId) {
+    const assign = await req('PUT', `/api/admin/bookings/${freshVoucher}/assign-driver`, { token: adminToken, body: { driverId: assignDriverId } });
     check('12-admin-crud', 'PUT assign-driver -> 200', assign.status === 200, `status=${assign.status} body=${JSON.stringify(assign.json).slice(0, 100)}`);
   }
   if (assignDriverId) {
@@ -355,7 +408,7 @@ function findVoucher(obj) {
   const custBook = await req('POST', '/api/bookings', { token: phase13Token, body: {
     passengerName: 'E2E-TEST Customer Booking', passengerEmail: email, passengerPhone: '+650****0000',
     vehicle: '4-Seater', pickup: 'Changi Airport', destination: 'Marina Bay Sands',
-    dateTime: '2026-10-20T11:00', currency: 'SGD', paymentMethod: 'Cash', pax: 2,
+    dateTime: new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 16), currency: 'SGD', paymentMethod: 'Cash', pax: 2,
     bookingType: 'One Way', distanceKm: 20, notes: 'E2E authenticated customer booking'
   } });
   check('13-customer', 'authenticated booking -> 2xx', custBook.status >= 200 && custBook.status < 300, `status=${custBook.status}`);
@@ -438,9 +491,9 @@ function findVoucher(obj) {
   await db.query("DELETE FROM otp_sessions WHERE email LIKE '%e2e%'");
   check('10-cleanup', 'test data removed from DB', true, 'customers/bookings/drivers/content/sessions purged');
 
-  const errLogSizeAfter = fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
+  const errLogSizeAfter = errLogPath && fs.existsSync(errLogPath) ? fs.statSync(errLogPath).size : 0;
   let newErrors = '';
-  if (errLogSizeAfter > errLogSizeBefore) {
+  if (errLogPath && errLogSizeAfter > errLogSizeBefore) {
     const fd = fs.openSync(errLogPath, 'r');
     const buf = Buffer.alloc(errLogSizeAfter - errLogSizeBefore);
     fs.readSync(fd, buf, 0, buf.length, errLogSizeBefore);
@@ -448,24 +501,32 @@ function findVoucher(obj) {
     newErrors = buf.toString();
   }
   const realErrors = newErrors.split('\n').filter(l => l.trim() && !l.includes('[AdminAuth] 401') && !l.includes('SyntaxError') && !l.includes('body-parser') && !/^\s+at /.test(l) && !l.includes('code: ') && !l.includes('statusCode:'));
-  check('10-cleanup', 'no new server errors during E2E', realErrors.length === 0, realErrors.slice(0, 5).join(' | ').slice(0, 200));
+  if (errLogPath) check('10-cleanup', 'no new server errors during E2E', realErrors.length === 0, realErrors.slice(0, 5).join(' | ').slice(0, 200));
+  else skip('10-cleanup', 'server error-log diff', 'Set STB_E2E_ERROR_LOG to an accessible test-server log path');
 
   await db.end();
 
   /* ---------- report ---------- */
-  const pass = results.filter(r => r.pass).length;
-  const fail = results.filter(r => !r.pass);
-  const out = { total: results.length, pass, fail: fail.length, results };
-  fs.mkdirSync('/tmp/stb-e2e', { recursive: true });
-  fs.writeFileSync('/tmp/stb-e2e-results.json', JSON.stringify(out, null, 2));
+  const pass = results.filter(r => r.pass && !r.skipped).length;
+  const fail = results.filter(r => !r.pass && !r.skipped);
+  const skipped = results.filter(r => r.skipped).length;
+  const out = { total: results.length, pass, fail: fail.length, skipped, results };
+  const resultsPath = process.env.STB_E2E_RESULTS_PATH || '/tmp/stb-e2e-results.json';
+  fs.mkdirSync(pathModule.dirname(resultsPath), { recursive: true });
+  fs.writeFileSync(resultsPath, JSON.stringify(out, null, 2));
 
-  console.log(`\n===== STB E2E SUMMARY: ${pass}/${results.length} passed, ${fail.length} failed =====`);
+  console.log(`\n===== STB E2E SUMMARY: ${pass} passed, ${fail.length} failed, ${skipped} skipped (${results.length} checks) =====`);
   const byPhase = {};
-  for (const r of results) { byPhase[r.phase] = byPhase[r.phase] || { p: 0, f: 0 }; r.pass ? byPhase[r.phase].p++ : byPhase[r.phase].f++; }
-  for (const [ph, c] of Object.entries(byPhase)) console.log(`  ${ph}: ${c.p} pass / ${c.f} fail`);
+  for (const r of results) {
+    byPhase[r.phase] = byPhase[r.phase] || { p: 0, f: 0, s: 0 };
+    if (r.skipped) byPhase[r.phase].s++;
+    else if (r.pass) byPhase[r.phase].p++;
+    else byPhase[r.phase].f++;
+  }
+  for (const [ph, counts] of Object.entries(byPhase)) console.log(`  ${ph}: ${counts.p} pass / ${counts.f} fail / ${counts.s} skipped`);
   if (fail.length) {
     console.log('\n--- FAILURES ---');
     for (const f of fail) console.log(`  [FAIL][${f.phase}] ${f.name} :: ${f.detail}`);
   }
-  process.exit(0);
+  process.exitCode = fail.length ? 1 : 0;
 })().catch(e => { console.error('SUITE CRASH:', e); process.exit(1); });

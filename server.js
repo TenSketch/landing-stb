@@ -17,6 +17,7 @@ import { requireAdminAuth } from "./lib/auth.js";
 import apiRouter from "./lib/api.js";
 import { optionalCustomerAuth } from "./lib/customerAuth.js";
 import { getPublicBrandConfig, getBookingConfig, getContentConfig, getCurrencyConfig } from "./lib/settings.js";
+import { getBrowserMapsApiKey } from "./lib/googleMapsConfig.js";
 
 dotenv.config();
 
@@ -154,7 +155,7 @@ testConnection().then((dbStatus) => {
 app.get("/api/config", async (_req, res) => {
   try {
     res.json({
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+      googleMapsApiKey: getBrowserMapsApiKey(),
       brand: await getPublicBrandConfig(),
       booking: await getBookingConfig(),
       content: await getContentConfig(),
@@ -163,7 +164,7 @@ app.get("/api/config", async (_req, res) => {
   } catch (err) {
     console.warn("[Config] failed to load dynamic config:", err.message);
     res.json({
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+      googleMapsApiKey: getBrowserMapsApiKey(),
       brand: {
         name: process.env.BRAND_NAME || "STB Singapore",
         tagline: process.env.BRAND_TAGLINE || "Majestic Hospitality Since 2014",
@@ -226,7 +227,7 @@ app.post("/api/bookings", optionalCustomerAuth, async (req, res) => {
   if (req.customer && !payload.customerId) {
     payload.customerId = req.customer.id;
   }
-  const r = await handleCreateBooking(payload, baseUrl);
+  const r = await handleCreateBooking(payload, baseUrl, req.get('Idempotency-Key') || null);
   res.status(r.status).json(r.body);
 });
 

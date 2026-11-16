@@ -7,7 +7,7 @@
 | Module | Route | Status | Notes |
 |--------|-------|--------|-------|
 | Dashboard | `/admin` | ✅ Working | Stats cards, recent bookings |
-| Bookings | `/admin/bookings` | ⚠️ Partial | List + status change + driver assign (prompt-based) |
+| Bookings | `/admin/bookings` | ⚠️ Partial | List + status change + accessible driver assignment dialog; server-side driver eligibility remains to verify |
 | Customers | `/admin/customers` | ❌ Not implemented | Listed in nav but no UI |
 | Vehicles | `/admin/vehicles` | ✅ Working | Full CRUD with extended fields |
 | Pricing | `/admin/pricing` | ⚠️ Partial | Rules list, add form, add/edit modal |
@@ -32,8 +32,12 @@ Current `app.js` topbar has hamburger + brand + user avatar + sign-out button.
 ### Bookings
 - List: `GET /api/admin/bookings` with optional `?status=&date=&assigned=`
 - Status update: `PUT /api/admin/bookings/:voucherCode/status`
-- Driver assignment: `PUT /api/admin/bookings/:voucherCode/assign-driver` with JSON body `{ driverName, driverPhone }`
-- **Issue**: Driver assign uses `window.prompt()` — no server-side driver validation
+- Driver assignment: `PUT /api/admin/bookings/:voucherCode/assign-driver` with JSON body `{ driverId }` (UUID of an active driver record; client-supplied driver details are ignored)
+- Driver assignment uses a modal that shows the selected driver's details for confirmation; the server resolves every value from the driver record.
+- The dialog has an accessible name/description, labelled controls, Escape-to-close, focus trapping, and focus restoration.
+- The admin API resolves the submitted driver ID against the database and rejects missing, malformed or inactive drivers; it ignores client-supplied driver details.
+- The assignment-choice endpoint is scoped to the dispatch permission and returns only fields needed by the modal.
+- Regression coverage checks active-driver assignment, malformed IDs and inactive-driver rejection.
 
 ### Customers
 - Nav link exists but no route handler or UI component
@@ -85,3 +89,9 @@ To add a new module:
 | Driver tab | — | Not implemented |
 | Notification templates | — | Not implemented |
 | Payment management | — | Not implemented |
+
+## Accessibility follow-up — driver assignment dialog
+
+The driver assignment dialog in `public/admin/app.js` is keyboard-operable: focus moves into the dialog, Tab/Shift+Tab stays within it, Escape and close/cancel controls close it, and focus is restored to the invoking control. The dialog exposes `role="dialog"`, `aria-modal="true"`, a labelled heading and description, and explicit labels for its form controls.
+
+Manual browser verification is still required for keyboard-only use, screen-reader announcements, narrow viewport behavior and focus restoration after the booking list refresh. Automated syntax/CI success is not a substitute for this manual check.

@@ -1706,6 +1706,8 @@ function handleContinueToReview() {
 // FINAL BOOKING SUBMISSION & CONFIRMATION
 // ============================================
 let _isBookingSubmitting = false;
+let _bookingIdempotencyKey = null;
+let _bookingIdempotencyFingerprint = null;
 
 async function handleBookingSubmit() {
   if (_isBookingSubmitting) return; // prevent double / spot submits
@@ -1828,10 +1830,7 @@ async function handleBookingSubmit() {
 
   // Submit to Backend API
   try {
-    const res = await fetch('/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const bookingPayload = {
         passengerName: name,
         passengerEmail: email,
         passengerPhone: phone,
@@ -1853,13 +1852,24 @@ async function handleBookingSubmit() {
         distanceKm: state.tripMode === 'one_way' ? state.distanceKm : null,
         hours: state.tripMode === 'hourly' ? Number(state.hourlyDuration) || 4 : null,
         days: state.tripMode === 'daily' ? Number(state.dailyDuration) || 1 : null,
-      }),
+    };
+    const bookingFingerprint = JSON.stringify(bookingPayload);
+    if (!_bookingIdempotencyKey || _bookingIdempotencyFingerprint !== bookingFingerprint) {
+      _bookingIdempotencyKey = window.crypto?.randomUUID?.() || `stb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      _bookingIdempotencyFingerprint = bookingFingerprint;
+    }
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': _bookingIdempotencyKey },
+      body: JSON.stringify(bookingPayload),
     });
     if (res.ok) {
       const data = await res.json();
       serverVoucherCode = data.booking?.voucherCode;
       if (serverVoucherCode) {
         bookingSuccessful = true;
+        _bookingIdempotencyKey = null;
+        _bookingIdempotencyFingerprint = null;
         if (window.STBAnalytics) {
           STBAnalytics.bookingSubmitted();
           STBAnalytics.bookingSuccess();
