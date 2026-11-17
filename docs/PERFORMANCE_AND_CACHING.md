@@ -1,5 +1,7 @@
 # Performance & Caching
 
+> **Revalidation note (2026-10-15):** The cache-first service-worker note below is stale: current `public/sw.js` v3 uses network-first for navigations/HTML/JS/CSS, bypasses APIs and cross-origin resources, and cache-first for static media. See [`PWA.md`](PWA.md). Other performance entries require fresh profiling/source verification before they are treated as measured bottlenecks.
+
 ## Known Issues
 
 | Severity | Issue | Location | Impact |

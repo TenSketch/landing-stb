@@ -1,5 +1,7 @@
 # STB QA — Testing Phases (audit → fix → test → commit → next)
 
+> **Historical QA log:** The checkmarks and 160-check total below describe the prior 2026-09-30 run, not current health. Fresh isolated CI evidence is recorded in dated QA reports; current run status is available from GitHub Actions. See [`AGILE_DEVELOPMENT_QA_METHOD.md`](AGILE_DEVELOPMENT_QA_METHOD.md) for the current evidence/reporting rules.
+
 Status of each phase for the Singapore Tour Booking landing/platform.
 Harness: `tests/e2e-suite.cjs` (90-check functional/e2e suite) + `tests/audit.cjs` (69 extended security/ops probes).
 

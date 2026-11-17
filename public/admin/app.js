@@ -39,10 +39,12 @@ async function api(path, options = {}) {
     const err = data?.error || `Request failed (${res.status})`;
     if (res.status === 401 && !path.includes('/auth/')) {
       renderAuth();
-    } else {
-      showToast(err, 'error');
     }
-    throw new Error(err);
+    // Callers own their feedback: catch handlers show one toast, while page
+    // loaders render an inline error state. Avoid duplicate global + local toasts.
+    const error = new Error(err);
+    error.status = res.status;
+    throw error;
   }
   return data;
 }
@@ -116,7 +118,7 @@ function renderAuth() {
       await loadPermissions();
       renderApp();
     } catch (err) {
-      // error shown by api
+      showToast(err.message, 'error');
     }
   });
 
@@ -352,70 +354,99 @@ function statusBadge(status) {
 }
 
 function showDriverAssignModal(voucher, drivers) {
-  const existing = (drivers || []).find(d => d.is_active);
+  const previouslyFocused = document.activeElement;
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:440px;">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="dam-title" aria-describedby="dam-description" tabindex="-1" style="max-width:440px;">
       <div class="modal-header">
-        <h3>Assign Driver</h3>
-        <button class="btn-ghost btn-sm modal-close">&times;</button>
+        <h3 id="dam-title">Assign Driver</h3>
+        <button type="button" class="btn-ghost btn-sm modal-close" aria-label="Close driver assignment dialog">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="margin:0 0 16px;font-size:0.85rem;color:#6B6B6B;">Booking: <strong>${escapeHtml(voucher)}</strong></p>
+        <p id="dam-description" style="margin:0 0 16px;font-size:0.85rem;color:#6B6B6B;">Booking: <strong>${escapeHtml(voucher)}</strong></p>
         <div class="form-group">
-          <label class="form-label">Select Active Driver</label>
-          <select id="dam-driver" class="form-select">
-            <option value="">— Enter manually —</option>
+          <label class="form-label" for="dam-driver">Select Active Driver</label>
+          <select id="dam-driver" class="form-select" required>
+            <option value="">Choose a driver…</option>
             ${(drivers || []).filter(d => d.is_active).map(d =>
-              `<option value="${escapeHtml(d.name)}|||${escapeHtml(d.phone || '')}|||${escapeHtml(d.plate_number || '')}">${escapeHtml(d.name)} ${d.phone ? `(${escapeHtml(d.phone)})` : ''}</option>`
+              `<option value="${escapeHtml(d.id)}">${escapeHtml(d.name)} ${d.phone ? `(${escapeHtml(d.phone)})` : ''}</option>`
             ).join('')}
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Driver Name</label>
-          <input type="text" id="dam-name" class="form-input" placeholder="e.g. Chandran Raj" value="${escapeHtml(existing?.name || '')}">
+          <label class="form-label" for="dam-name">Driver Name</label>
+          <input type="text" id="dam-name" class="form-input" placeholder="e.g. Chandran Raj" value="" readonly aria-readonly="true">
         </div>
         <div class="form-group">
-          <label class="form-label">Driver Phone</label>
-          <input type="tel" id="dam-phone" class="form-input" placeholder="+65 9123 4567" value="${escapeHtml(existing?.phone || '')}">
+          <label class="form-label" for="dam-phone">Driver Phone</label>
+          <input type="tel" id="dam-phone" class="form-input" placeholder="+65 9123 4567" value="" readonly aria-readonly="true">
         </div>
         <div class="form-group">
-          <label class="form-label">Vehicle Plate</label>
-          <input type="text" id="dam-plate" class="form-input" placeholder="SGX 1234 A" style="text-transform:uppercase;" value="${escapeHtml(existing?.plate_number || '')}">
+          <label class="form-label" for="dam-plate">Vehicle Plate</label>
+          <input type="text" id="dam-plate" class="form-input" placeholder="SGX 1234 A" style="text-transform:uppercase;" value="" readonly aria-readonly="true">
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary modal-close">Cancel</button>
-        <button class="btn-primary" id="dam-submit">Assign Driver</button>
+        <button type="button" class="btn-secondary modal-close">Cancel</button>
+        <button type="button" class="btn-primary" id="dam-submit">Assign Driver</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
 
-  $('#dam-driver').addEventListener('change', () => {
-    const parts = $('#dam-driver').value.split('|||');
-    if (parts.length >= 2) {
-      $('#dam-name').value = parts[0];
-      $('#dam-phone').value = parts[1];
-      if (parts[2]) $('#dam-plate').value = parts[2];
+  const dialog = $('.modal-box', overlay);
+  const focusableSelector = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const closeModal = () => {
+    overlay.remove();
+    if (previouslyFocused && typeof previouslyFocused.focus === 'function') previouslyFocused.focus();
+  };
+  dialog?.focus();
+  $('#dam-driver')?.focus();
+
+  overlay.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModal();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = $$(focusableSelector, dialog).filter(el => el.offsetParent !== null);
+    if (!focusable.length) {
+      event.preventDefault();
+      dialog?.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   });
 
-  $$('.modal-close', overlay).forEach(btn => btn.addEventListener('click', () => overlay.remove()));
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  $('#dam-driver').addEventListener('change', () => {
+    const selected = (drivers || []).find(driver => String(driver.id) === $('#dam-driver').value && driver.is_active);
+    $('#dam-name').value = selected?.name || '';
+    $('#dam-phone').value = selected?.phone || '';
+    $('#dam-plate').value = selected?.plate_number || '';
+  });
+
+  $$('.modal-close', overlay).forEach(btn => btn.addEventListener('click', closeModal));
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
   $('#dam-submit').addEventListener('click', async () => {
-    const driverName = $('#dam-name').value.trim();
-    const driverPhone = $('#dam-phone').value.trim();
-    const driverPlate = $('#dam-plate').value.trim().toUpperCase();
-    if (!driverName) { showToast('Driver name is required.', 'error'); return; }
+    const driverId = $('#dam-driver').value;
+    if (!driverId) { showToast('Select an active driver before assigning.', 'error'); return; }
     try {
       await api(`/bookings/${voucher}/assign-driver`, {
         method: 'PUT',
-        body: JSON.stringify({ driverName, driverPhone, driverPlate })
+        body: JSON.stringify({ driverId })
       });
       showToast('Driver assigned', 'success');
-      overlay.remove();
+      closeModal();
       navigate('bookings');
     } catch (err) { showToast(err.message, 'error'); }
   });
@@ -424,7 +455,7 @@ function showDriverAssignModal(voucher, drivers) {
 // Bookings
 async function renderBookings() {
   const { bookings = [] } = await api('/bookings');
-  const drivers = hasPerm('drivers.view') ? (await api('/drivers').catch(() => ({ drivers: [] }))).drivers || [] : [];
+  const drivers = hasPerm('bookings.assign_driver') ? (await api('/drivers/assignable').catch(() => ({ drivers: [] }))).drivers || [] : [];
   $('#page-title').textContent = 'Bookings';
   $('#page-content').innerHTML = `
     <div class="admin-card">

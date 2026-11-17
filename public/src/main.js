@@ -1706,6 +1706,8 @@ function handleContinueToReview() {
 // FINAL BOOKING SUBMISSION & CONFIRMATION
 // ============================================
 let _isBookingSubmitting = false;
+let _bookingIdempotencyKey = null;
+let _bookingIdempotencyFingerprint = null;
 
 async function handleBookingSubmit() {
   if (_isBookingSubmitting) return; // prevent double / spot submits
@@ -1803,6 +1805,7 @@ async function handleBookingSubmit() {
 
   let bookingSuccessful = false;
   let serverVoucherCode = '';
+  let submissionErrorMessage = 'We could not confirm your booking. Please retry with the same details.';
 
   let submitVehicle = state.selectedSimpleVehicle || '4-Seater';
   let submitFare = 'Pending Quote';
@@ -1828,10 +1831,7 @@ async function handleBookingSubmit() {
 
   // Submit to Backend API
   try {
-    const res = await fetch('/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const bookingPayload = {
         passengerName: name,
         passengerEmail: email,
         passengerPhone: phone,
@@ -1853,24 +1853,41 @@ async function handleBookingSubmit() {
         distanceKm: state.tripMode === 'one_way' ? state.distanceKm : null,
         hours: state.tripMode === 'hourly' ? Number(state.hourlyDuration) || 4 : null,
         days: state.tripMode === 'daily' ? Number(state.dailyDuration) || 1 : null,
-      }),
+    };
+    const bookingFingerprint = JSON.stringify(bookingPayload);
+    if (!_bookingIdempotencyKey || _bookingIdempotencyFingerprint !== bookingFingerprint) {
+      _bookingIdempotencyKey = window.crypto?.randomUUID?.() || `stb-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      _bookingIdempotencyFingerprint = bookingFingerprint;
+    }
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': _bookingIdempotencyKey },
+      body: JSON.stringify(bookingPayload),
     });
     if (res.ok) {
       const data = await res.json();
       serverVoucherCode = data.booking?.voucherCode;
       if (serverVoucherCode) {
         bookingSuccessful = true;
+        _bookingIdempotencyKey = null;
+        _bookingIdempotencyFingerprint = null;
         if (window.STBAnalytics) {
           STBAnalytics.bookingSubmitted();
           STBAnalytics.bookingSuccess();
         }
       } else {
+        submissionErrorMessage = 'The booking service returned no reference number. Please retry to confirm your request.';
         console.error('[API] Server response did not return a valid voucherCode.');
       }
     } else {
+      const errorBody = await res.json().catch(() => null);
+      submissionErrorMessage = typeof errorBody?.error === 'string'
+        ? errorBody.error.slice(0, 250)
+        : 'The booking service could not confirm this request. Please review your details and retry.';
       console.error('[API] Booking submission failed on backend status:', res.status);
     }
   } catch (e) {
+    submissionErrorMessage = 'A connection error prevented confirmation. Please retry before sending a new request.';
     console.error('[API] Submission error:', e);
   } finally {
     if (btn) btn.disabled = false;
@@ -1967,6 +1984,7 @@ async function handleBookingSubmit() {
       destination: finalDest,
       dateTime: `${dateVal} at ${timeVal}`,
       waUrl: waErrorUrl,
+      reason: submissionErrorMessage,
     });
   }
 }
@@ -2033,6 +2051,8 @@ function showDedicatedConfirmation(data) {
 }
 
 function showDedicatedError(data) {
+  const errorReason = $('#error-reason');
+  if (errorReason) errorReason.textContent = data.reason || 'Please retry your booking request.';
   $('#error-pickup').textContent = data.pickup;
   $('#error-dest').textContent = data.destination;
   $('#error-datetime').textContent = data.dateTime;
